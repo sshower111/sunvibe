@@ -1,0 +1,48 @@
+import { Button } from "@/components/ui/button"
+import { ArrowRight } from "lucide-react"
+
+export function HeroSection() {
+  return (
+    <section className="relative h-screen w-full overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <img src="/artisan-bakery-fresh-bread-pastries-golden-crust.jpg" alt="Artisan bakery products" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+      </div>
+
+      {/* Content */}
+      <div className="relative h-full flex items-center justify-center">
+        <div className="container mx-auto px-4 lg:px-8 text-center">
+          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 text-balance animate-fade-in-up">
+            Authentic Asian Style
+            <br />
+            <span className="text-accent">Breads & Pastries</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto text-pretty animate-fade-in-up animation-delay-200">
+            Premium French, Chinese, and Italian breads crafted with passion and tradition
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
+            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg px-8">
+              View Menu
+              <ArrowRight className="ml-2" size={20} />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm text-lg px-8"
+            >
+              Our Story
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll Indicator */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-2">
+          <div className="w-1.5 h-3 bg-white/50 rounded-full" />
+        </div>
+      </div>
+    </section>
+  )
+}
