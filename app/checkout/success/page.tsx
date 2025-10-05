@@ -73,19 +73,21 @@ function SuccessContent() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-              <Button
-                asChild
-                variant="outline"
-                className="w-full sm:w-auto px-6"
-              >
-                <Link href="/menu">Continue Shopping</Link>
-              </Button>
-              <Button
-                asChild
-                className="w-full sm:w-auto bg-accent hover:bg-accent/90 px-6"
-              >
-                <Link href="/">Back to Home</Link>
-              </Button>
+              <Link href="/menu" className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  className="w-full px-6"
+                >
+                  Continue Shopping
+                </Button>
+              </Link>
+              <Link href="/" className="w-full sm:w-auto">
+                <Button
+                  className="w-full bg-accent hover:bg-accent/90 px-6"
+                >
+                  Back to Home
+                </Button>
+              </Link>
             </div>
 
             {sessionId && (
