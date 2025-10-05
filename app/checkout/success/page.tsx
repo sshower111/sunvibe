@@ -8,6 +8,21 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useCart } from "@/contexts/cart-context"
 
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  )
+}
+
 function SuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
@@ -22,7 +37,7 @@ function SuccessContent() {
   }, [sessionId, clearCart])
 
   return (
-    <>
+    <main className="min-h-screen flex flex-col">
       <Navigation />
 
       <div className="flex-1 pt-32 pb-16 bg-gray-50">
@@ -100,27 +115,14 @@ function SuccessContent() {
       </div>
 
       <Footer />
-    </>
+    </main>
   )
 }
 
 export default function SuccessPage() {
   return (
-    <main className="min-h-screen flex flex-col">
-      <Suspense fallback={
-        <div className="min-h-screen flex flex-col">
-          <Navigation />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading...</p>
-            </div>
-          </div>
-          <Footer />
-        </div>
-      }>
-        <SuccessContent />
-      </Suspense>
-    </main>
+    <Suspense fallback={<LoadingState />}>
+      <SuccessContent />
+    </Suspense>
   )
 }
