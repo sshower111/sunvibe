@@ -21,6 +21,7 @@ export function CartSheet() {
     if (items.length === 0) return
 
     setCheckingOut(true)
+    console.log("🛒 Cart Sheet - Pickup Time:", pickupTime)
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
