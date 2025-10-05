@@ -75,16 +75,12 @@ export default function SuccessPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/menu">
-                <Button variant="outline" className="w-full sm:w-auto">
-                  Continue Shopping
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button className="w-full sm:w-auto bg-accent hover:bg-accent/90">
-                  Back to Home
-                </Button>
-              </Link>
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link href="/menu">Continue Shopping</Link>
+              </Button>
+              <Button asChild className="w-full sm:w-auto bg-accent hover:bg-accent/90">
+                <Link href="/">Back to Home</Link>
+              </Button>
             </div>
 
             {sessionId && (
