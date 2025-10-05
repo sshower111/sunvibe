@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,6 @@ import { useCart } from "@/contexts/cart-context"
 
 function SuccessContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const sessionId = searchParams.get("session_id")
   const { clearCart } = useCart()
 
@@ -21,14 +20,6 @@ function SuccessContent() {
       console.log("Checkout session:", sessionId)
     }
   }, [sessionId, clearCart])
-
-  const handleContinueShopping = () => {
-    router.push('/menu')
-  }
-
-  const handleBackHome = () => {
-    router.push('/')
-  }
 
   return (
     <>
@@ -83,17 +74,17 @@ function SuccessContent() {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
               <Button
+                asChild
                 variant="outline"
                 className="w-full sm:w-auto px-6"
-                onClick={handleContinueShopping}
               >
-                Continue Shopping
+                <Link href="/menu">Continue Shopping</Link>
               </Button>
               <Button
+                asChild
                 className="w-full sm:w-auto bg-accent hover:bg-accent/90 px-6"
-                onClick={handleBackHome}
               >
-                Back to Home
+                <Link href="/">Back to Home</Link>
               </Button>
             </div>
 
