@@ -8,6 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetDescription,
 } from "@/components/ui/sheet"
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react"
 import { useState } from "react"
@@ -66,6 +67,9 @@ export function CartSheet() {
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Shopping Cart</SheetTitle>
+          <SheetDescription>
+            Review your items and proceed to checkout
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex flex-col h-full pt-6">
