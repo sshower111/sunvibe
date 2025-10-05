@@ -88,21 +88,18 @@ function SuccessContent() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-              <Link href="/menu" className="w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  className="w-full px-6"
-                >
-                  Continue Shopping
-                </Button>
-              </Link>
-              <Link href="/" className="w-full sm:w-auto">
-                <Button
-                  className="w-full bg-accent hover:bg-accent/90 px-6"
-                >
-                  Back to Home
-                </Button>
-              </Link>
+              <a
+                href="/menu"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-6 w-full sm:w-auto"
+              >
+                Continue Shopping
+              </a>
+              <a
+                href="/"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-accent text-accent-foreground hover:bg-accent/90 h-10 px-6 w-full sm:w-auto"
+              >
+                Back to Home
+              </a>
             </div>
 
             {sessionId && (
