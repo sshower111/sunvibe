@@ -62,164 +62,144 @@ export async function POST(req: NextRequest) {
       const customerEmail = session.customer_details?.email || 'No email provided'
       const customerName = session.customer_details?.name || 'Customer'
       const totalAmount = ((session.amount_total || 0) / 100).toFixed(2)
+      const orderId = `SB-${session.id.slice(-8).toUpperCase()}`
 
       console.log("📧 Webhook - Session metadata:", session.metadata)
       console.log("⏰ Webhook - Pickup time:", pickupTime)
 
-      // Create HTML email content
+      // Create simple order notification email for bakery
       const emailHtml = `
         <!DOCTYPE html>
         <html>
           <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-              .content { background-color: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; }
-              .order-details { background-color: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
-              .item { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
-              .item:last-child { border-bottom: none; }
-              .total { font-size: 1.2em; font-weight: bold; color: #10b981; margin-top: 15px; }
-              .info-row { display: flex; justify-content: space-between; padding: 8px 0; }
-              .label { font-weight: bold; color: #6b7280; }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+              .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; }
+              .header { background: linear-gradient(135deg, #d97706 0%, #ea580c 100%); color: white; padding: 30px 20px; text-align: center; }
+              .content { padding: 30px 20px; }
+              .order-id { background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 6px; font-weight: 600; display: inline-block; margin: 10px 0; }
+              .info { margin: 20px 0; }
+              .info-row { padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+              .label { color: #6b7280; font-size: 14px; }
+              .value { color: #1f2937; font-weight: 600; margin-top: 4px; }
+              .items { background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; }
+              .item { padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+              .item:last-child { border: none; }
+              .total { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center; font-size: 20px; font-weight: bold; color: #92400e; }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1>🥐 New Order Received!</h1>
+                <h1 style="margin: 0;">🥐 New Order!</h1>
               </div>
               <div class="content">
-                <h2>Order Details</h2>
-                <div class="order-details">
+                <div class="order-id">Order ${orderId}</div>
+
+                <div class="info">
                   <div class="info-row">
-                    <span class="label">Customer:</span>
-                    <span>${customerName}</span>
+                    <div class="label">Customer</div>
+                    <div class="value">${customerName}</div>
                   </div>
                   <div class="info-row">
-                    <span class="label">Email:</span>
-                    <span>${customerEmail}</span>
+                    <div class="label">Email</div>
+                    <div class="value">${customerEmail}</div>
                   </div>
                   <div class="info-row">
-                    <span class="label">Pickup Time:</span>
-                    <span>${pickupTime}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">Order ID:</span>
-                    <span>${session.id}</span>
+                    <div class="label">Pickup Time</div>
+                    <div class="value">${pickupTime}</div>
                   </div>
                 </div>
 
-                <h3>Items Ordered:</h3>
-                <div class="order-details">
+                <div class="items">
                   ${orderItems.map(item => `
                     <div class="item">
-                      <div style="display: flex; justify-content: space-between;">
-                        <span><strong>${item.name}</strong></span>
-                        <span>$${item.total}</span>
-                      </div>
-                      <div style="color: #6b7280; font-size: 0.9em;">
-                        Qty: ${item.quantity} × $${item.price}
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <strong>${item.name}</strong><br>
+                          <span style="color: #6b7280; font-size: 14px;">Qty: ${item.quantity} × $${item.price}</span>
+                        </div>
+                        <strong>$${item.total}</strong>
                       </div>
                     </div>
                   `).join('')}
-
-                  <div class="total">
-                    Total: $${totalAmount} USD
-                  </div>
                 </div>
 
-                <p style="color: #6b7280; font-size: 0.9em; margin-top: 20px;">
-                  This order was automatically generated from your Sunville Bakery website.
-                </p>
+                <div class="total">Total: $${totalAmount}</div>
               </div>
             </div>
           </body>
         </html>
       `
 
-      // Create customer confirmation email
+      // Create customer confirmation email with same modern design
       const customerEmailHtml = `
         <!DOCTYPE html>
         <html>
           <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background-color: #10b981; color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-              .content { background-color: #f9fafb; padding: 30px 20px; border-radius: 0 0 8px 8px; }
-              .order-details { background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+              .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; }
+              .header { background: linear-gradient(135deg, #d97706 0%, #ea580c 100%); color: white; padding: 40px 20px; text-align: center; }
+              .content { padding: 30px 20px; }
+              .order-id { background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 6px; font-weight: 600; display: inline-block; margin: 10px 0; }
+              .pickup-time { background: #fed7aa; color: #9a3412; padding: 12px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: 700; margin: 20px 0; }
+              .items { background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; }
               .item { padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
-              .item:last-child { border-bottom: none; }
-              .total { font-size: 1.3em; font-weight: bold; color: #10b981; margin-top: 20px; padding-top: 15px; border-top: 2px solid #10b981; }
-              .info-row { display: flex; justify-content: space-between; padding: 10px 0; }
-              .label { font-weight: bold; color: #6b7280; }
-              .success-icon { font-size: 48px; margin-bottom: 10px; }
-              .next-steps { background-color: #ecfdf5; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #10b981; }
-              .next-steps h3 { margin-top: 0; color: #065f46; }
-              .next-steps ol { margin: 10px 0; padding-left: 20px; }
-              .next-steps li { margin: 8px 0; color: #064e3b; }
+              .item:last-child { border: none; }
+              .total { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center; font-size: 20px; font-weight: bold; color: #92400e; }
+              .next-steps { background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; }
+              .next-steps h3 { margin-top: 0; color: #92400e; }
+              .location { background: white; padding: 15px; border-radius: 6px; margin-top: 10px; border-left: 3px solid #d97706; }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <div class="success-icon">✅</div>
+                <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
                 <h1 style="margin: 0;">Order Confirmed!</h1>
-                <p style="margin: 10px 0 0 0; opacity: 0.9;">Thank you for your order, ${customerName}</p>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">Thank you, ${customerName}!</p>
               </div>
               <div class="content">
-                <p style="font-size: 1.1em; color: #065f46;">
-                  Your delicious treats will be prepared fresh and ready for pickup!
-                </p>
+                <div class="order-id">Order ${orderId}</div>
 
-                <div class="order-details">
-                  <h2 style="margin-top: 0; color: #10b981;">Order Summary</h2>
-                  <div class="info-row">
-                    <span class="label">Order ID:</span>
-                    <span style="font-family: monospace; font-size: 0.9em;">${session.id.slice(0, 24)}...</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">Pickup Time:</span>
-                    <span style="font-size: 1.1em; color: #10b981; font-weight: bold;">${pickupTime}</span>
-                  </div>
+                <div class="pickup-time">
+                  🕐 Pickup: ${pickupTime}
                 </div>
 
-                <h3>Your Items:</h3>
-                <div class="order-details">
+                <div class="items">
                   ${orderItems.map(item => `
                     <div class="item">
                       <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span><strong>${item.name}</strong></span>
-                        <span style="font-weight: bold;">$${item.total}</span>
-                      </div>
-                      <div style="color: #6b7280; font-size: 0.9em; margin-top: 4px;">
-                        Quantity: ${item.quantity} × $${item.price} each
+                        <div>
+                          <strong>${item.name}</strong><br>
+                          <span style="color: #6b7280; font-size: 14px;">Qty: ${item.quantity} × $${item.price}</span>
+                        </div>
+                        <strong>$${item.total}</strong>
                       </div>
                     </div>
                   `).join('')}
+                </div>
 
-                  <div class="total">
-                    Total Paid: $${totalAmount} USD
+                <div class="total">Total: $${totalAmount}</div>
+
+                <div class="next-steps">
+                  <h3>📍 Pickup Location</h3>
+                  <div class="location">
+                    <strong>Sunville Bakery</strong><br>
+                    4053 Spring Mountain Rd<br>
+                    Las Vegas, NV 89102<br>
+                    <br>
+                    <strong>Hours:</strong><br>
+                    Mon-Tue, Thu-Sun: 8:00 AM - 8:00 PM<br>
+                    Wednesday: 8:00 AM - 3:00 PM
                   </div>
                 </div>
 
-                <div class="next-steps">
-                  <h3>What's Next?</h3>
-                  <ol>
-                    <li><strong>We'll start preparing your items fresh</strong></li>
-                    <li><strong>Pick up your order at:</strong><br>
-                        Sunville Bakery<br>
-                        4053 Spring Mountain Rd<br>
-                        Las Vegas, NV 89102<br>
-                        During business hours</li>
-                    <li><strong>Bring this confirmation</strong> or your order ID when you arrive</li>
-                  </ol>
-                </div>
-
-                <p style="text-align: center; color: #6b7280; font-size: 0.9em; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-                  Questions? Contact us at sunvillebakerylv@gmail.com<br>
-                  <a href="https://sunvillebakerylv.com" style="color: #10b981;">Visit our website</a>
+                <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                  Questions? Call 702-889-8897 or email sunvillebakerylv@gmail.com
                 </p>
               </div>
             </div>

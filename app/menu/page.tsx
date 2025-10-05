@@ -107,7 +107,7 @@ export default function MenuPage() {
       <div className="pt-36 pb-8">
         <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
           {/* Store Info Section */}
-          <Card className="mb-4 cursor-pointer hover:shadow-md transition-shadow relative z-0" onClick={() => setShowPickupOptions(!showPickupOptions)}>
+          <Card className="mb-5 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowPickupOptions(!showPickupOptions)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -228,7 +228,7 @@ export default function MenuPage() {
 
           {/* Hours Info Section */}
           <Card
-            className="mb-6 cursor-pointer hover:shadow-md transition-shadow relative z-0"
+            className="mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0"
             onClick={() => setShowHoursInfo(!showHoursInfo)}
           >
             <CardContent className="p-6">
@@ -269,26 +269,26 @@ export default function MenuPage() {
           </Card>
 
           {/* Search and Categories */}
-          <div className="mb-8">
-            <div className="relative mb-5">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+          <div className="mb-10">
+            <div className="relative mb-6">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/60" />
               <input
                 type="text"
-                placeholder="Search menu..."
+                placeholder="Search for delicious treats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-5 py-4 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent shadow-sm"
+                className="w-full pl-14 pr-6 py-5 text-base bg-white border-2 border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent shadow-md hover:shadow-lg transition-all"
               />
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-5 py-3 text-base rounded-xl whitespace-nowrap font-semibold transition-all shadow-sm ${
+                  className={`px-6 py-3.5 text-base rounded-full whitespace-nowrap font-semibold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 ${
                     selectedCategory === category
-                      ? 'bg-primary text-primary-foreground shadow-md'
-                      : 'bg-white text-foreground hover:bg-gray-100 hover:shadow-md'
+                      ? 'gradient-accent text-white ring-2 ring-accent/30'
+                      : 'bg-white text-foreground hover:bg-accent/5 border border-border'
                   }`}
                 >
                   {category}
@@ -310,42 +310,47 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {filteredProducts.map((product, index) => (
               <Card
                 key={product.id}
-                className="overflow-hidden hover:shadow-lg transition-shadow relative"
+                className="group overflow-hidden card-modern hover:-translate-y-1 transition-all duration-300 relative"
               >
-                <div className="relative h-48 bg-gray-100">
+                <div className="relative h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                   <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <CardContent className="p-3">
-                  <h3 className="font-bold text-base mb-1">{product.name}</h3>
+                <CardContent className="p-5 relative">
+                  <h3 className="font-bold text-lg mb-2 font-serif text-primary group-hover:text-accent transition-colors">
+                    {product.name}
+                  </h3>
                   {product.description && (
-                    <p className="text-xs text-muted-foreground mb-1 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
                       {product.description}
                     </p>
                   )}
-                  <p className="text-sm font-semibold text-accent">
-                    ${product.price}
-                  </p>
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-xl font-bold text-accent">
+                      ${product.price}
+                    </p>
+                    <button
+                      onClick={() => addItem({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        priceId: product.priceId,
+                        image: product.image,
+                      })}
+                      className="rounded-full h-11 w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
+                    >
+                      +
+                    </button>
+                  </div>
                 </CardContent>
-                <button
-                  onClick={() => addItem({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    priceId: product.priceId,
-                    image: product.image,
-                  })}
-                  className="absolute bottom-3 right-3 rounded-full h-9 w-9 bg-white border-2 border-gray-300 hover:border-accent hover:bg-accent hover:text-white transition-all hover:scale-110 flex items-center justify-center text-xl font-semibold shadow-md hover:shadow-lg"
-                >
-                  +
-                </button>
               </Card>
             ))}
             </div>

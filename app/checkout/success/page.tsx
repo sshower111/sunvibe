@@ -104,7 +104,7 @@ function SuccessContent() {
 
             {sessionId && (
               <p className="text-xs md:text-sm text-muted-foreground pt-6 border-t border-gray-200">
-                Order reference: {sessionId.slice(0, 20)}...
+                Order ID: SB-{sessionId.slice(-8).toUpperCase()}
               </p>
             )}
           </div>
