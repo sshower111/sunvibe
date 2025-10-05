@@ -25,7 +25,15 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(formattedProducts)
+    console.log(`📦 Products API: Returning ${formattedProducts.length} products`)
+    console.log('Categories:', [...new Set(formattedProducts.map(p => p.category))].join(', '))
+    console.log('Sample product:', formattedProducts[0])
+
+    return NextResponse.json(formattedProducts, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    })
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json(

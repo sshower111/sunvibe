@@ -324,9 +324,14 @@ export default function MenuPage() {
                   />
                 </div>
                 <CardContent className="p-3">
-                  <h3 className="font-bold text-base mb-0.5">{product.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    ${product.price} • {Math.round(parseFloat(product.price) * 100)}-{Math.round(parseFloat(product.price) * 150)} Cal
+                  <h3 className="font-bold text-base mb-1">{product.name}</h3>
+                  {product.description && (
+                    <p className="text-xs text-muted-foreground mb-1 line-clamp-2">
+                      {product.description}
+                    </p>
+                  )}
+                  <p className="text-sm font-semibold text-accent">
+                    ${product.price}
                   </p>
                 </CardContent>
                 <button
