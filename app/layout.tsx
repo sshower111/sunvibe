@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="https://i.ibb.co/jv0TXRV/sunville-bakery-logo.png" />
+        <link rel="icon" href="/sitelogo.png" />
       </head>
       <body className={`${montserrat.variable} ${raleway.variable} font-sans`}>
         <CartProvider>
