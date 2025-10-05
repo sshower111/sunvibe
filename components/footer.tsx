@@ -22,29 +22,29 @@ export function Footer() {
             <h3 className="font-semibold text-xl mb-4">Quick Links</h3>
             <ul className="space-y-2 text-base">
               <li>
-                <Link href="/" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                <a href="/" className="text-primary-foreground/80 hover:text-accent transition-colors">
                   Home
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/#about" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                <a href="/#about" className="text-primary-foreground/80 hover:text-accent transition-colors">
                   About
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/menu" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                <a href="/menu" className="text-primary-foreground/80 hover:text-accent transition-colors">
                   Menu
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/gallery" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                <a href="/gallery" className="text-primary-foreground/80 hover:text-accent transition-colors">
                   Gallery
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/#contact" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                <a href="/#contact" className="text-primary-foreground/80 hover:text-accent transition-colors">
                   Contact
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
