@@ -7,10 +7,11 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                <span className="text-primary font-serif text-2xl font-bold">S</span>
-              </div>
-              <span className="font-serif text-2xl font-bold">Sunville Bakery</span>
+              <img
+                src="/logoWhite.png"
+                alt="Sunville Bakery"
+                className="h-16 w-auto"
+              />
             </div>
             <p className="text-primary-foreground/80 text-base leading-relaxed">
               Authentic Asian style breads, pastries, and more. Crafted with passion since 2002.

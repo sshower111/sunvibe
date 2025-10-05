@@ -35,9 +35,11 @@ export function Navigation() {
         <div className="flex items-center justify-between h-28">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <span className={`font-serif text-5xl font-bold transition-colors ${isHomePage && isAtTop ? "text-white" : "text-primary"}`}>
-              Sunville Bakery
-            </span>
+            <img
+              src={isHomePage && isAtTop ? "/logoWhite.png" : "/logoBlack.png"}
+              alt="Sunville Bakery"
+              className="h-20 w-auto transition-all duration-300"
+            />
           </Link>
 
           {/* Desktop Navigation */}
