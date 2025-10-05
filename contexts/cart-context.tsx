@@ -28,6 +28,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [pickupTime, setPickupTime] = useState<string>("ASAP")
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -43,17 +44,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (savedPickupTime) {
       setPickupTime(savedPickupTime)
     }
+    setIsInitialized(true)
   }, [])
 
-  // Save cart to localStorage whenever it changes
+  // Save cart to localStorage whenever it changes (but only after initialization)
   useEffect(() => {
-    localStorage.setItem("sunville-cart", JSON.stringify(items))
-  }, [items])
+    if (isInitialized) {
+      localStorage.setItem("sunville-cart", JSON.stringify(items))
+    }
+  }, [items, isInitialized])
 
-  // Save pickup time to localStorage whenever it changes
+  // Save pickup time to localStorage whenever it changes (but only after initialization)
   useEffect(() => {
-    localStorage.setItem("sunville-pickup-time", pickupTime)
-  }, [pickupTime])
+    if (isInitialized) {
+      localStorage.setItem("sunville-pickup-time", pickupTime)
+    }
+  }, [pickupTime, isInitialized])
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     setItems((currentItems) => {

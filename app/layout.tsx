@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Montserrat, Raleway } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import { Suspense } from "react"
 import { CartProvider } from "@/contexts/cart-context"
 import "./globals.css"
 
@@ -37,7 +36,7 @@ export default function RootLayout({
       </head>
       <body className={`${montserrat.variable} ${raleway.variable} font-sans`}>
         <CartProvider>
-          <Suspense fallback={null}>{children}</Suspense>
+          {children}
           <Analytics />
         </CartProvider>
       </body>
