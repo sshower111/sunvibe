@@ -14,6 +14,7 @@ export function Navigation() {
 
   // Only use transparent nav on homepage
   const isHomePage = pathname === "/"
+  const isMenuPage = pathname === "/menu"
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,12 +85,14 @@ export function Navigation() {
             >
               Contact
             </Link>
-            <Button
-              asChild
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              <Link href="/menu">Order Now</Link>
-            </Button>
+            {!isMenuPage && (
+              <Button
+                asChild
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                <Link href="/menu">Order Now</Link>
+              </Button>
+            )}
             <CartSheet />
           </div>
 
@@ -151,13 +154,15 @@ export function Navigation() {
               >
                 Contact
               </Link>
-              <Button
-                asChild
-                className="bg-accent text-accent-foreground hover:bg-accent/90 mt-2 text-lg py-6"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Link href="/menu">Order Now</Link>
-              </Button>
+              {!isMenuPage && (
+                <Button
+                  asChild
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 mt-2 text-lg py-6"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Link href="/menu">Order Now</Link>
+                </Button>
+              )}
             </div>
           </div>
         )}

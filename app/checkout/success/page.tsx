@@ -23,14 +23,14 @@ export default function SuccessPage() {
   }, [sessionId, clearCart])
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen flex flex-col">
       <Navigation />
 
-      <div className="pt-24 pb-32 bg-gray-50">
+      <div className="flex-1 pt-32 pb-16 bg-gray-50">
         <div className="container mx-auto px-4 lg:px-8 max-w-2xl">
-          <div className="bg-white rounded-lg shadow-lg p-8 md:p-12 text-center">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 md:p-10 text-center">
+            <div className="mb-8">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg
                   className="w-10 h-10 text-green-600"
                   fill="none"
@@ -45,46 +45,45 @@ export default function SuccessPage() {
                   />
                 </svg>
               </div>
-              <h1 className="font-serif text-4xl md:text-5xl font-bold text-primary mb-4">
+              <h1 className="font-serif text-3xl md:text-4xl font-bold text-primary mb-3">
                 Order Confirmed!
               </h1>
-              <div className="w-24 h-1 bg-accent mx-auto mb-6" />
+              <div className="w-24 h-1 bg-accent mx-auto" />
             </div>
 
-            <p className="text-lg text-muted-foreground mb-8">
-              Thank you for your order! Your delicious treats will be prepared fresh and ready for
-              pickup.
+            <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-lg mx-auto">
+              Thank you for your order! Your delicious treats will be prepared fresh and ready for pickup.
             </p>
 
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
-              <h2 className="font-serif text-xl font-bold text-primary mb-4">What's Next?</h2>
-              <ul className="text-left text-muted-foreground space-y-3">
+            <div className="bg-gray-50 rounded-lg p-6 mb-8 text-left max-w-lg mx-auto">
+              <h2 className="font-serif text-lg md:text-xl font-bold text-primary mb-4 text-center">What's Next?</h2>
+              <ul className="text-muted-foreground space-y-4">
                 <li className="flex items-start gap-3">
-                  <span className="text-accent font-bold">1.</span>
-                  <span>You'll receive a confirmation email with your order details</span>
+                  <span className="text-accent font-bold text-lg shrink-0">1.</span>
+                  <span className="text-sm md:text-base">You'll receive a confirmation email with your order details</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-accent font-bold">2.</span>
-                  <span>We'll start preparing your items fresh</span>
+                  <span className="text-accent font-bold text-lg shrink-0">2.</span>
+                  <span className="text-sm md:text-base">We'll start preparing your items fresh</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-accent font-bold">3.</span>
-                  <span>Pick up your order at our bakery during business hours</span>
+                  <span className="text-accent font-bold text-lg shrink-0">3.</span>
+                  <span className="text-sm md:text-base">Pick up your order at our bakery during business hours</span>
                 </li>
               </ul>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild variant="outline" className="w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+              <Button asChild variant="outline" className="w-full sm:w-auto px-6">
                 <Link href="/menu">Continue Shopping</Link>
               </Button>
-              <Button asChild className="w-full sm:w-auto bg-accent hover:bg-accent/90">
+              <Button asChild className="w-full sm:w-auto bg-accent hover:bg-accent/90 px-6">
                 <Link href="/">Back to Home</Link>
               </Button>
             </div>
 
             {sessionId && (
-              <p className="text-sm text-muted-foreground mt-8">
+              <p className="text-xs md:text-sm text-muted-foreground pt-6 border-t border-gray-200">
                 Order reference: {sessionId.slice(0, 20)}...
               </p>
             )}
