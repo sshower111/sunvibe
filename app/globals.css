@@ -4,40 +4,40 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Light green color scheme */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.25 0 0);
-  --card: oklch(0.99 0.005 140);
-  --card-foreground: oklch(0.25 0 0);
+  /* Modern vibrant color scheme - Warm & Inviting Bakery */
+  --background: oklch(0.99 0.01 90);
+  --foreground: oklch(0.2 0.02 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 280);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0 0);
-  --primary: oklch(0.3 0.08 145);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.02 140);
-  --secondary-foreground: oklch(0.25 0 0);
-  --muted: oklch(0.96 0.02 140);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.65 0.15 140);
+  --popover-foreground: oklch(0.2 0.02 280);
+  --primary: oklch(0.35 0.12 30);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.95 0.02 90);
+  --secondary-foreground: oklch(0.2 0.02 280);
+  --muted: oklch(0.94 0.02 90);
+  --muted-foreground: oklch(0.5 0.02 280);
+  --accent: oklch(0.68 0.19 40);
   --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.02 140);
-  --input: oklch(0.92 0.02 140);
-  --ring: oklch(0.65 0.15 140);
-  --chart-1: oklch(0.65 0.15 140);
-  --chart-2: oklch(0.5 0.1 140);
-  --chart-3: oklch(0.75 0.12 140);
-  --chart-4: oklch(0.4 0.08 140);
-  --chart-5: oklch(0.85 0.1 140);
-  --radius: 0.5rem;
+  --border: oklch(0.88 0.02 90);
+  --input: oklch(0.92 0.02 90);
+  --ring: oklch(0.68 0.19 40);
+  --chart-1: oklch(0.68 0.19 40);
+  --chart-2: oklch(0.6 0.15 30);
+  --chart-3: oklch(0.75 0.14 50);
+  --chart-4: oklch(0.5 0.12 35);
+  --chart-5: oklch(0.82 0.1 45);
+  --radius: 0.75rem;
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.25 0 0);
-  --sidebar-primary: oklch(0.3 0.08 145);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.97 0.02 140);
-  --sidebar-accent-foreground: oklch(0.25 0 0);
-  --sidebar-border: oklch(0.92 0.02 140);
-  --sidebar-ring: oklch(0.65 0.15 140);
+  --sidebar-foreground: oklch(0.2 0.02 280);
+  --sidebar-primary: oklch(0.35 0.12 30);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.95 0.02 90);
+  --sidebar-accent-foreground: oklch(0.2 0.02 280);
+  --sidebar-border: oklch(0.88 0.02 90);
+  --sidebar-ring: oklch(0.68 0.19 40);
 }
 
 .dark {
@@ -123,5 +123,40 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .gradient-warm {
+    background: linear-gradient(135deg, oklch(0.68 0.19 40) 0%, oklch(0.75 0.16 50) 100%);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, oklch(0.35 0.12 30) 0%, oklch(0.45 0.14 35) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, oklch(0.65 0.18 38) 0%, oklch(0.72 0.2 45) 100%);
+  }
+
+  .card-modern {
+    @apply bg-card rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-border/50;
+  }
+
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, oklch(0.68 0.19 40) 0%, oklch(0.75 0.16 50) 100%);
   }
 }

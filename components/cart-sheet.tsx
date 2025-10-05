@@ -64,17 +64,17 @@ export function CartSheet() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+        <SheetHeader className="pb-4">
           <SheetTitle className="font-serif text-2xl">Shopping Cart</SheetTitle>
           <SheetDescription>
             Review your items and proceed to checkout
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col h-full pt-6">
+        <div className="flex flex-col flex-1 overflow-hidden px-4">
           {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-6">
               <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-lg text-muted-foreground mb-2">Your cart is empty</p>
               <p className="text-sm text-muted-foreground">
@@ -140,7 +140,7 @@ export function CartSheet() {
                 ))}
               </div>
 
-              <div className="border-t border-border pt-4 mt-4 space-y-4">
+              <div className="border-t border-border pt-6 mt-4 space-y-4">
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span className="font-serif">Total:</span>
                   <span className="text-accent">${totalPrice.toFixed(2)}</span>
