@@ -6,7 +6,13 @@
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
       "Bash(npx tsx:*)",
-      "Read(//c/Users/Keith/Downloads/**)"
+      "Read(//c/Users/Keith/Downloads/**)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(nslookup:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
