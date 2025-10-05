@@ -113,7 +113,7 @@ export default function MenuPage() {
                 <div className="flex-1">
                   <h1 className="font-bold text-2xl mb-2">SUNVILLE BAKERY</h1>
                   <p className="text-base text-muted-foreground">
-                    4053 Spring Mountain Rd, Las Vegas, NV 89102, United States
+                    4053 Spring Mountain Rd, Las Vegas, NV 89102
                   </p>
                   <div className="flex items-center gap-2 mt-3">
                     <span className="text-base font-medium">Pickup</span>
@@ -260,7 +260,7 @@ export default function MenuPage() {
                     <MapPin className="h-6 w-6 text-muted-foreground mt-0.5" />
                     <div className="text-base">
                       <p className="font-medium mb-2">Address</p>
-                      <p className="text-muted-foreground">4053 Spring Mountain Rd, Las Vegas, NV 89102, United States</p>
+                      <p className="text-muted-foreground">4053 Spring Mountain Rd, Las Vegas, NV 89102</p>
                     </div>
                   </div>
                 </div>

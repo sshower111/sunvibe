@@ -54,7 +54,6 @@ export function Footer() {
             <ul className="space-y-2 text-base text-primary-foreground/80">
               <li>4053 Spring Mountain Rd</li>
               <li>Las Vegas, NV 89102</li>
-              <li>United States</li>
               <li>702-889-8897</li>
               <li>sunvillebakery@gmail.com</li>
             </ul>
