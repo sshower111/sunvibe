@@ -210,7 +210,9 @@ export async function POST(req: NextRequest) {
                     <li><strong>We'll start preparing your items fresh</strong></li>
                     <li><strong>Pick up your order at:</strong><br>
                         Sunville Bakery<br>
-                        4029 Spring Mountain Rd #10, Las Vegas, NV 89102<br>
+                        4053 Spring Mountain Rd<br>
+                        Las Vegas, NV 89102<br>
+                        United States<br>
                         During business hours</li>
                     <li><strong>Bring this confirmation</strong> or your order ID when you arrive</li>
                   </ol>

@@ -21,9 +21,11 @@ export function ContactSection() {
               </div>
               <h3 className="font-semibold text-xl mb-3 text-primary">Location</h3>
               <p className="text-muted-foreground text-base">
-                4503 Spring Mountain Road
+                4053 Spring Mountain Rd
                 <br />
                 Las Vegas, NV 89102
+                <br />
+                United States
               </p>
             </div>
 
