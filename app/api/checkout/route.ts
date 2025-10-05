@@ -4,7 +4,9 @@ import { stripe } from '@/lib/stripe'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { priceId, productName, items } = body
+    const { priceId, productName, items, pickupTime } = body
+
+    console.log("📦 Checkout API - Received pickup time:", pickupTime)
 
     let lineItems
 
@@ -37,8 +39,11 @@ export async function POST(request: NextRequest) {
       cancel_url: `${request.nextUrl.origin}/menu`,
       metadata: {
         productName: productName || 'Cart items',
+        pickupTime: pickupTime || 'ASAP',
       },
     })
+
+    console.log("✅ Checkout API - Created session with metadata:", session.metadata)
 
     return NextResponse.json({ url: session.url })
   } catch (error) {

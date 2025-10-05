@@ -25,6 +25,7 @@ interface MenuRow {
   'Name (Chinese)': string
   Price: string
   'Image URL': string
+  Description: string
 }
 
 // Function to fetch direct image URL from ImgBB short link
@@ -54,7 +55,7 @@ async function importProducts() {
   console.log('🚀 Starting Stripe product import...\n')
 
   // Read CSV file
-  const csvPath = path.join(process.cwd(), '..', 'Menu & Price - Sheet1 (2).csv')
+  const csvPath = path.join(process.cwd(), '..', 'Menu & Price - Sheet1 (3).csv')
   const csvContent = fs.readFileSync(csvPath, 'utf-8')
 
   // Parse CSV
@@ -72,6 +73,7 @@ async function importProducts() {
     const chineseName = record['Name (Chinese)'].trim()
     const price = parseFloat(record.Price)
     const shortImageUrl = record['Image URL'].trim()
+    const description = record.Description?.trim() || `Freshly baked ${englishName.toLowerCase()} made daily with traditional techniques`
 
     const productName = `${englishName} ${chineseName}`
 
@@ -102,7 +104,7 @@ async function importProducts() {
         // Update product metadata and images
         await stripe.products.update(product.id, {
           name: productName,
-          description: `Freshly baked ${englishName.toLowerCase()} made daily with traditional techniques`,
+          description: description,
           ...(directImageUrl && { images: [directImageUrl] }),
           metadata: {
             category: category,
@@ -144,7 +146,7 @@ async function importProducts() {
       console.log(`📦 Creating product "${productName}"...`)
       const product = await stripe.products.create({
         name: productName,
-        description: `Freshly baked ${englishName.toLowerCase()} made daily with traditional techniques`,
+        description: description,
         ...(directImageUrl && { images: [directImageUrl] }),
         metadata: {
           category: category,
