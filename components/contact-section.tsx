@@ -24,8 +24,6 @@ export function ContactSection() {
                 4053 Spring Mountain Rd
                 <br />
                 Las Vegas, NV 89102
-                <br />
-                United States
               </p>
             </div>
 
