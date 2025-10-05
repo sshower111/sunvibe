@@ -35,63 +35,63 @@ export function Navigation() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-28">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <a href="/" className="flex items-center gap-2 group">
             <img
               src={isHomePage && isAtTop ? "/logoWhite.png" : "/logoBlack.png"}
               alt="Sunville Bakery"
               className="h-20 w-auto transition-all duration-300"
             />
-          </Link>
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link
+            <a
               href="/"
               className={`transition-colors font-semibold text-xl ${
                 isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
               }`}
             >
               Home
-            </Link>
-            <Link
+            </a>
+            <a
               href="/#about"
               className={`transition-colors font-semibold text-xl ${
                 isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
               }`}
             >
               About
-            </Link>
-            <Link
+            </a>
+            <a
               href="/menu"
               className={`transition-colors font-semibold text-xl ${
                 isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
               }`}
             >
               Menu
-            </Link>
-            <Link
+            </a>
+            <a
               href="/gallery"
               className={`transition-colors font-semibold text-xl ${
                 isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
               }`}
             >
               Gallery
-            </Link>
-            <Link
+            </a>
+            <a
               href="/#contact"
               className={`transition-colors font-semibold text-xl ${
                 isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
               }`}
             >
               Contact
-            </Link>
+            </a>
             {!isMenuPage && (
-              <Button
-                asChild
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              <a
+                href="/menu"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-accent text-accent-foreground hover:bg-accent/90 h-10 px-4 py-2"
               >
-                <Link href="/menu">Order Now</Link>
-              </Button>
+                Order Now
+              </a>
             )}
             <CartSheet />
           </div>
@@ -119,49 +119,49 @@ export function Navigation() {
         {isMobileMenuOpen && (
           <div className="md:hidden py-6 border-t border-border bg-background/95 backdrop-blur-md">
             <div className="flex flex-col gap-2">
-              <Link
+              <a
                 href="/"
                 className="text-center text-foreground hover:bg-accent/10 hover:text-accent transition-all font-semibold text-lg py-3 px-4 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Home
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/#about"
                 className="text-center text-foreground hover:bg-accent/10 hover:text-accent transition-all font-semibold text-lg py-3 px-4 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 About
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/menu"
                 className="text-center text-foreground hover:bg-accent/10 hover:text-accent transition-all font-semibold text-lg py-3 px-4 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Menu
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/gallery"
                 className="text-center text-foreground hover:bg-accent/10 hover:text-accent transition-all font-semibold text-lg py-3 px-4 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Gallery
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/#contact"
                 className="text-center text-foreground hover:bg-accent/10 hover:text-accent transition-all font-semibold text-lg py-3 px-4 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Contact
-              </Link>
+              </a>
               {!isMenuPage && (
-                <Button
-                  asChild
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 mt-2 text-lg py-6"
+                <a
+                  href="/menu"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-accent text-accent-foreground hover:bg-accent/90 mt-2 text-lg py-6"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <Link href="/menu">Order Now</Link>
-                </Button>
+                  Order Now
+                </a>
               )}
             </div>
           </div>
