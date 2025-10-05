@@ -7,7 +7,7 @@ export function HeroSection() {
     <section className="relative h-screen w-full overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
-        <img src="https://cdn.discordapp.com/attachments/795164252045443075/1424036875605245996/background2.jpg?ex=68e27d30&is=68e12bb0&hm=4e92f9a0f438a418b7e26443c85ca0d06474a6b6dc9c6266b814369e03c79c07&" alt="Artisan bakery products" className="w-full h-full object-cover object-top" />
+        <img src="/background2.jpg" alt="Artisan bakery products" className="w-full h-full object-cover object-top" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
       </div>
 
