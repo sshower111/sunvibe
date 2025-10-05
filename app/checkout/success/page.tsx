@@ -6,18 +6,21 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useCart } from "@/contexts/cart-context"
 
 export default function SuccessPage() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
   const [orderDetails, setOrderDetails] = useState<any>(null)
+  const { clearCart } = useCart()
 
   useEffect(() => {
     if (sessionId) {
-      // You can optionally fetch order details from Stripe using the session_id
+      // Clear the cart after successful checkout
+      clearCart()
       console.log("Checkout session:", sessionId)
     }
-  }, [sessionId])
+  }, [sessionId, clearCart])
 
   return (
     <main className="min-h-screen">
