@@ -31,6 +31,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Apply tax rates to line items if configured
+    const taxRateId = process.env.STRIPE_TAX_RATE_ID
+    if (taxRateId) {
+      lineItems = lineItems.map((item: any) => ({
+        ...item,
+        tax_rates: [taxRateId],
+      }))
+    }
+
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       line_items: lineItems,
