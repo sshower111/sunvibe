@@ -254,37 +254,61 @@ export default function MenuPage() {
                             className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm min-w-[120px]"
                           >
                             <option value="">Choose time</option>
-                            <option value="08:00 AM">8:00 AM</option>
-                            <option value="08:30 AM">8:30 AM</option>
-                            <option value="09:00 AM">9:00 AM</option>
-                            <option value="09:30 AM">9:30 AM</option>
-                            <option value="10:00 AM">10:00 AM</option>
-                            <option value="10:30 AM">10:30 AM</option>
-                            <option value="11:00 AM">11:00 AM</option>
-                            <option value="11:30 AM">11:30 AM</option>
-                            <option value="12:00 PM">12:00 PM</option>
-                            <option value="12:30 PM">12:30 PM</option>
-                            <option value="01:00 PM">1:00 PM</option>
-                            <option value="01:30 PM">1:30 PM</option>
-                            <option value="02:00 PM">2:00 PM</option>
-                            <option value="02:30 PM">2:30 PM</option>
                             {(() => {
                               const isWednesday = selectedDate && new Date(selectedDate + 'T00:00:00').getDay() === 3
-                              return !isWednesday ? (
-                                <>
-                                  <option value="03:00 PM">3:00 PM</option>
-                                  <option value="03:30 PM">3:30 PM</option>
-                                  <option value="04:00 PM">4:00 PM</option>
-                                  <option value="04:30 PM">4:30 PM</option>
-                                  <option value="05:00 PM">5:00 PM</option>
-                                  <option value="05:30 PM">5:30 PM</option>
-                                  <option value="06:00 PM">6:00 PM</option>
-                                  <option value="06:30 PM">6:30 PM</option>
-                                  <option value="07:00 PM">7:00 PM</option>
-                                  <option value="07:30 PM">7:30 PM</option>
-                                  <option value="08:00 PM">8:00 PM</option>
-                                </>
-                              ) : null
+                              const isToday = selectedDate === today
+                              const now = new Date()
+                              const currentHour = now.getHours()
+                              const currentMinute = now.getMinutes()
+
+                              // Helper function to check if time slot is in the past
+                              const isPastTime = (hour: number, minute: number) => {
+                                if (!isToday) return false
+                                if (hour < currentHour) return true
+                                if (hour === currentHour && minute <= currentMinute) return true
+                                return false
+                              }
+
+                              const allTimes = [
+                                { value: "08:00 AM", hour: 8, minute: 0 },
+                                { value: "08:30 AM", hour: 8, minute: 30 },
+                                { value: "09:00 AM", hour: 9, minute: 0 },
+                                { value: "09:30 AM", hour: 9, minute: 30 },
+                                { value: "10:00 AM", hour: 10, minute: 0 },
+                                { value: "10:30 AM", hour: 10, minute: 30 },
+                                { value: "11:00 AM", hour: 11, minute: 0 },
+                                { value: "11:30 AM", hour: 11, minute: 30 },
+                                { value: "12:00 PM", hour: 12, minute: 0 },
+                                { value: "12:30 PM", hour: 12, minute: 30 },
+                                { value: "01:00 PM", hour: 13, minute: 0 },
+                                { value: "01:30 PM", hour: 13, minute: 30 },
+                                { value: "02:00 PM", hour: 14, minute: 0 },
+                                { value: "02:30 PM", hour: 14, minute: 30 },
+                              ]
+
+                              const eveningTimes = [
+                                { value: "03:00 PM", hour: 15, minute: 0 },
+                                { value: "03:30 PM", hour: 15, minute: 30 },
+                                { value: "04:00 PM", hour: 16, minute: 0 },
+                                { value: "04:30 PM", hour: 16, minute: 30 },
+                                { value: "05:00 PM", hour: 17, minute: 0 },
+                                { value: "05:30 PM", hour: 17, minute: 30 },
+                                { value: "06:00 PM", hour: 18, minute: 0 },
+                                { value: "06:30 PM", hour: 18, minute: 30 },
+                                { value: "07:00 PM", hour: 19, minute: 0 },
+                                { value: "07:30 PM", hour: 19, minute: 30 },
+                                { value: "08:00 PM", hour: 20, minute: 0 },
+                              ]
+
+                              const timesToShow = isWednesday ? allTimes : [...allTimes, ...eveningTimes]
+
+                              return timesToShow
+                                .filter(time => !isPastTime(time.hour, time.minute))
+                                .map(time => (
+                                  <option key={time.value} value={time.value}>
+                                    {time.value}
+                                  </option>
+                                ))
                             })()}
                           </select>
                         </div>

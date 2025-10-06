@@ -55,10 +55,11 @@ export async function POST(request: NextRequest) {
     console.log("✅ Checkout API - Created session with metadata:", session.metadata)
 
     return NextResponse.json({ url: session.url })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Checkout error:', error)
+    console.error('Error details:', error.message, error.type)
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: 'Failed to create checkout session', details: error.message },
       { status: 500 }
     )
   }

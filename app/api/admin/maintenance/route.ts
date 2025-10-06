@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { writeFileSync, readFileSync, existsSync } from "fs"
-import { join } from "path"
-
-const MAINTENANCE_FILE = join(process.cwd(), "maintenance.json")
 
 export async function GET() {
-  try {
-    if (existsSync(MAINTENANCE_FILE)) {
-      const data = JSON.parse(readFileSync(MAINTENANCE_FILE, "utf-8"))
-      return NextResponse.json({ maintenanceMode: data.enabled || false })
-    }
-    return NextResponse.json({ maintenanceMode: false })
-  } catch (error) {
-    return NextResponse.json({ maintenanceMode: false })
-  }
+  // Read from environment variable
+  const maintenanceMode = process.env.MAINTENANCE_MODE === "true"
+  return NextResponse.json({ maintenanceMode })
 }
 
 export async function POST(request: NextRequest) {
@@ -25,12 +15,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    writeFileSync(
-      MAINTENANCE_FILE,
-      JSON.stringify({ enabled: maintenanceMode }, null, 2)
-    )
-
-    return NextResponse.json({ success: true, maintenanceMode })
+    // Note: On Vercel, you need to update the environment variable in the dashboard
+    // This endpoint will show instructions for now
+    return NextResponse.json({
+      success: false,
+      message: "To enable/disable maintenance mode on Vercel, please update the MAINTENANCE_MODE environment variable in your Vercel dashboard (Settings → Environment Variables)",
+      currentMode: process.env.MAINTENANCE_MODE === "true"
+    })
   } catch (error) {
     return NextResponse.json({ error: "Failed to update maintenance mode" }, { status: 500 })
   }
