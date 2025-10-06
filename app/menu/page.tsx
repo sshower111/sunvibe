@@ -310,13 +310,13 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {filteredProducts.map((product, index) => (
               <Card
                 key={product.id}
                 className="group overflow-hidden card-modern hover:-translate-y-1 transition-all duration-300 relative"
               >
-                <div className="relative h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                <div className="relative h-40 md:h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                   <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
@@ -324,17 +324,17 @@ export default function MenuPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <CardContent className="p-5 relative">
-                  <h3 className="font-bold text-lg mb-2 font-serif text-primary group-hover:text-accent transition-colors">
+                <CardContent className="p-3 md:p-5 relative">
+                  <h3 className="font-bold text-base md:text-lg mb-1 md:mb-2 font-serif text-primary group-hover:text-accent transition-colors line-clamp-1">
                     {product.name}
                   </h3>
                   {product.description && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
+                    <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-3 line-clamp-1 md:line-clamp-2 leading-relaxed">
                       {product.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-4">
-                    <p className="text-xl font-bold text-accent">
+                  <div className="flex items-center justify-between mt-2 md:mt-4">
+                    <p className="text-lg md:text-xl font-bold text-accent">
                       ${product.price}
                     </p>
                     <button
@@ -345,7 +345,7 @@ export default function MenuPage() {
                         priceId: product.priceId,
                         image: product.image,
                       })}
-                      className="rounded-full h-11 w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
+                      className="rounded-full h-9 w-9 md:h-11 md:w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-xl md:text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
                     >
                       +
                     </button>
