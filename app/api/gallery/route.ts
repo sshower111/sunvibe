@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 
-const ADMIN_PASSWORD = "sunville2024"
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 export async function GET() {
   try {

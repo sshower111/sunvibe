@@ -12,14 +12,45 @@ import {
 } from "@/components/ui/sheet"
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react"
 import { useState } from "react"
+import { PickupTimeAlert } from "@/components/pickup-time-alert"
 
 export function CartSheet() {
   const { items, removeItem, updateQuantity, totalItems, totalPrice, clearCart, pickupTime } = useCart()
   const [isOpen, setIsOpen] = useState(false)
   const [checkingOut, setCheckingOut] = useState(false)
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
 
   const handleCheckout = async () => {
     if (items.length === 0) return
+
+    // Validate pickup time - must be set
+    if (!pickupTime || pickupTime.trim() === "") {
+      setAlertMessage("Please visit the Menu page and select your pickup time before checking out.")
+      setAlertOpen(true)
+      setCheckingOut(false)
+      return
+    }
+
+    // If "Later" was selected, validate date and time are provided
+    if (pickupTime !== "ASAP") {
+      // Check if time was not actually selected
+      if (pickupTime.includes("(time not selected)")) {
+        setAlertMessage("Please select both date and time for pickup on the Menu page before checking out.")
+        setAlertOpen(true)
+        setCheckingOut(false)
+        return
+      }
+
+      // Validate format: should be "YYYY-MM-DD at HH:MM AM/PM"
+      const parts = pickupTime.trim().split(' at ')
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        setAlertMessage("Please select both date and time for pickup on the Menu page before checking out.")
+        setAlertOpen(true)
+        setCheckingOut(false)
+        return
+      }
+    }
 
     setCheckingOut(true)
     console.log("🛒 Cart Sheet - Pickup Time:", pickupTime)
@@ -47,13 +78,20 @@ export function CartSheet() {
       }
     } catch (error) {
       console.error("Checkout error:", error)
-      alert("Failed to start checkout. Please try again.")
+      setAlertMessage("Failed to start checkout. Please try again.")
+      setAlertOpen(true)
       setCheckingOut(false)
     }
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <>
+      <PickupTimeAlert
+        open={alertOpen}
+        onOpenChange={setAlertOpen}
+        message={alertMessage}
+      />
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="relative">
           <ShoppingCart className="h-5 w-5" />
@@ -168,5 +206,6 @@ export function CartSheet() {
         </div>
       </SheetContent>
     </Sheet>
+    </>
   )
 }

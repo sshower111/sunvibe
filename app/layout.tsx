@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Montserrat, Raleway } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { CartProvider } from "@/contexts/cart-context"
+import { MaintenanceCheck } from "@/components/maintenance-check"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -36,7 +37,9 @@ export default function RootLayout({
       </head>
       <body className={`${montserrat.variable} ${raleway.variable} font-sans`}>
         <CartProvider>
-          {children}
+          <MaintenanceCheck>
+            {children}
+          </MaintenanceCheck>
           <Analytics />
         </CartProvider>
       </body>
