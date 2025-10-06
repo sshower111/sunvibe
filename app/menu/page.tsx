@@ -104,18 +104,18 @@ export default function MenuPage() {
     <main className="min-h-screen bg-gray-50">
       <Navigation />
 
-      <div className="pt-36 pb-8">
+      <div className="pt-24 md:pt-36 pb-8">
         <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
           {/* Store Info Section */}
-          <Card className="mb-5 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowPickupOptions(!showPickupOptions)}>
-            <CardContent className="p-6">
+          <Card className="mb-3 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowPickupOptions(!showPickupOptions)}>
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h1 className="font-bold text-2xl mb-2">SUNVILLE BAKERY</h1>
-                  <p className="text-base text-muted-foreground">
+                  <h1 className="font-bold text-lg md:text-2xl mb-1 md:mb-2">SUNVILLE BAKERY</h1>
+                  <p className="text-sm md:text-base text-muted-foreground">
                     4053 Spring Mountain Rd, Las Vegas, NV 89102
                   </p>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-2 md:mt-3">
                     <span className="text-base font-medium">Pickup</span>
                     <span className="text-base text-muted-foreground">
                       {localPickupTime === "ASAP"
@@ -228,14 +228,14 @@ export default function MenuPage() {
 
           {/* Hours Info Section */}
           <Card
-            className="mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0"
+            className="mb-4 md:mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0"
             onClick={() => setShowHoursInfo(!showHoursInfo)}
           >
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Info className="h-6 w-6 text-primary" />
-                  <span className="text-base font-medium">Pickup Available • Closes at 8pm</span>
+                  <Info className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                  <span className="text-sm md:text-base font-medium">Pickup Available • Closes at 8pm</span>
                 </div>
                 <ChevronRight className={`h-6 w-6 text-muted-foreground transition-transform ${showHoursInfo ? 'rotate-90' : ''}`} />
               </div>
@@ -310,13 +310,13 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 mb-8">
             {filteredProducts.map((product, index) => (
               <Card
                 key={product.id}
-                className="group overflow-hidden card-modern hover:-translate-y-1 transition-all duration-300 relative"
+                className="group overflow-hidden rounded-xl md:rounded-2xl shadow-md hover:shadow-lg border border-border/50 hover:-translate-y-1 transition-all duration-300 relative"
               >
-                <div className="relative h-40 md:h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
+                <div className="relative h-28 md:h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
                   <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
@@ -324,17 +324,17 @@ export default function MenuPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
-                <CardContent className="p-3 md:p-5 relative">
-                  <h3 className="font-bold text-base md:text-lg mb-1 md:mb-2 font-serif text-primary group-hover:text-accent transition-colors line-clamp-1">
+                <CardContent className="p-2 md:p-5 relative">
+                  <h3 className="font-bold text-sm md:text-lg mb-0.5 md:mb-2 font-serif text-primary group-hover:text-accent transition-colors line-clamp-1">
                     {product.name}
                   </h3>
                   {product.description && (
-                    <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-3 line-clamp-1 md:line-clamp-2 leading-relaxed">
+                    <p className="hidden md:block text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
                       {product.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-2 md:mt-4">
-                    <p className="text-lg md:text-xl font-bold text-accent">
+                  <div className="flex items-center justify-between mt-1 md:mt-4">
+                    <p className="text-base md:text-xl font-bold text-accent">
                       ${product.price}
                     </p>
                     <button
@@ -345,7 +345,7 @@ export default function MenuPage() {
                         priceId: product.priceId,
                         image: product.image,
                       })}
-                      className="rounded-full h-9 w-9 md:h-11 md:w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-xl md:text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
+                      className="rounded-full h-8 w-8 md:h-11 md:w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-lg md:text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
                     >
                       +
                     </button>
