@@ -27,7 +27,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
-  const [pickupTime, setPickupTime] = useState<string>("ASAP")
+  const [pickupTime, setPickupTime] = useState<string>("")
   const [isInitialized, setIsInitialized] = useState(false)
 
   // Load cart from localStorage on mount
@@ -41,8 +41,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
     const savedPickupTime = localStorage.getItem("sunville-pickup-time")
-    if (savedPickupTime) {
+    // Only load saved pickup time if it's valid (not empty and not just "ASAP" placeholder)
+    if (savedPickupTime && savedPickupTime !== "ASAP") {
       setPickupTime(savedPickupTime)
+    } else {
+      // Clear invalid old values
+      localStorage.removeItem("sunville-pickup-time")
     }
     setIsInitialized(true)
   }, [])

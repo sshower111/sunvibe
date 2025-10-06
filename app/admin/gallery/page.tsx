@@ -10,12 +10,14 @@ import { Trash2, Plus, Image as ImageIcon } from "lucide-react"
 export default function AdminGalleryPage() {
   const [images, setImages] = useState<string[]>([])
   const [newImageUrl, setNewImageUrl] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [password, setPassword] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState("")
 
   // Simple password authentication (you can change this)
-  const ADMIN_PASSWORD = "sunville2024"
+  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -42,7 +44,81 @@ export default function AdminGalleryPage() {
     }
   }
 
-  const addImage = async () => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
+      }
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB')
+        return
+      }
+      setSelectedFile(file)
+    }
+  }
+
+  const uploadImage = async () => {
+    if (!selectedFile) {
+      alert("Please select an image file")
+      return
+    }
+
+    setLoading(true)
+    setUploadProgress("Uploading image...")
+
+    try {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      formData.append('password', ADMIN_PASSWORD)
+
+      const response = await fetch('/api/gallery/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.url) {
+        setUploadProgress("Adding to gallery...")
+
+        // Add the uploaded image to the gallery
+        const addResponse = await fetch('/api/gallery', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'add',
+            url: data.url,
+            password: ADMIN_PASSWORD
+          })
+        })
+
+        if (addResponse.ok) {
+          setImages([...images, data.url])
+          setSelectedFile(null)
+          setUploadProgress("")
+          alert("Image uploaded successfully!")
+          // Reset file input
+          const fileInput = document.getElementById('file-input') as HTMLInputElement
+          if (fileInput) fileInput.value = ''
+        } else {
+          throw new Error('Failed to add image to gallery')
+        }
+      } else {
+        throw new Error(data.error || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      alert(`Error uploading image: ${error}`)
+      setUploadProgress("")
+    }
+    setLoading(false)
+  }
+
+  const addImageFromUrl = async () => {
     if (!newImageUrl.trim()) {
       alert("Please enter an image URL")
       return
@@ -142,10 +218,56 @@ export default function AdminGalleryPage() {
           <Card className="mb-8">
             <CardContent className="p-6">
               <h2 className="text-xl font-bold mb-4">Add New Image</h2>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Upload from Computer */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Image URL (from ImgBB or direct link)
+                    Upload from Computer
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        id="file-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-white hover:file:bg-accent/90"
+                      />
+                      <Button
+                        onClick={uploadImage}
+                        disabled={loading || !selectedFile}
+                        className="bg-accent hover:bg-accent/90"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Upload
+                      </Button>
+                    </div>
+                    {selectedFile && (
+                      <p className="text-sm text-muted-foreground">
+                        Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                    {uploadProgress && (
+                      <p className="text-sm text-accent font-medium">
+                        {uploadProgress}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-muted-foreground">OR</span>
+                  </div>
+                </div>
+
+                {/* Add from URL */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Add from URL (ImgBB or direct link)
                   </label>
                   <div className="flex gap-3">
                     <input
@@ -156,22 +278,19 @@ export default function AdminGalleryPage() {
                       className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                     <Button
-                      onClick={addImage}
+                      onClick={addImageFromUrl}
                       disabled={loading}
                       className="bg-accent hover:bg-accent/90"
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Image
+                      Add
                     </Button>
                   </div>
                 </div>
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
-                    <strong>How to get image URL:</strong><br/>
-                    1. Go to <a href="https://imgbb.com" target="_blank" className="underline">imgbb.com</a><br/>
-                    2. Upload your image<br/>
-                    3. Copy the "Direct link" (starts with https://i.ibb.co/)<br/>
-                    4. Paste it above and click "Add Image"
+                    <strong>💡 Tip:</strong> Upload images directly from your computer (max 5MB) or paste a URL from ImgBB.
                   </p>
                 </div>
               </div>

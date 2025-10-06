@@ -19,22 +19,39 @@ interface Product {
 }
 
 export default function MenuPage() {
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0]
+
+  // Check if store is currently open
+  const isStoreOpen = () => {
+    const now = new Date()
+    const day = now.getDay() // 0 = Sunday, 3 = Wednesday
+    const hours = now.getHours()
+    const minutes = now.getMinutes()
+    const currentTime = hours * 60 + minutes // Convert to minutes
+
+    if (day === 3) {
+      // Wednesday: 8 AM - 3 PM (480 - 900 minutes)
+      return currentTime >= 480 && currentTime < 900
+    } else {
+      // Other days: 8 AM - 8 PM (480 - 1200 minutes)
+      return currentTime >= 480 && currentTime < 1200
+    }
+  }
+
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [checkingOut, setCheckingOut] = useState<string | null>(null)
-  const [localPickupTime, setLocalPickupTime] = useState<"ASAP" | "Later">("ASAP")
+  const [localPickupTime, setLocalPickupTime] = useState<"ASAP" | "Later">(isStoreOpen() ? "ASAP" : "Later")
   const [selectedTime, setSelectedTime] = useState<string>("")
-  const [selectedDate, setSelectedDate] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<string>(isStoreOpen() ? "" : today)
   const [showPickupOptions, setShowPickupOptions] = useState(false)
   const [showHoursInfo, setShowHoursInfo] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const { addItem, setPickupTime } = useCart()
-
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0]
 
   // Get current store hours status
   const getStoreStatus = () => {
@@ -144,80 +161,98 @@ export default function MenuPage() {
 
       <div className="pt-24 md:pt-36 pb-8">
         <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
-          {/* Store Info Section */}
-          <Card className="mb-3 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowPickupOptions(!showPickupOptions)}>
+          {/* Combined Store Info & Hours Section */}
+          <Card className="mb-4 md:mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowHoursInfo(!showHoursInfo)}>
             <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h1 className="font-bold text-lg md:text-2xl mb-1 md:mb-2">SUNVILLE BAKERY</h1>
-                  <p className="text-sm md:text-base text-muted-foreground">
+                  <h1 className="font-bold text-lg md:text-2xl mb-1">SUNVILLE BAKERY</h1>
+                  <p className="text-sm md:text-base text-muted-foreground mb-2">
                     4053 Spring Mountain Rd, Las Vegas, NV 89102
                   </p>
-                  <div className="flex items-center gap-2 mt-2 md:mt-3">
-                    <span className="text-base font-medium">Pickup</span>
-                    <span className="text-base text-muted-foreground">
-                      {localPickupTime === "ASAP"
-                        ? "ASAP"
-                        : (selectedDate && selectedTime
-                            ? `${selectedDate} at ${selectedTime}`
-                            : selectedDate || "Later")}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                    <span className="text-sm md:text-base font-medium">{storeStatus}</span>
+                  </div>
+                </div>
+                <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform ${showHoursInfo ? 'rotate-90' : ''}`} />
+              </div>
+
+              {showHoursInfo && (
+                <div className="mt-4 pt-4 border-t space-y-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground mt-0.5" />
+                    <div className="text-sm md:text-base">
+                      <p className="font-medium mb-1">Hours</p>
+                      <p className="text-muted-foreground">Mon-Tue, Thu-Sun: 8:00 AM - 8:00 PM</p>
+                      <p className="text-muted-foreground">Wednesday: 8:00 AM - 3:00 PM</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground mt-0.5" />
+                    <div className="text-sm md:text-base">
+                      <p className="font-medium mb-1">Phone</p>
+                      <p className="text-muted-foreground">702-889-8897</p>
+                    </div>
                   </div>
 
-                  {showPickupOptions && (
-                    <div className="mt-4 pt-4 border-t" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-base font-medium">Pickup Time:</span>
-                        <div className="inline-flex items-center bg-gray-100 rounded-lg p-1.5">
-                          <button
-                            onClick={() => {
+                  {/* Pickup Time Selection */}
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-sm md:text-base font-medium">Pickup Time:</span>
+                      <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => {
+                            if (isStoreOpen()) {
                               setLocalPickupTime("ASAP")
                               setSelectedTime("")
                               setSelectedDate("")
-                            }}
-                            className={`px-4 py-2 text-base font-medium rounded-md transition-colors ${
-                              localPickupTime === "ASAP"
-                                ? "bg-white text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            ASAP
-                          </button>
-                          <button
-                            onClick={() => {
-                              setLocalPickupTime("Later")
-                              setSelectedDate(today)
-                            }}
-                            className={`px-4 py-2 text-base font-medium rounded-md transition-colors ${
-                              localPickupTime === "Later"
-                                ? "bg-white text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            Later
-                          </button>
-                        </div>
+                            }
+                          }}
+                          disabled={!isStoreOpen()}
+                          className={`px-3 py-1.5 text-sm md:text-base font-medium rounded-md transition-colors ${
+                            localPickupTime === "ASAP"
+                              ? "bg-white text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          } ${!isStoreOpen() ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          ASAP
+                        </button>
+                        <button
+                          onClick={() => {
+                            setLocalPickupTime("Later")
+                            setSelectedDate(today)
+                          }}
+                          className={`px-3 py-1.5 text-sm md:text-base font-medium rounded-md transition-colors ${
+                            localPickupTime === "Later"
+                              ? "bg-white text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Later
+                        </button>
                       </div>
+                    </div>
 
-                      {localPickupTime === "Later" && (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <label className="text-base font-medium">Select Date:</label>
-                            <input
-                              type="date"
-                              value={selectedDate}
-                              min={today}
-                              onChange={(e) => setSelectedDate(e.target.value)}
-                              className="px-4 py-3 border-2 border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm"
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <label className="text-base font-medium">Select Time:</label>
-                            <select
-                              value={selectedTime}
-                              onChange={(e) => setSelectedTime(e.target.value)}
-                              className="px-4 py-3 border-2 border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm min-w-[150px]"
-                            >
+                    {localPickupTime === "Later" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm md:text-base font-medium w-20">Date:</label>
+                          <input
+                            type="date"
+                            value={selectedDate}
+                            min={today}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm md:text-base font-medium w-20">Time:</label>
+                          <select
+                            value={selectedTime}
+                            onChange={(e) => setSelectedTime(e.target.value)}
+                            className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm min-w-[120px]"
+                          >
                             <option value="">Choose time</option>
                             <option value="08:00 AM">8:00 AM</option>
                             <option value="08:30 AM">8:30 AM</option>
@@ -234,7 +269,6 @@ export default function MenuPage() {
                             <option value="02:00 PM">2:00 PM</option>
                             <option value="02:30 PM">2:30 PM</option>
                             {(() => {
-                              // Check if selected date is a Wednesday
                               const isWednesday = selectedDate && new Date(selectedDate + 'T00:00:00').getDay() === 3
                               return !isWednesday ? (
                                 <>
@@ -253,53 +287,9 @@ export default function MenuPage() {
                               ) : null
                             })()}
                           </select>
-                          </div>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform ${showPickupOptions ? 'rotate-90' : ''}`} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Hours Info Section */}
-          <Card
-            className="mb-4 md:mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0"
-            onClick={() => setShowHoursInfo(!showHoursInfo)}
-          >
-            <CardContent className="p-3 md:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Info className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-                  <span className="text-sm md:text-base font-medium">{storeStatus}</span>
-                </div>
-                <ChevronRight className={`h-6 w-6 text-muted-foreground transition-transform ${showHoursInfo ? 'rotate-90' : ''}`} />
-              </div>
-              {showHoursInfo && (
-                <div className="mt-4 pt-4 border-t space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-6 w-6 text-muted-foreground mt-0.5" />
-                    <div className="text-base">
-                      <p className="font-medium mb-2">Hours</p>
-                      <p className="text-muted-foreground">Mon-Tue, Thu-Sun: 8:00 AM - 8:00 PM</p>
-                      <p className="text-muted-foreground">Wednesday: 8:00 AM - 3:00 PM</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Phone className="h-6 w-6 text-muted-foreground mt-0.5" />
-                    <div className="text-base">
-                      <p className="font-medium mb-2">Phone</p>
-                      <p className="text-muted-foreground">702-889-8897</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-6 w-6 text-muted-foreground mt-0.5" />
-                    <div className="text-base">
-                      <p className="font-medium mb-2">Address</p>
-                      <p className="text-muted-foreground">4053 Spring Mountain Rd, Las Vegas, NV 89102</p>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -376,13 +366,15 @@ export default function MenuPage() {
                       ${product.price}
                     </p>
                     <button
-                      onClick={() => addItem({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price,
-                        priceId: product.priceId,
-                        image: product.image,
-                      })}
+                      onClick={() => {
+                        addItem({
+                          id: product.id,
+                          name: product.name,
+                          price: product.price,
+                          priceId: product.priceId,
+                          image: product.image,
+                        })
+                      }}
                       className="rounded-full h-8 w-8 md:h-11 md:w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-lg md:text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
                     >
                       +
