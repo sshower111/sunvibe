@@ -24,9 +24,10 @@ export function HeroSection() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
             <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg px-8" asChild>
-              <Link href="/menu">
-                View Menu
-                <ArrowRight className="ml-2" size={20} />
+              <Link href="/menu" className="flex items-center gap-3">
+                <span>View Menu</span>
+                <span className="text-white">|</span>
+                <ArrowRight size={20} />
               </Link>
             </Button>
             <Button

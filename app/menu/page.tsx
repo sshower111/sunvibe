@@ -298,25 +298,25 @@ export default function MenuPage() {
 
           {/* Search and Categories */}
           <div className="mb-10">
-            <div className="relative mb-6">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/60" />
+            <div className="relative mb-8">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/60 z-10" />
               <input
                 type="text"
                 placeholder="Search for delicious treats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-6 py-5 text-base bg-white border-2 border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent shadow-md hover:shadow-lg transition-all"
+                className="w-full pl-14 pr-6 py-5 text-base bg-white border-2 border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent shadow-md hover:shadow-lg transition-all relative z-10"
               />
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide relative">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-3.5 text-base rounded-full whitespace-nowrap font-semibold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 ${
+                  className={`px-6 py-3.5 text-base rounded-full whitespace-nowrap font-semibold transition-all shadow-md ${
                     selectedCategory === category
-                      ? 'gradient-accent text-white ring-2 ring-accent/30'
-                      : 'bg-white text-foreground hover:bg-accent/5 border border-border'
+                      ? 'gradient-accent text-white ring-2 ring-accent/30 hover:shadow-lg hover:-translate-y-0.5'
+                      : 'bg-white text-foreground hover:bg-accent/5 border border-border hover:shadow-lg hover:-translate-y-0.5'
                   }`}
                 >
                   {category}
