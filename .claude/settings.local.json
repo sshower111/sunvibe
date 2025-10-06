@@ -28,7 +28,9 @@
       "Bash(copy:*)",
       "Read(//c/Users/Keith/OneDrive/Pictures/Screenshots/**)",
       "Bash(if not exist \"public\\gallery\" mkdir \"public\\gallery\")",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(cat:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

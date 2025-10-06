@@ -1,6 +1,6 @@
 export function AboutSection() {
   return (
-    <section id="about" className="py-16 sm:py-24 md:py-32 bg-green-50/30">
+    <section id="about" className="py-16 sm:py-20 bg-green-50/30">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-primary mb-6 text-balance">
@@ -25,7 +25,7 @@ export function AboutSection() {
         </div>
 
         {/* Team Photos */}
-        <div className="flex justify-center items-center max-w-4xl mx-auto mb-12 sm:mb-16">
+        <div className="flex justify-center items-center max-w-4xl mx-auto">
           <div className="text-center">
             <div className="relative w-36 h-36 sm:w-48 sm:h-48 mx-auto mb-4 rounded-full overflow-hidden bg-white shadow-lg">
               <img
@@ -37,21 +37,6 @@ export function AboutSection() {
             <h3 className="font-serif text-2xl sm:text-3xl font-bold text-primary mb-2">Johnny</h3>
             <p className="text-base sm:text-lg text-muted-foreground">Head Baker & Founder</p>
           </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 max-w-5xl mx-auto px-4">
-          {[
-            { number: "20+", label: "Years Experience" },
-            { number: "100+", label: "Products" },
-            { number: "10k+", label: "Happy Customers" },
-            { number: "100%", label: "Fresh Daily" },
-          ].map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-accent mb-2">{stat.number}</div>
-              <div className="text-sm sm:text-base md:text-lg text-muted-foreground font-medium">{stat.label}</div>
-            </div>
-          ))}
         </div>
       </div>
     </section>

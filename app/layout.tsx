@@ -100,7 +100,7 @@ export default function RootLayout({
               "url": process.env.NEXT_PUBLIC_SITE_URL || "https://sunville-bakery.vercel.app",
               "logo": `${process.env.NEXT_PUBLIC_SITE_URL || "https://sunville-bakery.vercel.app"}/sitelogo.png`,
               "image": `${process.env.NEXT_PUBLIC_SITE_URL || "https://sunville-bakery.vercel.app"}/sitelogo.png`,
-              "telephone": "+1-702-XXX-XXXX",
+              "telephone": "+1-702-889-9887",
               "priceRange": "$$",
               "servesCuisine": ["Asian", "Japanese", "Chinese"],
               "menu": `${process.env.NEXT_PUBLIC_SITE_URL || "https://sunville-bakery.vercel.app"}/menu`,

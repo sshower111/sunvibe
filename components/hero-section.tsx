@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export function HeroSection() {
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative h-[70vh] w-full overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
         <img src="/background2.jpg" alt="Artisan bakery products" className="w-full h-full object-cover object-top" />
@@ -19,25 +18,16 @@ export function HeroSection() {
             <br />
             <span className="text-accent">Baked Goods</span>
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8 max-w-2xl mx-auto text-pretty animate-fade-in-up animation-delay-200 px-4">
+          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-10 sm:mb-12 max-w-2xl mx-auto text-pretty animate-fade-in-up animation-delay-200 px-4">
             Handcrafted fresh daily with traditional techniques and the finest ingredients
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
-            <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg px-8" asChild>
-              <Link href="/menu" className="flex items-center gap-3">
-                <span>View Menu</span>
-                <span className="text-white">|</span>
-                <ArrowRight size={20} />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm text-lg px-8"
-              asChild
+          <div className="flex justify-center animate-fade-in-up animation-delay-400">
+            <Link
+              href="/menu"
+              className="text-white text-xl font-semibold underline underline-offset-8 transition-all duration-200 hover:scale-110 hover:text-accent"
             >
-              <a href="#about">Our Story</a>
-            </Button>
+              View Menu
+            </Link>
           </div>
         </div>
       </div>

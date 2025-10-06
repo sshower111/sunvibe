@@ -47,40 +47,40 @@ export function Navigation() {
           <div className="hidden md:flex items-center gap-6">
             <a
               href="/"
-              className={`transition-colors font-semibold text-xl ${
-                isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
+              className={`transition-all duration-200 font-semibold text-xl hover:scale-110 hover:text-accent ${
+                isHomePage && isAtTop ? "text-white" : "text-foreground"
               }`}
             >
               Home
             </a>
             <a
               href="/#about"
-              className={`transition-colors font-semibold text-xl ${
-                isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
+              className={`transition-all duration-200 font-semibold text-xl hover:scale-110 hover:text-accent ${
+                isHomePage && isAtTop ? "text-white" : "text-foreground"
               }`}
             >
               About
             </a>
             <a
               href="/menu"
-              className={`transition-colors font-semibold text-xl ${
-                isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
+              className={`transition-all duration-200 font-semibold text-xl hover:scale-110 hover:text-accent ${
+                isHomePage && isAtTop ? "text-white" : "text-foreground"
               }`}
             >
               Menu
             </a>
             <a
               href="/gallery"
-              className={`transition-colors font-semibold text-xl ${
-                isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
+              className={`transition-all duration-200 font-semibold text-xl hover:scale-110 hover:text-accent ${
+                isHomePage && isAtTop ? "text-white" : "text-foreground"
               }`}
             >
               Gallery
             </a>
             <a
-              href="/#contact"
-              className={`transition-colors font-semibold text-xl ${
-                isHomePage && isAtTop ? "text-white hover:text-accent" : "text-foreground hover:text-accent"
+              href="/contact"
+              className={`transition-all duration-200 font-semibold text-xl hover:scale-110 hover:text-accent ${
+                isHomePage && isAtTop ? "text-white" : "text-foreground"
               }`}
             >
               Contact
@@ -88,17 +88,23 @@ export function Navigation() {
             {!isMenuPage && (
               <a
                 href="/menu"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-accent text-accent-foreground hover:bg-accent/90 h-10 px-4 py-2"
+                className={`transition-all duration-200 font-semibold text-xl hover:scale-110 hover:text-accent underline underline-offset-4 ${
+                  isHomePage && isAtTop ? "text-white" : "text-foreground"
+                }`}
               >
                 Order Now
               </a>
             )}
-            <CartSheet />
+            <div className={isHomePage && isAtTop ? "text-white" : "text-foreground"}>
+              <CartSheet />
+            </div>
           </div>
 
           {/* Mobile Menu Button & Cart */}
           <div className="md:hidden flex items-center gap-2">
-            <CartSheet />
+            <div className={isHomePage && isAtTop ? "text-white" : "text-foreground"}>
+              <CartSheet />
+            </div>
             <button
               className={`p-2 rounded-lg transition-all ${
                 isMobileMenuOpen
@@ -148,7 +154,7 @@ export function Navigation() {
                 Gallery
               </a>
               <a
-                href="/#contact"
+                href="/contact"
                 className="text-center text-foreground hover:bg-accent/10 hover:text-accent transition-all font-semibold text-lg py-3 px-4 rounded-lg"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
