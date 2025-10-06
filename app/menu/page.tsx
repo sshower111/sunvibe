@@ -36,6 +36,44 @@ export default function MenuPage() {
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0]
 
+  // Get current store hours status
+  const getStoreStatus = () => {
+    const now = new Date()
+    const day = now.getDay() // 0 = Sunday, 3 = Wednesday
+    const hours = now.getHours()
+    const minutes = now.getMinutes()
+    const currentTime = hours * 60 + minutes // Convert to minutes
+
+    if (day === 3) {
+      // Wednesday: 8 AM - 3 PM (480 - 900 minutes)
+      if (currentTime >= 480 && currentTime < 900) {
+        return "Pickup Available • Closes at 3pm"
+      }
+    } else {
+      // Other days: 8 AM - 8 PM (480 - 1200 minutes)
+      if (currentTime >= 480 && currentTime < 1200) {
+        return "Pickup Available • Closes at 8pm"
+      }
+    }
+
+    // Closed
+    if (day === 3) {
+      return "Closed • Opens Wed 8am-3pm"
+    }
+    return "Closed • Opens 8am-8pm"
+  }
+
+  const [storeStatus, setStoreStatus] = useState(getStoreStatus())
+
+  // Update store status every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStoreStatus(getStoreStatus())
+    }, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [])
+
   // Update global pickup time whenever local state changes
   useEffect(() => {
     if (localPickupTime === "ASAP") {
@@ -235,7 +273,7 @@ export default function MenuPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Info className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-                  <span className="text-sm md:text-base font-medium">Pickup Available • Closes at 8pm</span>
+                  <span className="text-sm md:text-base font-medium">{storeStatus}</span>
                 </div>
                 <ChevronRight className={`h-6 w-6 text-muted-foreground transition-transform ${showHoursInfo ? 'rotate-90' : ''}`} />
               </div>
