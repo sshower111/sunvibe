@@ -93,14 +93,14 @@ export function CartSheet() {
       />
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <button className="relative transition-all duration-200 hover:scale-110 hover:text-accent p-2">
           <ShoppingCart className="h-5 w-5" />
           {totalItems > 0 && (
             <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
               {totalItems}
             </span>
           )}
-        </Button>
+        </button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader className="pb-4">

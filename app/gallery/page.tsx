@@ -12,9 +12,9 @@ export default function GalleryPage() {
     <main className="min-h-screen">
       <Navigation />
 
-      <div className="pt-36 pb-32 bg-white">
+      <div className="pt-36 pb-16 bg-white">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h1 className="font-serif text-5xl md:text-7xl font-bold text-primary mb-6">
               Gallery
             </h1>

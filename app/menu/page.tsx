@@ -159,10 +159,10 @@ export default function MenuPage() {
     <main className="min-h-screen bg-gray-50">
       <Navigation />
 
-      <div className="pt-24 md:pt-36 pb-8">
+      <div className="pt-36 pb-12">
         <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
           {/* Combined Store Info & Hours Section */}
-          <Card className="mb-4 md:mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowHoursInfo(!showHoursInfo)}>
+          <Card className="mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowHoursInfo(!showHoursInfo)}>
             <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -321,31 +321,33 @@ export default function MenuPage() {
           </Card>
 
           {/* Search and Categories */}
-          <div className="mb-10">
-            <div className="relative mb-8">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/60 z-10" />
+          <div className="mb-8">
+            <div className="relative mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/60" />
               <input
                 type="text"
                 placeholder="Search for delicious treats..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-6 py-5 text-base bg-white border-2 border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent shadow-md hover:shadow-lg transition-all relative z-10"
+                className="w-full pl-12 pr-4 py-3 text-base bg-white border-2 border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent shadow-sm hover:shadow-md transition-all"
               />
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide relative">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-3.5 text-base rounded-full whitespace-nowrap font-semibold transition-all shadow-md ${
-                    selectedCategory === category
-                      ? 'gradient-accent text-white ring-2 ring-accent/30 hover:shadow-lg hover:-translate-y-0.5'
-                      : 'bg-white text-foreground hover:bg-accent/5 border border-border hover:shadow-lg hover:-translate-y-0.5'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+            <div className="overflow-x-auto scrollbar-hide">
+              <div className="flex gap-6 py-2 min-w-min">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`text-xl font-semibold transition-all duration-200 hover:scale-110 whitespace-nowrap ${
+                      selectedCategory === category
+                        ? 'text-accent underline underline-offset-8'
+                        : 'text-foreground hover:text-accent'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -363,20 +365,28 @@ export default function MenuPage() {
 
           {!loading && !error && (
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 mb-8">
-            {filteredProducts.map((product, index) => (
+            {filteredProducts.map((product, index) => {
+              const hasImage = product.image &&
+                               product.image.trim() !== '' &&
+                               !product.image.includes('/placeholder') &&
+                               product.image !== 'null' &&
+                               product.image !== 'undefined'
+              return (
               <Card
                 key={product.id}
-                className="group overflow-hidden rounded-xl md:rounded-2xl shadow-md hover:shadow-lg border border-border/50 hover:-translate-y-1 transition-all duration-300 relative"
+                className={`group overflow-hidden rounded-xl md:rounded-2xl shadow-md hover:shadow-lg border border-border/50 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
               >
-                <div className="relative h-28 md:h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <CardContent className="p-2 md:p-5 relative">
+                {hasImage && (
+                  <div className="relative h-28 md:h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden flex-shrink-0">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+                )}
+                <CardContent className="p-2 md:p-5 relative flex flex-col flex-grow">
                   <h3 className="font-bold text-sm md:text-lg mb-0.5 md:mb-2 font-serif text-primary group-hover:text-accent transition-colors line-clamp-1">
                     {product.name}
                   </h3>
@@ -385,7 +395,7 @@ export default function MenuPage() {
                       {product.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-1 md:mt-4">
+                  <div className="flex items-center justify-between mt-auto pt-1 md:pt-4">
                     <p className="text-base md:text-xl font-bold text-accent">
                       ${product.price}
                     </p>
@@ -399,14 +409,15 @@ export default function MenuPage() {
                           image: product.image,
                         })
                       }}
-                      className="rounded-full h-8 w-8 md:h-11 md:w-11 gradient-accent text-white shadow-lg hover:shadow-2xl transition-all hover:scale-110 flex items-center justify-center text-lg md:text-2xl font-bold ring-2 ring-accent/20 hover:ring-accent/40"
+                      className="rounded-full h-8 w-8 md:h-11 md:w-11 bg-transparent text-black border-2 border-black hover:bg-black/10 transition-all hover:scale-110 flex items-center justify-center text-lg md:text-2xl font-bold flex-shrink-0"
                     >
                       +
                     </button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              )
+            })}
             </div>
           )}
         </div>
