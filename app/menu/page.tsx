@@ -310,7 +310,7 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 mb-8">
             {filteredProducts.map((product, index) => (
               <Card
                 key={product.id}
