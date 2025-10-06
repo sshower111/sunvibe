@@ -19,6 +19,10 @@ yarn-error.log*
 # env files
 .env*
 
+# scripts with sensitive keys
+scripts/switch-*.sh
+scripts/switch-stripe-mode.bat
+
 # vercel
 .vercel
 
