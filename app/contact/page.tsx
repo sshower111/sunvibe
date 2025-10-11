@@ -28,11 +28,13 @@ export default function ContactPage() {
         body: JSON.stringify(formData)
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         setSubmitted(true)
         setFormData({ name: "", email: "", phone: "", message: "" })
       } else {
-        setError("Failed to send message. Please try again.")
+        setError(data.error || "Failed to send message. Please try again.")
       }
     } catch (err) {
       setError("Failed to send message. Please try again.")
@@ -49,115 +51,139 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-white via-background/30 to-white flex flex-col">
       <Navigation />
 
-      <main className="flex-1 pt-36 pb-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="text-center mb-12">
-            <h1 className="font-serif text-5xl md:text-7xl font-bold text-primary mb-6">
-              Contact Us
+      <main className="flex-1 pt-36 pb-24">
+        <div className="container mx-auto px-8 lg:px-16 max-w-[1400px]">
+          <div className="text-center mb-20">
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-primary mb-6 tracking-[-0.02em] leading-tight">
+              Get in Touch
             </h1>
-            <div className="w-24 h-1 bg-accent mx-auto mb-6" />
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+            <div className="w-20 h-[3px] bg-accent mx-auto mb-8" />
+            <p className="text-lg sm:text-xl text-muted-foreground/70 max-w-2xl mx-auto leading-relaxed">
               We'd love to hear from you! Send us a message and we'll get back to you as soon as possible.
             </p>
           </div>
 
           {/* Contact Form */}
           <div className="max-w-2xl mx-auto">
-              <Card>
+            <Card className="shadow-2xl border-border/40 rounded-2xl overflow-hidden">
+              <CardContent className="p-8 md:p-12">
+                <h2 className="font-serif text-2xl md:text-3xl font-normal text-primary mb-8 tracking-tight">Send us a Message</h2>
+
+                {submitted && (
+                  <div className="mb-8 p-5 bg-green-50 border-2 border-green-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-green-800 font-semibold text-lg">
+                      ✓ Message sent successfully! We'll get back to you soon.
+                    </p>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="mb-8 p-5 bg-red-50 border-2 border-red-200 rounded-xl">
+                    <p className="text-red-800 font-semibold text-lg">{error}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div>
+                    <label htmlFor="name" className="block text-base font-semibold mb-3 text-foreground">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full px-5 py-4 border-2 border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-300 text-base"
+                      placeholder="Your name"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-base font-semibold mb-3 text-foreground">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full px-5 py-4 border-2 border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-300 text-base"
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="phone" className="block text-base font-semibold mb-3 text-foreground">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full px-5 py-4 border-2 border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-300 text-base"
+                      placeholder="(702) 123-4567"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-base font-semibold mb-3 text-foreground">
+                      Message *
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      required
+                      value={formData.message}
+                      onChange={handleChange}
+                      rows={6}
+                      className="w-full px-5 py-4 border-2 border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-300 resize-none text-base"
+                      placeholder="Tell us what you'd like to know..."
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full px-12 py-4 bg-accent text-white font-semibold text-base tracking-[0.08em] uppercase rounded-xl transition-all duration-300 hover:bg-accent/90 hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {submitting ? "Sending..." : "Send Message"}
+                  </button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Contact Information */}
+            <div className="mt-16 grid md:grid-cols-2 gap-8">
+              <Card className="shadow-lg border-border/40 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-8">
-                  <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-
-                  {submitted && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-green-800 font-medium">
-                        ✓ Message sent successfully! We'll get back to you soon.
-                      </p>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-800 font-medium">{error}</p>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium mb-2">
-                        Name *
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        required
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-                        placeholder="Your name"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-2">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        required
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-                        placeholder="your.email@example.com"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-                        placeholder="(702) 123-4567"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="message" className="block text-sm font-medium mb-2">
-                        Message *
-                      </label>
-                      <textarea
-                        id="message"
-                        name="message"
-                        required
-                        value={formData.message}
-                        onChange={handleChange}
-                        rows={6}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent resize-none"
-                        placeholder="Tell us what you'd like to know..."
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full text-xl font-semibold underline underline-offset-8 transition-all duration-200 hover:scale-110 hover:text-accent py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submitting ? "Sending..." : "Send Message"}
-                    </button>
-                  </form>
+                  <h3 className="font-serif text-xl font-normal text-primary mb-4">Visit Us</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    4053 Spring Mountain Rd<br />
+                    Las Vegas, NV 89102
+                  </p>
                 </CardContent>
               </Card>
+
+              <Card className="shadow-lg border-border/40 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
+                <CardContent className="p-8">
+                  <h3 className="font-serif text-xl font-normal text-primary mb-4">Call Us</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    <a href="tel:702-889-8897" className="hover:text-accent transition-colors duration-300">
+                      702-889-8897
+                    </a>
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>
