@@ -437,7 +437,7 @@ export default function MenuPage() {
                       {addedToCart === product.id && (
                         <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />
                       )}
-                      <span className="relative z-10">+</span>
+                      <span className={`relative z-10 transition-opacity duration-200 ${addedToCart === product.id ? 'opacity-0' : 'opacity-100'}`}>+</span>
                     </button>
                   </div>
                 </CardContent>
