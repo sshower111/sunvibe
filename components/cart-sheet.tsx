@@ -130,16 +130,16 @@ export function CartSheet() {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-20 h-20 object-cover rounded-lg"
+                      className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
                     />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 flex flex-col">
                       <h3 className="font-serif font-bold text-sm mb-1 truncate">
                         {item.name}
                       </h3>
                       <p className="text-sm text-accent font-bold mb-2">
                         ${item.price} each
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-auto">
                         <Button
                           variant="outline"
                           size="icon"
@@ -159,17 +159,17 @@ export function CartSheet() {
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 ml-auto text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex flex-col items-end justify-between flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                       <p className="font-bold text-sm">
                         ${(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </p>
