@@ -452,9 +452,9 @@ export default function MenuPage() {
       {/* Add to Cart Notification */}
       {showNotification && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-foreground/95 backdrop-blur-sm text-background px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 border-2 border-accent/80">
-            <div className="bg-accent rounded-full p-3">
-              <ShoppingCart className="h-6 w-6 text-white fill-white" />
+          <div className="bg-foreground/95 backdrop-blur-sm text-background px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 ">
+            <div className="rounded-full p-3">
+              <ShoppingCart className="h-6 w-6 text-background" />
             </div>
             <div>
               <p className="font-bold text-xl">
