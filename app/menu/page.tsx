@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/contexts/cart-context"
-import { ShoppingCart, Search, ChevronRight, Clock, Phone, MapPin, Info } from "lucide-react"
+import { ShoppingCart, Search, ChevronRight, Clock, Phone, MapPin, Info, Check } from "lucide-react"
 
 interface Product {
   id: string
@@ -51,6 +51,9 @@ export default function MenuPage() {
   const [showHoursInfo, setShowHoursInfo] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
+  const [addedToCart, setAddedToCart] = useState<string | null>(null)
+  const [showNotification, setShowNotification] = useState(false)
+  const [itemsAddedCount, setItemsAddedCount] = useState(0)
   const { addItem, setPickupTime } = useCart()
 
   // Get current store hours status
@@ -90,6 +93,17 @@ export default function MenuPage() {
 
     return () => clearInterval(interval)
   }, [])
+
+  // Handle notification timeout
+  useEffect(() => {
+    if (showNotification) {
+      const timer = setTimeout(() => {
+        setShowNotification(false)
+        setItemsAddedCount(0)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [showNotification, itemsAddedCount])
 
   // Update global pickup time whenever local state changes
   useEffect(() => {
@@ -156,51 +170,51 @@ export default function MenuPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-white">
       <Navigation />
 
-      <div className="pt-36 pb-12">
-        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
+      <div className="pt-36 pb-24">
+        <div className="container mx-auto px-8 lg:px-16 max-w-[1400px]">
           {/* Combined Store Info & Hours Section */}
-          <Card className="mb-8 cursor-pointer card-modern hover:-translate-y-0.5 transition-all relative z-0" onClick={() => setShowHoursInfo(!showHoursInfo)}>
-            <CardContent className="p-3 md:p-6">
+          <Card className="mb-12 cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative z-0 border-border/50 rounded-2xl" onClick={() => setShowHoursInfo(!showHoursInfo)}>
+            <CardContent className="p-6 md:p-8">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h1 className="font-bold text-lg md:text-2xl mb-1">SUNVILLE BAKERY</h1>
-                  <p className="text-sm md:text-base text-muted-foreground mb-2">
+                  <h1 className="font-serif text-2xl md:text-3xl font-normal mb-3 tracking-tight text-primary">Sunville Bakery</h1>
+                  <p className="text-base md:text-lg text-muted-foreground/80 mb-3">
                     4053 Spring Mountain Rd, Las Vegas, NV 89102
                   </p>
-                  <div className="flex items-center gap-2">
-                    <Info className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                    <span className="text-sm md:text-base font-medium">{storeStatus}</span>
+                  <div className="flex items-center gap-3">
+                    <Info className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+                    <span className="text-base md:text-lg font-medium text-foreground">{storeStatus}</span>
                   </div>
                 </div>
-                <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform ${showHoursInfo ? 'rotate-90' : ''}`} />
+                <ChevronRight className={`h-6 w-6 text-muted-foreground/60 transition-transform duration-300 ${showHoursInfo ? 'rotate-90' : ''}`} />
               </div>
 
               {showHoursInfo && (
-                <div className="mt-4 pt-4 border-t space-y-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground mt-0.5" />
-                    <div className="text-sm md:text-base">
-                      <p className="font-medium mb-1">Hours</p>
-                      <p className="text-muted-foreground">Mon-Tue, Thu-Sun: 8:00 AM - 8:00 PM</p>
-                      <p className="text-muted-foreground">Wednesday: 8:00 AM - 3:00 PM</p>
+                <div className="mt-6 pt-6 border-t border-border/50 space-y-6" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-start gap-4">
+                    <Clock className="h-6 w-6 md:h-7 md:w-7 text-accent mt-0.5" />
+                    <div className="text-base md:text-lg">
+                      <p className="font-semibold mb-2 text-foreground">Hours</p>
+                      <p className="text-muted-foreground/80 leading-relaxed">Mon-Tue, Thu-Sun: 8:00 AM - 8:00 PM</p>
+                      <p className="text-muted-foreground/80 leading-relaxed">Wednesday: 8:00 AM - 3:00 PM</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground mt-0.5" />
-                    <div className="text-sm md:text-base">
-                      <p className="font-medium mb-1">Phone</p>
-                      <p className="text-muted-foreground">702-889-8897</p>
+                  <div className="flex items-start gap-4">
+                    <Phone className="h-6 w-6 md:h-7 md:w-7 text-accent mt-0.5" />
+                    <div className="text-base md:text-lg">
+                      <p className="font-semibold mb-2 text-foreground">Phone</p>
+                      <p className="text-muted-foreground/80">702-889-8897</p>
                     </div>
                   </div>
 
                   {/* Pickup Time Selection */}
-                  <div className="pt-4 border-t">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm md:text-base font-medium">Pickup Time:</span>
-                      <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+                  <div className="pt-6 border-t border-border/50">
+                    <div className="flex items-center gap-4 mb-4">
+                      <span className="text-base md:text-lg font-semibold text-foreground">Pickup Time:</span>
+                      <div className="inline-flex items-center bg-muted/50 rounded-xl p-1.5">
                         <button
                           onClick={() => {
                             if (isStoreOpen()) {
@@ -210,9 +224,9 @@ export default function MenuPage() {
                             }
                           }}
                           disabled={!isStoreOpen()}
-                          className={`px-3 py-1.5 text-sm md:text-base font-medium rounded-md transition-colors ${
+                          className={`px-5 py-2.5 text-sm md:text-base font-semibold rounded-lg transition-all duration-300 ${
                             localPickupTime === "ASAP"
-                              ? "bg-white text-foreground shadow-sm"
+                              ? "bg-white text-foreground shadow-md"
                               : "text-muted-foreground hover:text-foreground"
                           } ${!isStoreOpen() ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
@@ -223,9 +237,9 @@ export default function MenuPage() {
                             setLocalPickupTime("Later")
                             setSelectedDate(today)
                           }}
-                          className={`px-3 py-1.5 text-sm md:text-base font-medium rounded-md transition-colors ${
+                          className={`px-5 py-2.5 text-sm md:text-base font-semibold rounded-lg transition-all duration-300 ${
                             localPickupTime === "Later"
-                              ? "bg-white text-foreground shadow-sm"
+                              ? "bg-white text-foreground shadow-md"
                               : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
@@ -235,23 +249,23 @@ export default function MenuPage() {
                     </div>
 
                     {localPickupTime === "Later" && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm md:text-base font-medium w-20">Date:</label>
+                      <div className="space-y-3 mt-4">
+                        <div className="flex items-center gap-3">
+                          <label className="text-base md:text-lg font-semibold w-24 text-foreground">Date:</label>
                           <input
                             type="date"
                             value={selectedDate}
                             min={today}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm"
+                            className="px-4 py-3 border-2 border-border/50 rounded-xl text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm transition-all duration-300"
                           />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm md:text-base font-medium w-20">Time:</label>
+                        <div className="flex items-center gap-3">
+                          <label className="text-base md:text-lg font-semibold w-24 text-foreground">Time:</label>
                           <select
                             value={selectedTime}
                             onChange={(e) => setSelectedTime(e.target.value)}
-                            className="px-3 py-2 border-2 border-gray-200 rounded-xl text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm min-w-[120px]"
+                            className="px-4 py-3 border-2 border-border/50 rounded-xl text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm min-w-[140px] transition-all duration-300"
                           >
                             <option value="">Choose time</option>
                             {(() => {
@@ -321,27 +335,27 @@ export default function MenuPage() {
           </Card>
 
           {/* Search and Categories */}
-          <div className="mb-8">
-            <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/60" />
+          <div className="mb-16">
+            <div className="relative mb-10">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/50" />
               <input
                 type="text"
-                placeholder="Search for delicious treats..."
+                placeholder="Search our menu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 text-base bg-white border-2 border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent shadow-sm hover:shadow-md transition-all"
+                className="w-full pl-16 pr-8 py-5 text-lg bg-white border-2 border-border/40 rounded-2xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-300 shadow-sm hover:shadow-md"
               />
             </div>
-            <div className="overflow-x-auto scrollbar-hide">
-              <div className="flex gap-6 py-2 min-w-min">
+            <div className="overflow-x-auto scrollbar-hide border-b-2 border-border/30">
+              <div className="flex gap-10 pb-5 min-w-min">
                 {categories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`text-xl font-semibold transition-all duration-200 hover:scale-110 whitespace-nowrap ${
+                    className={`text-sm font-semibold tracking-[0.08em] uppercase transition-all duration-300 whitespace-nowrap pb-3 border-b-3 ${
                       selectedCategory === category
-                        ? 'text-accent underline underline-offset-8'
-                        : 'text-foreground hover:text-accent'
+                        ? 'text-foreground border-accent scale-105'
+                        : 'text-muted-foreground/70 border-transparent hover:text-foreground hover:border-border/50'
                     }`}
                   >
                     {category}
@@ -364,7 +378,7 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 mb-16">
             {filteredProducts.map((product, index) => {
               const hasImage = product.image &&
                                product.image.trim() !== '' &&
@@ -374,29 +388,29 @@ export default function MenuPage() {
               return (
               <Card
                 key={product.id}
-                className={`group overflow-hidden rounded-xl md:rounded-2xl shadow-md hover:shadow-lg border border-border/50 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
+                className={`group overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl border border-border/40 hover:-translate-y-2 transition-all duration-500 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
               >
                 {hasImage && (
-                  <div className="relative h-28 md:h-56 bg-gradient-to-br from-muted to-muted/50 overflow-hidden flex-shrink-0">
+                  <div className="relative h-32 md:h-64 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   </div>
                 )}
-                <CardContent className="p-2 md:p-5 relative flex flex-col flex-grow">
-                  <h3 className="font-bold text-sm md:text-lg mb-0.5 md:mb-2 font-serif text-primary group-hover:text-accent transition-colors line-clamp-1">
+                <CardContent className="p-4 md:p-7 relative flex flex-col flex-grow">
+                  <h3 className="font-serif text-lg md:text-2xl font-normal mb-2 md:mb-3 text-primary group-hover:text-accent transition-colors duration-300 tracking-tight">
                     {product.name}
                   </h3>
                   {product.description && (
-                    <p className="hidden md:block text-sm text-muted-foreground mb-3 line-clamp-2 leading-relaxed">
+                    <p className="hidden md:block text-base text-muted-foreground/75 mb-4 line-clamp-2 leading-relaxed">
                       {product.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-auto pt-1 md:pt-4">
-                    <p className="text-base md:text-xl font-bold text-accent">
+                  <div className="flex items-center justify-between mt-auto pt-3 md:pt-5">
+                    <p className="text-xl md:text-2xl font-bold text-accent">
                       ${product.price}
                     </p>
                     <button
@@ -408,10 +422,22 @@ export default function MenuPage() {
                           priceId: product.priceId,
                           image: product.image,
                         })
+                        setAddedToCart(product.id)
+                        setTimeout(() => setAddedToCart(null), 600)
+
+                        if (showNotification) {
+                          setItemsAddedCount(prev => prev + 1)
+                        } else {
+                          setItemsAddedCount(1)
+                          setShowNotification(true)
+                        }
                       }}
-                      className="rounded-full h-8 w-8 md:h-11 md:w-11 bg-transparent text-black border-2 border-black hover:bg-black/10 transition-all hover:scale-110 flex items-center justify-center text-lg md:text-2xl font-bold flex-shrink-0"
+                      className="relative rounded-full h-11 w-11 md:h-14 md:w-14 bg-transparent text-foreground border-2 border-foreground hover:bg-accent hover:border-accent hover:text-white transition-all duration-300 hover:scale-110 flex items-center justify-center text-2xl md:text-3xl font-bold flex-shrink-0 shadow-md hover:shadow-lg overflow-visible"
                     >
-                      +
+                      {addedToCart === product.id && (
+                        <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />
+                      )}
+                      <span className="relative z-10">+</span>
                     </button>
                   </div>
                 </CardContent>
@@ -422,6 +448,22 @@ export default function MenuPage() {
           )}
         </div>
       </div>
+
+      {/* Add to Cart Notification */}
+      {showNotification && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-foreground/95 backdrop-blur-sm text-background px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 border-2 border-accent/80">
+            <div className="bg-accent rounded-full p-3">
+              <ShoppingCart className="h-6 w-6 text-white fill-white" />
+            </div>
+            <div>
+              <p className="font-bold text-xl">
+                {itemsAddedCount === 1 ? 'Item Added!' : `${itemsAddedCount} Items Added!`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </main>
