@@ -357,3 +357,63 @@ git push origin main
 
 Vercel will automatically deploy the changes from the main branch.
 
+
+---
+
+## October 12, 2025 - Brand Color Update
+
+**Commit:** 0329c13
+**Status:** ✅ Deployed
+
+### Changes
+
+Applied new brand color #E5C14A (golden yellow) across the entire website, replacing the previous orange/warm accent color.
+
+### Color Conversion
+
+- **Hex:** #E5C14A
+- **OKLCH:** oklch(0.80 0.12 90)
+- **Foreground:** Changed from white to dark (oklch(0.2 0.02 280)) for better contrast on light backgrounds
+
+### Files Modified
+
+**`app/globals.css`:**
+- Updated `--accent` color variable
+- Updated `--accent-foreground` for text contrast
+- Updated `--ring` color for focus states
+- Updated `--chart-1` for data visualization consistency
+- Updated `--sidebar-ring` for sidebar interactions
+- Updated gradient utilities:
+  - `.gradient-warm`
+  - `.gradient-accent`
+  - `.text-gradient`
+
+### Visual Impact
+
+The brand color now appears consistently throughout:
+- ✅ Navigation links (hover and active states)
+- ✅ Buttons and calls-to-action
+- ✅ Category filters on menu page
+- ✅ Focus rings on interactive elements
+- ✅ Hover effects and transitions
+- ✅ Text gradients in headers
+- ✅ Chart and data visualization elements
+- ✅ Sidebar navigation elements
+
+### Design Considerations
+
+- **Contrast:** Updated foreground color from white to dark ensures text remains readable on light backgrounds
+- **Accessibility:** The new color maintains WCAG AA contrast standards
+- **Consistency:** All accent color references updated for uniform brand appearance
+- **Modern Look:** Golden yellow (#E5C14A) provides a warm, inviting bakery aesthetic
+
+### Deployment
+
+```bash
+git add app/globals.css
+git commit -m "Apply new brand color #E5C14A across website"
+git push origin main
+```
+
+Vercel will automatically deploy from the main branch.
+
