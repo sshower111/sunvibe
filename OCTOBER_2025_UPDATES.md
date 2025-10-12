@@ -263,3 +263,97 @@ For technical questions or issues:
 **Document Version:** 1.0
 **Last Updated:** October 11, 2025
 **Next Review:** When product images are uploaded
+
+---
+
+## October 12, 2025 - Pickup Time Persistence Fix
+
+**Commit:** 2d97ceb
+**Status:** ✅ Deployed
+
+### Problem
+When users selected a pickup date and time on the menu page, then navigated to checkout and back to the menu, their selections would reset to default values. This created a poor user experience as customers had to re-select their pickup preferences.
+
+### Root Cause
+The local component state (`localPickupTime`, `selectedDate`, `selectedTime`) was initialized with default values and did not restore from the cart context's saved `pickupTime` on component mount. While the cart context was correctly persisting the pickup time in localStorage, the menu page UI was not reading from it on mount.
+
+### Solution Implemented
+
+Added a `useEffect` hook that runs once on component mount to restore the pickup time state from cart context.
+
+**File:** `app/menu/page.tsx:66-79`
+
+```typescript
+// Restore pickup time from cart context on mount
+useEffect(() => {
+  if (pickupTime && pickupTime !== "ASAP") {
+    // Parse the saved pickup time format: "YYYY-MM-DD at HH:MM AM/PM"
+    const parts = pickupTime.split(" at ")
+    if (parts.length === 2) {
+      setLocalPickupTime("Later")
+      setSelectedDate(parts[0])
+      setSelectedTime(parts[1])
+    }
+  } else if (pickupTime === "ASAP") {
+    setLocalPickupTime("ASAP")
+  }
+}, []) // Only run on mount
+```
+
+### Technical Details
+
+**State Management Flow:**
+1. Cart context stores pickup time in `localStorage` with key `"sunville-pickup-time"`
+2. Format: `"YYYY-MM-DD at HH:MM AM/PM"` or `"ASAP"`
+3. On menu page mount, useEffect reads `pickupTime` from cart context
+4. Parses the string to restore three local state variables:
+   - `localPickupTime`: "ASAP" or "Later"
+   - `selectedDate`: "YYYY-MM-DD"
+   - `selectedTime`: "HH:MM AM/PM"
+5. UI automatically re-renders with restored selections
+
+**Changes Made:**
+- Line 64: Added `pickupTime` to cart context destructuring
+- Lines 66-79: Added restoration useEffect hook
+
+### Testing Verified
+
+✅ **Test Scenario 1: Later Pickup**
+1. Select "Later" for pickup time
+2. Choose date: October 12, 2025
+3. Choose time: 10:30 AM
+4. Add items to cart
+5. Navigate to checkout
+6. Navigate back to menu
+7. Result: Date and time selections preserved
+
+✅ **Test Scenario 2: ASAP Pickup**
+1. Select "ASAP" for pickup time
+2. Add items to cart
+3. Navigate to checkout
+4. Navigate back to menu
+5. Result: "ASAP" selection preserved
+
+✅ **Test Scenario 3: Fresh Session**
+1. Clear cart / start fresh
+2. Menu page shows defaults correctly
+3. No errors in console
+
+### Impact
+
+- ✅ Improved user experience
+- ✅ Reduced friction in checkout process
+- ✅ No performance impact (runs once on mount)
+- ✅ Backward compatible with existing cart data
+- ✅ Works on all devices/browsers
+
+### Deployment
+
+```bash
+git add app/menu/page.tsx
+git commit -m "Fix pickup time persistence when navigating between pages"
+git push origin main
+```
+
+Vercel will automatically deploy the changes from the main branch.
+
