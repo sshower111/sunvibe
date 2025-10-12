@@ -188,6 +188,11 @@ export default function MenuPage() {
                     <Info className="h-5 w-5 md:h-6 md:w-6 text-accent" />
                     <span className="text-base md:text-lg font-medium text-foreground">{storeStatus}</span>
                   </div>
+                  {!showHoursInfo && localPickupTime === "Later" && selectedDate && (
+                    <div className="mt-2 text-sm md:text-base text-muted-foreground">
+                      Pickup: {selectedDate}{selectedTime && ` at ${selectedTime}`}
+                    </div>
+                  )}
                 </div>
                 <ChevronRight className={`h-6 w-6 text-muted-foreground/60 transition-transform duration-300 ${showHoursInfo ? 'rotate-90' : ''}`} />
               </div>
@@ -269,7 +274,13 @@ export default function MenuPage() {
                           >
                             <option value="">Choose time</option>
                             {(() => {
-                              const isWednesday = selectedDate && new Date(selectedDate + 'T00:00:00').getDay() === 3
+                              // Parse date correctly to avoid timezone issues
+                              let isWednesday = false
+                              if (selectedDate) {
+                                const [year, month, day] = selectedDate.split('-').map(Number)
+                                const dateObj = new Date(year, month - 1, day)
+                                isWednesday = dateObj.getDay() === 3
+                              }
                               const isToday = selectedDate === today
                               const now = new Date()
                               const currentHour = now.getHours()
@@ -452,12 +463,12 @@ export default function MenuPage() {
       {/* Add to Cart Notification */}
       {showNotification && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-foreground/95 backdrop-blur-sm text-background px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4 ">
-            <div className="rounded-full p-3">
-              <ShoppingCart className="h-6 w-6 text-background" />
+          <div className="bg-foreground/95 backdrop-blur-sm text-background px-4 py-3 md:px-8 md:py-5 rounded-2xl shadow-2xl flex items-center gap-3 md:gap-4">
+            <div className="rounded-full p-2 md:p-3">
+              <ShoppingCart className="h-5 w-5 md:h-6 md:w-6 text-background" />
             </div>
             <div>
-              <p className="font-bold text-xl">
+              <p className="font-bold text-lg md:text-xl">
                 {itemsAddedCount === 1 ? 'Item Added!' : `${itemsAddedCount} Items Added!`}
               </p>
             </div>
