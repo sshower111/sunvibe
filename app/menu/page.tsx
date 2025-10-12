@@ -225,7 +225,11 @@ export default function MenuPage() {
                   {/* Pickup Time Selection */}
                   <div className="pt-6 border-t border-border/50">
                     <div className="flex items-center gap-4 mb-4">
-                      <span className="text-base md:text-lg font-semibold text-foreground">Pickup Time:</span>
+                      <span className="text-base md:text-lg font-semibold text-foreground">
+                        {localPickupTime === "Later" && selectedDate && selectedTime
+                          ? `Pickup: ${selectedDate} at ${selectedTime}`
+                          : "Pickup Time:"}
+                      </span>
                       <div className="inline-flex items-center bg-muted/50 rounded-xl p-1.5">
                         <button
                           onClick={() => {
