@@ -30,7 +30,11 @@
       "Bash(if not exist \"public\\gallery\" mkdir \"public\\gallery\")",
       "Bash(del nul)",
       "Bash(cat:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(python:*)",
+      "Bash(/dev/null)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
