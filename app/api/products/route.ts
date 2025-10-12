@@ -14,6 +14,7 @@ export async function GET() {
     const formattedProducts = products.data.map((product) => {
       const price = product.default_price as any
 
+
       return {
         id: product.id,
         name: product.name,
