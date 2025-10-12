@@ -61,7 +61,22 @@ export default function MenuPage() {
   const [addedToCart, setAddedToCart] = useState<string | null>(null)
   const [showNotification, setShowNotification] = useState(false)
   const [itemsAddedCount, setItemsAddedCount] = useState(0)
-  const { addItem, setPickupTime } = useCart()
+  const { addItem, setPickupTime, pickupTime } = useCart()
+
+  // Restore pickup time from cart context on mount
+  useEffect(() => {
+    if (pickupTime && pickupTime !== "ASAP") {
+      // Parse the saved pickup time format: "YYYY-MM-DD at HH:MM AM/PM"
+      const parts = pickupTime.split(" at ")
+      if (parts.length === 2) {
+        setLocalPickupTime("Later")
+        setSelectedDate(parts[0])
+        setSelectedTime(parts[1])
+      }
+    } else if (pickupTime === "ASAP") {
+      setLocalPickupTime("ASAP")
+    }
+  }, []) // Only run on mount
 
   // Get current store hours status
   const getStoreStatus = () => {
