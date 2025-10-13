@@ -1,18 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Montserrat, Raleway } from "next/font/google"
+import { Inter, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { CartProvider } from "@/contexts/cart-context"
 import { MaintenanceCheck } from "@/components/maintenance-check"
 import "./globals.css"
 
-const montserrat = Montserrat({
+const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 })
 
-const raleway = Raleway({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
@@ -130,7 +130,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${montserrat.variable} ${raleway.variable} font-sans`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <CartProvider>
           <MaintenanceCheck>
             {children}
