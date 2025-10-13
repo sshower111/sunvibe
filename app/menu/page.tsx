@@ -80,12 +80,31 @@ export default function MenuPage() {
       // Parse the saved pickup time format: "YYYY-MM-DD at HH:MM AM/PM"
       const parts = pickupTime.split(" at ")
       if (parts.length === 2) {
-        setLocalPickupTime("Later")
-        setSelectedDate(parts[0])
-        setSelectedTime(parts[1])
+        const savedDate = parts[0]
+        const savedTime = parts[1]
+
+        // Check if saved date is today and store is closed
+        if (savedDate === today && !isStoreOpen()) {
+          // Store is closed, default to tomorrow instead
+          setLocalPickupTime("Later")
+          setSelectedDate(tomorrow)
+          setSelectedTime("")
+        } else {
+          // Restore saved values
+          setLocalPickupTime("Later")
+          setSelectedDate(savedDate)
+          setSelectedTime(savedTime)
+        }
       }
     } else if (pickupTime === "ASAP") {
-      setLocalPickupTime("ASAP")
+      // If ASAP was saved but store is now closed, switch to Later with tomorrow
+      if (!isStoreOpen()) {
+        setLocalPickupTime("Later")
+        setSelectedDate(tomorrow)
+        setSelectedTime("")
+      } else {
+        setLocalPickupTime("ASAP")
+      }
     }
   }, []) // Only run on mount
 
