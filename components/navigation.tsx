@@ -33,13 +33,13 @@ export function Navigation() {
       }`}
     >
       <div className="container mx-auto px-8 lg:px-16 max-w-[1400px]">
-        <div className="flex items-center justify-between h-28">
+        <div className="flex items-center justify-between h-24">
           {/* Logo */}
           <a href="/" className="flex items-center group">
             <img
               src={isHomePage && isAtTop ? "/logoWhite.png" : "/logoBlack.png"}
               alt="Sunville Bakery"
-              className="h-14 w-auto transition-all duration-500 group-hover:scale-105"
+              className="h-12 w-auto transition-all duration-500 group-hover:scale-105"
             />
           </a>
 
@@ -47,7 +47,7 @@ export function Navigation() {
           <div className="hidden md:flex items-center gap-12">
             <a
               href="/"
-              className={`transition-all duration-300 font-medium text-[13px] tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
+              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
                 isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
               }`}
             >
@@ -55,7 +55,7 @@ export function Navigation() {
             </a>
             <a
               href="/#about"
-              className={`transition-all duration-300 font-medium text-[13px] tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
+              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
                 isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
               }`}
             >
@@ -63,7 +63,7 @@ export function Navigation() {
             </a>
             <a
               href="/menu"
-              className={`transition-all duration-300 font-medium text-[13px] tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
+              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
                 isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
               }`}
             >
@@ -71,7 +71,7 @@ export function Navigation() {
             </a>
             <a
               href="/gallery"
-              className={`transition-all duration-300 font-medium text-[13px] tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
+              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
                 isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
               }`}
             >
@@ -79,7 +79,7 @@ export function Navigation() {
             </a>
             <a
               href="/contact"
-              className={`transition-all duration-300 font-medium text-[13px] tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
+              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
                 isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
               }`}
             >
