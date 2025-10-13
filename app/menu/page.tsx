@@ -29,6 +29,17 @@ export default function MenuPage() {
   }
   const today = getLocalDateString()
 
+  // Get tomorrow's date in YYYY-MM-DD format
+  const getTomorrowDateString = () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const year = tomorrow.getFullYear()
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0')
+    const day = String(tomorrow.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  const tomorrow = getTomorrowDateString()
+
   // Check if store is currently open
   const isStoreOpen = () => {
     const now = new Date()
@@ -53,7 +64,7 @@ export default function MenuPage() {
   const [checkingOut, setCheckingOut] = useState<string | null>(null)
   const [localPickupTime, setLocalPickupTime] = useState<"ASAP" | "Later">(isStoreOpen() ? "ASAP" : "Later")
   const [selectedTime, setSelectedTime] = useState<string>("")
-  const [selectedDate, setSelectedDate] = useState<string>(isStoreOpen() ? "" : today)
+  const [selectedDate, setSelectedDate] = useState<string>(isStoreOpen() ? "" : tomorrow)
   const [showPickupOptions, setShowPickupOptions] = useState(false)
   const [showHoursInfo, setShowHoursInfo] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
