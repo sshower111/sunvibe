@@ -34,7 +34,11 @@
       "Bash(git restore:*)",
       "Bash(python:*)",
       "Bash(/dev/null)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(awk:*)",
+      "Bash(xargs kill:*)",
+      "Bash(findstr:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []
