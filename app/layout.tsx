@@ -96,7 +96,7 @@ export default function RootLayout({
 window.embeddedChatbotConfig = {
 chatbotId: "uPyP6VyjYrGcYs9Mz0f3V",
 domain: "www.chatbase.co",
-buttonPosition: "left"
+buttonPosition: "right"
 }
     `
           }}
