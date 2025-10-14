@@ -423,10 +423,10 @@ export default function MenuPage() {
               return (
               <Card
                 key={product.id}
-                className={`group overflow-hidden rounded-lg shadow-md hover:shadow-xl border border-border/30 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
+                className={`group overflow-hidden rounded-lg shadow-md hover:shadow-xl border border-border/30 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'min-h-[260px] md:min-h-[280px]' : 'min-h-[120px] md:min-h-[130px]'}`}
               >
                 {hasImage && (
-                  <div className="relative h-40 md:h-44 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
+                  <div className="relative h-32 md:h-36 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
                     <img
                       src={product.image}
                       alt={product.name}
@@ -435,17 +435,19 @@ export default function MenuPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                 )}
-                <CardContent className="p-3 md:p-4 relative flex flex-col flex-grow">
-                  <h3 className="font-serif text-base md:text-lg font-semibold mb-1 md:mb-2 text-primary group-hover:text-accent transition-colors duration-300 tracking-tight line-clamp-2">
-                    {product.name}
-                  </h3>
-                  {product.description && (
-                    <p className="hidden md:block text-xs text-muted-foreground/70 mb-2 line-clamp-2 leading-snug">
-                      {product.description}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-auto pt-2 md:pt-3">
-                    <p className="text-xl md:text-2xl font-bold text-primary">
+                <CardContent className={`${hasImage ? 'p-3 md:p-4' : 'p-3 md:p-3.5'} relative flex flex-col flex-grow justify-between`}>
+                  <div>
+                    <h3 className={`font-serif font-semibold text-primary group-hover:text-accent transition-colors duration-300 tracking-tight ${hasImage ? 'text-base md:text-lg mb-1 md:mb-2 line-clamp-2' : 'text-sm md:text-base mb-1 line-clamp-1'}`}>
+                      {product.name}
+                    </h3>
+                    {product.description && hasImage && (
+                      <p className="hidden md:block text-xs text-muted-foreground/70 mb-2 line-clamp-2 leading-snug">
+                        {product.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className={`flex items-center justify-between ${hasImage ? 'pt-2 md:pt-3' : 'pt-1.5'}`}>
+                    <p className={`font-bold text-primary ${hasImage ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'}`}>
                       ${product.price}
                     </p>
                     <button
@@ -467,7 +469,7 @@ export default function MenuPage() {
                           setShowNotification(true)
                         }
                       }}
-                      className="relative rounded-full h-10 w-10 md:h-11 md:w-11 bg-transparent text-foreground border-2 border-foreground/60 transition-all duration-300 hover:scale-110 flex items-center justify-center text-xl md:text-2xl font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible"
+                      className={`relative rounded-full bg-transparent text-foreground border-2 border-foreground/60 transition-all duration-300 hover:scale-110 flex items-center justify-center font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible ${hasImage ? 'h-10 w-10 md:h-11 md:w-11 text-xl md:text-2xl' : 'h-9 w-9 md:h-10 md:w-10 text-lg md:text-xl'}`}
                     >
                       {addedToCart === product.id && (
                         <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />
