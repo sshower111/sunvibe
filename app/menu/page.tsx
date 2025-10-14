@@ -5,7 +5,7 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCart } from "@/contexts/cart-context"
-import { ShoppingCart, Search, ChevronRight, Clock, Phone, Info } from "lucide-react"
+import { ShoppingCart, Search, ChevronRight, ChevronDown, Clock, Phone, Info } from "lucide-react"
 
 interface Product {
   id: string
@@ -236,15 +236,8 @@ export default function MenuPage() {
                   </div>
 
                   {/* Pickup Time Selection */}
-                  <div className="pt-6 border-t border-border/50">
-                    <div className="flex items-center gap-4 mb-4">
-                      <span className="text-base md:text-lg font-semibold text-foreground">
-                        {localPickupTime === "ASAP"
-                          ? "Pickup: ASAP"
-                          : localPickupTime === "Later" && selectedDate && selectedTime
-                          ? `Pickup: ${selectedDate} at ${selectedTime}`
-                          : "Pickup Time:"}
-                      </span>
+                  <div id="pickup-time-section" className="pt-6 border-t border-border/50 scroll-mt-32">
+                    <div className="mb-4">
                       <div className="inline-flex items-center bg-muted/50 rounded-xl p-1.5">
                         <button
                           onClick={() => {
@@ -268,19 +261,24 @@ export default function MenuPage() {
                             setLocalPickupTime("Later")
                             setSelectedDate(today)
                           }}
-                          className={`px-5 py-2.5 text-sm md:text-base font-semibold rounded-lg transition-all duration-300 ${
+                          className={`px-5 py-2.5 text-sm md:text-base font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
                             localPickupTime === "Later"
                               ? "bg-white text-foreground shadow-md"
                               : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
                           Later
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-300 ${
+                              localPickupTime === "Later" ? "rotate-180" : ""
+                            }`}
+                          />
                         </button>
                       </div>
                     </div>
 
                     {localPickupTime === "Later" && (
-                      <div className="space-y-3 mt-4">
+                      <div className="space-y-3 mt-4 animate-in slide-in-from-top-2 fade-in duration-300">
                         <div className="flex items-center gap-3">
                           <label className="text-base md:text-lg font-semibold w-24 text-foreground">Date:</label>
                           <input
