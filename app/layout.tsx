@@ -93,9 +93,19 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="uPyP6VyjYrGcYs9Mz0f3V";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+window.embeddedChatbotConfig = {
+chatbotId: "uPyP6VyjYrGcYs9Mz0f3V",
+domain: "www.chatbase.co",
+buttonPosition: "left"
+}
     `
           }}
+        />
+        <script
+          src="https://www.chatbase.co/embed.min.js"
+          data-chatbot-id="uPyP6VyjYrGcYs9Mz0f3V"
+          data-domain="www.chatbase.co"
+          defer
         />
         <script
           type="application/ld+json"

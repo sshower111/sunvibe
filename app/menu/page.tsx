@@ -4,9 +4,8 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { useCart } from "@/contexts/cart-context"
-import { ShoppingCart, Search, ChevronRight, Clock, Phone, MapPin, Info, Check } from "lucide-react"
+import { ShoppingCart, Search, ChevronRight, Clock, Phone, Info } from "lucide-react"
 
 interface Product {
   id: string
@@ -60,12 +59,9 @@ export default function MenuPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-  const [checkingOut, setCheckingOut] = useState<string | null>(null)
   const [localPickupTime, setLocalPickupTime] = useState<"ASAP" | "Later">(isStoreOpen() ? "ASAP" : "Later")
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [selectedDate, setSelectedDate] = useState<string>(isStoreOpen() ? "" : tomorrow)
-  const [showPickupOptions, setShowPickupOptions] = useState(false)
   const [showHoursInfo, setShowHoursInfo] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -119,20 +115,20 @@ export default function MenuPage() {
     if (day === 3) {
       // Wednesday: 8 AM - 3 PM (480 - 900 minutes)
       if (currentTime >= 480 && currentTime < 900) {
-        return "Pickup Available â€¢ Closes at 3pm"
+        return "Pickup Available • Closes at 3pm"
       }
     } else {
       // Other days: 8 AM - 8 PM (480 - 1200 minutes)
       if (currentTime >= 480 && currentTime < 1200) {
-        return "Pickup Available â€¢ Closes at 8pm"
+        return "Pickup Available • Closes at 8pm"
       }
     }
 
     // Closed
     if (day === 3) {
-      return "Closed â€¢ Opens Wed 8am-3pm"
+      return "Closed • Opens Wed 8am-3pm"
     }
-    return "Closed â€¢ Opens 8am-8pm"
+    return "Closed • Opens 8am-8pm"
   }
 
   const [storeStatus, setStoreStatus] = useState(getStoreStatus())
@@ -192,34 +188,6 @@ export default function MenuPage() {
         setLoading(false)
       })
   }, [])
-
-  const handleBuyNow = async (product: Product) => {
-    setCheckingOut(product.id)
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: product.priceId,
-          productName: product.name,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        throw new Error('No checkout URL returned')
-      }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Failed to start checkout. Please try again.')
-      setCheckingOut(null)
-    }
-  }
 
   return (
     <main className="min-h-screen bg-white">
