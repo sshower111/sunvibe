@@ -413,7 +413,7 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 mb-16">
             {filteredProducts.map((product, index) => {
               const hasImage = product.image &&
                                product.image.trim() !== '' &&
@@ -423,29 +423,29 @@ export default function MenuPage() {
               return (
               <Card
                 key={product.id}
-                className={`group overflow-hidden rounded-xl shadow-md hover:shadow-2xl border border-border/30 hover:border-accent/30 hover:-translate-y-2 transition-all duration-500 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
+                className={`group overflow-hidden rounded-lg shadow-md hover:shadow-xl border border-border/30 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
               >
                 {hasImage && (
-                  <div className="relative h-32 md:h-64 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
+                  <div className="relative h-40 md:h-44 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                 )}
-                <CardContent className="p-4 md:p-7 relative flex flex-col flex-grow">
-                  <h3 className="font-serif text-lg md:text-2xl font-semibold mb-2 md:mb-3 text-primary group-hover:text-accent transition-colors duration-300 tracking-tight">
+                <CardContent className="p-3 md:p-4 relative flex flex-col flex-grow">
+                  <h3 className="font-serif text-base md:text-lg font-semibold mb-1 md:mb-2 text-primary group-hover:text-accent transition-colors duration-300 tracking-tight line-clamp-2">
                     {product.name}
                   </h3>
                   {product.description && (
-                    <p className="hidden md:block text-sm text-muted-foreground/70 mb-4 line-clamp-2 leading-relaxed">
+                    <p className="hidden md:block text-xs text-muted-foreground/70 mb-2 line-clamp-2 leading-snug">
                       {product.description}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-auto pt-3 md:pt-5">
-                    <p className="text-2xl md:text-3xl font-bold text-primary">
+                  <div className="flex items-center justify-between mt-auto pt-2 md:pt-3">
+                    <p className="text-xl md:text-2xl font-bold text-primary">
                       ${product.price}
                     </p>
                     <button
@@ -467,7 +467,7 @@ export default function MenuPage() {
                           setShowNotification(true)
                         }
                       }}
-                      className="relative rounded-full h-11 w-11 md:h-14 md:w-14 bg-transparent text-foreground border-2 border-foreground/60 transition-all duration-300 hover:scale-110 flex items-center justify-center text-2xl md:text-3xl font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible"
+                      className="relative rounded-full h-10 w-10 md:h-11 md:w-11 bg-transparent text-foreground border-2 border-foreground/60 transition-all duration-300 hover:scale-110 flex items-center justify-center text-xl md:text-2xl font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible"
                     >
                       {addedToCart === product.id && (
                         <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />

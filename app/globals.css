@@ -160,3 +160,14 @@
     background-image: linear-gradient(135deg, oklch(0.80 0.12 90) 0%, oklch(0.85 0.14 95) 100%);
   }
 }
+
+/* Chatbase widget positioning */
+#chatbase-bubble-button {
+  right: 20px !important;
+  left: auto !important;
+}
+
+#chatbase-bubble-window {
+  right: 20px !important;
+  left: auto !important;
+}
