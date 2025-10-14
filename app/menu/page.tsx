@@ -499,7 +499,7 @@ export default function MenuPage() {
                           setShowNotification(true)
                         }
                       }}
-                      className="relative rounded-full h-11 w-11 md:h-14 md:w-14 bg-accent/10 text-accent border-2 border-accent/40 transition-all duration-300 hover:scale-110 hover:bg-accent hover:text-white hover:border-accent flex items-center justify-center text-2xl md:text-3xl font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible"
+                      className="relative rounded-full h-11 w-11 md:h-14 md:w-14 bg-transparent text-foreground border-2 border-foreground/60 transition-all duration-300 hover:scale-110 flex items-center justify-center text-2xl md:text-3xl font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible"
                     >
                       {addedToCart === product.id && (
                         <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />
