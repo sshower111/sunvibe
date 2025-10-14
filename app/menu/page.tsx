@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
@@ -119,20 +119,20 @@ export default function MenuPage() {
     if (day === 3) {
       // Wednesday: 8 AM - 3 PM (480 - 900 minutes)
       if (currentTime >= 480 && currentTime < 900) {
-        return "Pickup Available • Closes at 3pm"
+        return "Pickup Available â€¢ Closes at 3pm"
       }
     } else {
       // Other days: 8 AM - 8 PM (480 - 1200 minutes)
       if (currentTime >= 480 && currentTime < 1200) {
-        return "Pickup Available • Closes at 8pm"
+        return "Pickup Available â€¢ Closes at 8pm"
       }
     }
 
     // Closed
     if (day === 3) {
-      return "Closed • Opens Wed 8am-3pm"
+      return "Closed â€¢ Opens Wed 8am-3pm"
     }
-    return "Closed • Opens 8am-8pm"
+    return "Closed â€¢ Opens 8am-8pm"
   }
 
   const [storeStatus, setStoreStatus] = useState(getStoreStatus())
@@ -455,7 +455,7 @@ export default function MenuPage() {
               return (
               <Card
                 key={product.id}
-                className={`group overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl border border-border/40 hover:-translate-y-2 transition-all duration-500 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
+                className={`group overflow-hidden rounded-xl shadow-md hover:shadow-2xl border border-border/30 hover:border-accent/30 hover:-translate-y-2 transition-all duration-500 relative flex flex-col ${hasImage ? 'h-full' : ''}`}
               >
                 {hasImage && (
                   <div className="relative h-32 md:h-64 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
@@ -468,16 +468,16 @@ export default function MenuPage() {
                   </div>
                 )}
                 <CardContent className="p-4 md:p-7 relative flex flex-col flex-grow">
-                  <h3 className="font-serif text-lg md:text-2xl font-normal mb-2 md:mb-3 text-primary group-hover:text-accent transition-colors duration-300 tracking-tight">
+                  <h3 className="font-serif text-lg md:text-2xl font-semibold mb-2 md:mb-3 text-primary group-hover:text-accent transition-colors duration-300 tracking-tight">
                     {product.name}
                   </h3>
                   {product.description && (
-                    <p className="hidden md:block text-base text-muted-foreground/75 mb-4 line-clamp-2 leading-relaxed">
+                    <p className="hidden md:block text-sm text-muted-foreground/70 mb-4 line-clamp-2 leading-relaxed">
                       {product.description}
                     </p>
                   )}
                   <div className="flex items-center justify-between mt-auto pt-3 md:pt-5">
-                    <p className="text-xl md:text-2xl font-bold text-accent">
+                    <p className="text-2xl md:text-3xl font-bold text-primary">
                       ${product.price}
                     </p>
                     <button
@@ -499,7 +499,7 @@ export default function MenuPage() {
                           setShowNotification(true)
                         }
                       }}
-                      className="relative rounded-full h-11 w-11 md:h-14 md:w-14 bg-transparent text-foreground border-2 border-foreground transition-all duration-300 hover:scale-110 flex items-center justify-center text-2xl md:text-3xl font-bold flex-shrink-0 shadow-md hover:shadow-lg overflow-visible"
+                      className="relative rounded-full h-11 w-11 md:h-14 md:w-14 bg-accent/10 text-accent border-2 border-accent/40 transition-all duration-300 hover:scale-110 hover:bg-accent hover:text-white hover:border-accent flex items-center justify-center text-2xl md:text-3xl font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible"
                     >
                       {addedToCart === product.id && (
                         <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />
