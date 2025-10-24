@@ -238,30 +238,6 @@ export default function ContactPage() {
                 </form>
               </CardContent>
             </Card>
-
-            {/* Contact Information */}
-            <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <Card className="shadow-lg border-border/40 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6 sm:p-8">
-                  <h3 className="font-serif text-lg sm:text-xl font-normal text-primary mb-4">Visit Us</h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-                    4053 Spring Mountain Rd<br />
-                    Las Vegas, NV 89102
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-lg border-border/40 rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6 sm:p-8">
-                  <h3 className="font-serif text-lg sm:text-xl font-normal text-primary mb-4">Call Us</h3>
-                  <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-                    <a href="tel:702-889-8897" className="hover:text-accent transition-colors duration-300">
-                      702-889-8897
-                    </a>
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </main>
