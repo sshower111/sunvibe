@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { trackEvent } from "@/lib/analytics"
 
 export interface CartItem {
   id: string
@@ -69,16 +70,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((currentItems) => {
       const existingItem = currentItems.find((i) => i.id === item.id)
       if (existingItem) {
+        // Track adding more of existing item
+        trackEvent.addToCart(item.name, parseFloat(item.price), 1)
         return currentItems.map((i) =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         )
       }
+      // Track adding new item
+      trackEvent.addToCart(item.name, parseFloat(item.price), 1)
       return [...currentItems, { ...item, quantity: 1 }]
     })
   }
 
   const removeItem = (id: string) => {
-    setItems((currentItems) => currentItems.filter((item) => item.id !== id))
+    setItems((currentItems) => {
+      const item = currentItems.find((i) => i.id === id)
+      if (item) {
+        trackEvent.removeFromCart(item.name)
+      }
+      return currentItems.filter((item) => item.id !== id)
+    })
   }
 
   const updateQuantity = (id: string, quantity: number) => {
