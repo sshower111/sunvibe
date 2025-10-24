@@ -173,11 +173,24 @@
 }
 
 #chatbase-bubble-prompt {
-  right: 20px !important;
+  right: 90px !important;
   left: auto !important;
 }
 
 .chatbase-bubble-prompt {
-  right: 20px !important;
+  right: 90px !important;
+  left: auto !important;
+}
+
+/* Additional selectors for greeting message */
+[class*="chatbase"][class*="prompt"] {
+  right: 90px !important;
+  left: auto !important;
+}
+
+iframe[id*="chatbase"] + div,
+div[class*="chatbase-greeting"],
+div[style*="position"][style*="fixed"]:has(> div:first-child:only-child) {
+  right: 90px !important;
   left: auto !important;
 }
