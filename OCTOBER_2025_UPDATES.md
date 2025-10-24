@@ -417,3 +417,135 @@ git push origin main
 
 Vercel will automatically deploy from the main branch.
 
+---
+
+## October 24, 2025 - Contact Page & Chatbot Improvements
+
+**Commit:** c8b68a4
+**Status:** ✅ Deployed
+
+### Contact Page Cleanup
+
+Simplified the contact page by removing redundant contact information cards and eliminating empty space.
+
+#### Changes Made
+
+**Removed Contact Information Cards:**
+- "Visit Us" card displaying address (4053 Spring Mountain Rd, Las Vegas, NV 89102)
+- "Call Us" card displaying phone number (702-889-8897)
+- These details were redundant as customers can submit inquiries through the contact form
+
+**Layout Improvements:**
+- Removed `mt-16` spacing that created large gap below contact form
+- Contact page now focuses solely on the message submission form
+- Cleaner, more streamlined user experience
+
+**File Modified:** `app/contact/page.tsx`
+- Removed lines 242-264 containing the contact info grid
+- Maintained form functionality and validation
+
+### Chatbot Positioning Fix
+
+Fixed the Chatbase greeting message to appear on the right side with the chatbot button for consistent positioning.
+
+#### Problem
+The chatbot button appeared on the right side of the screen, but the greeting message "Hi there, welcome to Sunville Bakery, how are you today?" appeared on the left side, creating a confusing user experience.
+
+#### Solution Implemented
+
+**File Modified:** `app/globals.css`
+
+Updated CSS positioning rules for Chatbase widget elements:
+
+```css
+/* Chatbase widget positioning */
+#chatbase-bubble-button {
+  right: 20px !important;
+  left: auto !important;
+}
+
+#chatbase-bubble-window {
+  right: 20px !important;
+  left: auto !important;
+}
+
+#chatbase-bubble-prompt {
+  right: 90px !important;  /* Changed from 20px */
+  left: auto !important;
+}
+
+.chatbase-bubble-prompt {
+  right: 90px !important;  /* Changed from 20px */
+  left: auto !important;
+}
+
+/* Additional selectors for greeting message */
+[class*="chatbase"][class*="prompt"] {
+  right: 90px !important;
+  left: auto !important;
+}
+
+iframe[id*="chatbase"] + div,
+div[class*="chatbase-greeting"],
+div[style*="position"][style*="fixed"]:has(> div:first-child:only-child) {
+  right: 90px !important;
+  left: auto !important;
+}
+```
+
+#### Technical Details
+
+**Positioning Strategy:**
+- Chatbot button: `right: 20px` (remains at far right)
+- Greeting prompt: `right: 90px` (positioned to the left of button)
+- Both elements now aligned on the right side of the screen
+
+**CSS Selectors Added:**
+- Multiple attribute selectors to catch various Chatbase class names
+- Covered different potential DOM structures used by Chatbase widget
+- Used `!important` to override inline styles from Chatbase script
+
+#### Visual Impact
+
+- ✅ Greeting message now appears on right side
+- ✅ Positioned just to the left of the chatbot button
+- ✅ Consistent right-side alignment for all chatbot elements
+- ✅ Professional, cohesive appearance
+
+### Testing Verified
+
+✅ **Contact Page:**
+- Contact form displays correctly
+- No visual gaps or empty space below form
+- Form validation and submission working
+- Responsive design maintained
+
+✅ **Chatbot:**
+- Greeting message appears on right side
+- Chatbot button remains on right side
+- Both elements properly aligned
+- No overlap or positioning conflicts
+
+### Deployment
+
+```bash
+git add app/contact/page.tsx app/globals.css
+git commit -m "Remove contact info cards and fix chatbot greeting position"
+git push origin main
+```
+
+Vercel automatically deployed from the main branch.
+
+### Impact
+
+**User Experience Improvements:**
+- Cleaner contact page focused on message submission
+- Consistent chatbot positioning reduces confusion
+- More professional appearance overall
+- Better use of screen real estate
+
+**Maintenance Benefits:**
+- Single source of truth for contact form
+- Reduced code complexity
+- Easier to maintain contact page
+

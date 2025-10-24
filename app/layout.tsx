@@ -1,7 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { CartProvider } from "@/contexts/cart-context"
 import { MaintenanceCheck } from "@/components/maintenance-check"
 import "./globals.css"
@@ -154,6 +155,7 @@ buttonPosition: "right"
             {children}
           </MaintenanceCheck>
           <Analytics />
+          <SpeedInsights />
         </CartProvider>
       </body>
     </html>

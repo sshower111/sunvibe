@@ -38,7 +38,9 @@
       "Bash(awk:*)",
       "Bash(xargs kill:*)",
       "Bash(findstr:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(dir:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
