@@ -1,11 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { CartSheet } from "@/components/cart-sheet"
 
 export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -14,7 +11,6 @@ export function Navigation() {
 
   // Only use transparent nav on homepage
   const isHomePage = pathname === "/"
-  const isMenuPage = pathname === "/menu"
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,16 +81,10 @@ export function Navigation() {
             >
               Contact
             </a>
-            <div className={`ml-4 ${isHomePage && isAtTop ? "text-white" : "text-foreground"}`}>
-              <CartSheet />
-            </div>
           </div>
 
-          {/* Mobile Menu Button & Cart */}
+          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-3">
-            <div className={isHomePage && isAtTop ? "text-white" : "text-foreground"}>
-              <CartSheet />
-            </div>
             <button
               className={`p-2.5 rounded-lg transition-all duration-300 ${
                 isMobileMenuOpen
