@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
-import { useCart } from "@/contexts/cart-context"
-import { ShoppingCart, Search, ChevronRight, ChevronDown, Clock, Phone, Info } from "lucide-react"
+import { Search, ChevronRight, Clock, Phone, Info } from "lucide-react"
 
 interface Product {
   id: string
@@ -18,91 +17,12 @@ interface Product {
 }
 
 export default function MenuPage() {
-  // Get today's date in YYYY-MM-DD format
-  const getLocalDateString = () => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-  const today = getLocalDateString()
-
-  // Get tomorrow's date in YYYY-MM-DD format
-  const getTomorrowDateString = () => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const year = tomorrow.getFullYear()
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0')
-    const day = String(tomorrow.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-  const tomorrow = getTomorrowDateString()
-
-  // Check if store is currently open
-  const isStoreOpen = () => {
-    const now = new Date()
-    const day = now.getDay() // 0 = Sunday, 3 = Wednesday
-    const hours = now.getHours()
-    const minutes = now.getMinutes()
-    const currentTime = hours * 60 + minutes // Convert to minutes
-
-    if (day === 3) {
-      // Wednesday: 8 AM - 3 PM (480 - 900 minutes)
-      return currentTime >= 480 && currentTime < 900
-    } else {
-      // Other days: 8 AM - 8 PM (480 - 1200 minutes)
-      return currentTime >= 480 && currentTime < 1200
-    }
-  }
-
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [localPickupTime, setLocalPickupTime] = useState<"ASAP" | "Later">(isStoreOpen() ? "ASAP" : "Later")
-  const [selectedTime, setSelectedTime] = useState<string>("")
-  const [selectedDate, setSelectedDate] = useState<string>(isStoreOpen() ? "" : tomorrow)
   const [showHoursInfo, setShowHoursInfo] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
-  const [addedToCart, setAddedToCart] = useState<string | null>(null)
-  const [showNotification, setShowNotification] = useState(false)
-  const [itemsAddedCount, setItemsAddedCount] = useState(0)
-  const { addItem, setPickupTime, pickupTime } = useCart()
-
-  // Restore pickup time from cart context on mount
-  useEffect(() => {
-    if (pickupTime && pickupTime !== "ASAP") {
-      // Parse the saved pickup time format: "YYYY-MM-DD at HH:MM AM/PM"
-      const parts = pickupTime.split(" at ")
-      if (parts.length === 2) {
-        const savedDate = parts[0]
-        const savedTime = parts[1]
-
-        // Check if saved date is today and store is closed
-        if (savedDate === today && !isStoreOpen()) {
-          // Store is closed, default to tomorrow instead
-          setLocalPickupTime("Later")
-          setSelectedDate(tomorrow)
-          setSelectedTime("")
-        } else {
-          // Restore saved values
-          setLocalPickupTime("Later")
-          setSelectedDate(savedDate)
-          setSelectedTime(savedTime)
-        }
-      }
-    } else if (pickupTime === "ASAP") {
-      // If ASAP was saved but store is now closed, switch to Later with tomorrow
-      if (!isStoreOpen()) {
-        setLocalPickupTime("Later")
-        setSelectedDate(tomorrow)
-        setSelectedTime("")
-      } else {
-        setLocalPickupTime("ASAP")
-      }
-    }
-  }, []) // Only run on mount
 
   // Get current store hours status
   const getStoreStatus = () => {
@@ -141,29 +61,6 @@ export default function MenuPage() {
 
     return () => clearInterval(interval)
   }, [])
-
-  // Handle notification timeout
-  useEffect(() => {
-    if (showNotification) {
-      const timer = setTimeout(() => {
-        setShowNotification(false)
-        setItemsAddedCount(0)
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [showNotification, itemsAddedCount])
-
-  // Update global pickup time whenever local state changes
-  useEffect(() => {
-    if (localPickupTime === "ASAP") {
-      setPickupTime("ASAP")
-    } else {
-      const dateStr = selectedDate || today
-      const timeStr = selectedTime || ""
-      const fullDateTime = timeStr ? `${dateStr} at ${timeStr}` : `${dateStr} (time not selected)`
-      setPickupTime(fullDateTime)
-    }
-  }, [localPickupTime, selectedTime, selectedDate, setPickupTime, today])
 
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category))).sort()]
 
@@ -208,11 +105,6 @@ export default function MenuPage() {
                     <Info className="h-5 w-5 md:h-6 md:w-6 text-accent" />
                     <span className="text-base md:text-lg font-medium text-foreground">{storeStatus}</span>
                   </div>
-                  {!showHoursInfo && localPickupTime === "Later" && selectedDate && (
-                    <div className="mt-2 text-sm md:text-base text-muted-foreground">
-                      Pickup: {selectedDate}{selectedTime && ` at ${selectedTime}`}
-                    </div>
-                  )}
                 </div>
                 <ChevronRight className={`h-6 w-6 text-muted-foreground/60 transition-transform duration-300 ${showHoursInfo ? 'rotate-90' : ''}`} />
               </div>
@@ -233,136 +125,6 @@ export default function MenuPage() {
                       <p className="font-semibold mb-2 text-foreground">Phone</p>
                       <p className="text-muted-foreground/80">702-889-8897</p>
                     </div>
-                  </div>
-
-                  {/* Pickup Time Selection */}
-                  <div id="pickup-time-section" className="pt-6 border-t border-border/50 scroll-mt-32">
-                    <div className="mb-4">
-                      <div className="inline-flex items-center bg-muted/50 rounded-xl p-1.5">
-                        <button
-                          onClick={() => {
-                            if (isStoreOpen()) {
-                              setLocalPickupTime("ASAP")
-                              setSelectedTime("")
-                              setSelectedDate("")
-                            }
-                          }}
-                          disabled={!isStoreOpen()}
-                          className={`px-5 py-2.5 text-sm md:text-base font-semibold rounded-lg transition-all duration-300 ${
-                            localPickupTime === "ASAP"
-                              ? "bg-white text-foreground shadow-md"
-                              : "text-muted-foreground hover:text-foreground"
-                          } ${!isStoreOpen() ? "opacity-50 cursor-not-allowed" : ""}`}
-                        >
-                          ASAP
-                        </button>
-                        <button
-                          onClick={() => {
-                            setLocalPickupTime("Later")
-                            setSelectedDate(today)
-                          }}
-                          className={`px-5 py-2.5 text-sm md:text-base font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                            localPickupTime === "Later"
-                              ? "bg-white text-foreground shadow-md"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          Later
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform duration-300 ${
-                              localPickupTime === "Later" ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                    {localPickupTime === "Later" && (
-                      <div className="space-y-3 mt-4 animate-in slide-in-from-top-2 fade-in duration-300">
-                        <div className="flex items-center gap-3">
-                          <label className="text-base md:text-lg font-semibold w-24 text-foreground">Date:</label>
-                          <input
-                            type="date"
-                            value={selectedDate}
-                            min={today}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="px-4 py-3 border-2 border-border/50 rounded-xl text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm transition-all duration-300"
-                          />
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <label className="text-base md:text-lg font-semibold w-24 text-foreground">Time:</label>
-                          <select
-                            value={selectedTime}
-                            onChange={(e) => setSelectedTime(e.target.value)}
-                            className="px-4 py-3 border-2 border-border/50 rounded-xl text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white shadow-sm min-w-[140px] transition-all duration-300"
-                          >
-                            <option value="">Choose time</option>
-                            {(() => {
-                              // Parse date correctly to avoid timezone issues
-                              let isWednesday = false
-                              if (selectedDate) {
-                                const [year, month, day] = selectedDate.split('-').map(Number)
-                                const dateObj = new Date(year, month - 1, day)
-                                isWednesday = dateObj.getDay() === 3
-                              }
-                              const isToday = selectedDate === today
-                              const now = new Date()
-                              const currentHour = now.getHours()
-                              const currentMinute = now.getMinutes()
-
-                              // Helper function to check if time slot is in the past
-                              const isPastTime = (hour: number, minute: number) => {
-                                if (!isToday) return false
-                                if (hour < currentHour) return true
-                                if (hour === currentHour && minute <= currentMinute) return true
-                                return false
-                              }
-
-                              const allTimes = [
-                                { value: "08:00 AM", hour: 8, minute: 0 },
-                                { value: "08:30 AM", hour: 8, minute: 30 },
-                                { value: "09:00 AM", hour: 9, minute: 0 },
-                                { value: "09:30 AM", hour: 9, minute: 30 },
-                                { value: "10:00 AM", hour: 10, minute: 0 },
-                                { value: "10:30 AM", hour: 10, minute: 30 },
-                                { value: "11:00 AM", hour: 11, minute: 0 },
-                                { value: "11:30 AM", hour: 11, minute: 30 },
-                                { value: "12:00 PM", hour: 12, minute: 0 },
-                                { value: "12:30 PM", hour: 12, minute: 30 },
-                                { value: "01:00 PM", hour: 13, minute: 0 },
-                                { value: "01:30 PM", hour: 13, minute: 30 },
-                                { value: "02:00 PM", hour: 14, minute: 0 },
-                                { value: "02:30 PM", hour: 14, minute: 30 },
-                              ]
-
-                              const eveningTimes = [
-                                { value: "03:00 PM", hour: 15, minute: 0 },
-                                { value: "03:30 PM", hour: 15, minute: 30 },
-                                { value: "04:00 PM", hour: 16, minute: 0 },
-                                { value: "04:30 PM", hour: 16, minute: 30 },
-                                { value: "05:00 PM", hour: 17, minute: 0 },
-                                { value: "05:30 PM", hour: 17, minute: 30 },
-                                { value: "06:00 PM", hour: 18, minute: 0 },
-                                { value: "06:30 PM", hour: 18, minute: 30 },
-                                { value: "07:00 PM", hour: 19, minute: 0 },
-                                { value: "07:30 PM", hour: 19, minute: 30 },
-                                { value: "08:00 PM", hour: 20, minute: 0 },
-                              ]
-
-                              const timesToShow = isWednesday ? allTimes : [...allTimes, ...eveningTimes]
-
-                              return timesToShow
-                                .filter(time => !isPastTime(time.hour, time.minute))
-                                .map(time => (
-                                  <option key={time.value} value={time.value}>
-                                    {time.value}
-                                  </option>
-                                ))
-                            })()}
-                          </select>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -414,7 +176,7 @@ export default function MenuPage() {
 
           {!loading && !error && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 mb-16">
-            {filteredProducts.map((product, index) => {
+            {filteredProducts.map((product) => {
               const hasImage = product.image &&
                                product.image.trim() !== '' &&
                                !product.image.includes('/placeholder') &&
@@ -450,32 +212,6 @@ export default function MenuPage() {
                     <p className={`font-bold text-primary ${hasImage ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'}`}>
                       ${product.price}
                     </p>
-                    <button
-                      onClick={() => {
-                        addItem({
-                          id: product.id,
-                          name: product.name,
-                          price: product.price,
-                          priceId: product.priceId,
-                          image: product.image,
-                        })
-                        setAddedToCart(product.id)
-                        setTimeout(() => setAddedToCart(null), 600)
-
-                        if (showNotification) {
-                          setItemsAddedCount(prev => prev + 1)
-                        } else {
-                          setItemsAddedCount(1)
-                          setShowNotification(true)
-                        }
-                      }}
-                      className={`relative rounded-full bg-transparent text-foreground border-2 border-foreground/60 transition-all duration-300 hover:scale-110 flex items-center justify-center font-bold flex-shrink-0 shadow-sm hover:shadow-lg overflow-visible ${hasImage ? 'h-10 w-10 md:h-11 md:w-11 text-xl md:text-2xl' : 'h-9 w-9 md:h-10 md:w-10 text-lg md:text-xl'}`}
-                    >
-                      {addedToCart === product.id && (
-                        <span className="absolute inset-[-2px] rounded-full border-[3px] border-transparent border-t-accent border-r-accent/50 animate-spin" style={{animationDuration: '0.6s'}} />
-                      )}
-                      <span className={`relative z-10 transition-opacity duration-200 ${addedToCart === product.id ? 'opacity-0' : 'opacity-100'}`}>+</span>
-                    </button>
                   </div>
                 </CardContent>
               </Card>
@@ -485,22 +221,6 @@ export default function MenuPage() {
           )}
         </div>
       </div>
-
-      {/* Add to Cart Notification */}
-      {showNotification && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-foreground/95 backdrop-blur-sm text-background px-4 py-3 md:px-8 md:py-5 rounded-2xl shadow-2xl flex items-center gap-3 md:gap-4">
-            <div className="rounded-full p-2 md:p-3">
-              <ShoppingCart className="h-5 w-5 md:h-6 md:w-6 text-background" />
-            </div>
-            <div>
-              <p className="font-bold text-lg md:text-xl">
-                {itemsAddedCount === 1 ? 'Item Added!' : `${itemsAddedCount} Items Added!`}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </main>
