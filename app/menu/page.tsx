@@ -23,6 +23,8 @@ export default function MenuPage() {
   const [showHoursInfo, setShowHoursInfo] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
 
   // Get current store hours status
   const getStoreStatus = () => {
@@ -64,11 +66,67 @@ export default function MenuPage() {
 
   const categories = ["All", ...Array.from(new Set(products.map(p => p.category))).sort()]
 
+  // Generate search suggestions based on current query
+  const searchSuggestions = searchQuery.trim()
+    ? products
+        .filter(product =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.category.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .slice(0, 8) // Limit to 8 suggestions like Google
+        .map(product => ({
+          text: product.name,
+          category: product.category,
+          product
+        }))
+    : []
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory
     return matchesSearch && matchesCategory
   })
+
+  // Handle keyboard navigation for search suggestions
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || searchSuggestions.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedSuggestionIndex(prev =>
+        prev < searchSuggestions.length - 1 ? prev + 1 : prev
+      )
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1)
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (selectedSuggestionIndex >= 0) {
+        const suggestion = searchSuggestions[selectedSuggestionIndex]
+        setSearchQuery(suggestion.text)
+        setShowSuggestions(false)
+        setSelectedSuggestionIndex(-1)
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false)
+      setSelectedSuggestionIndex(-1)
+    }
+  }
+
+  const handleSuggestionClick = (suggestionText: string) => {
+    setSearchQuery(suggestionText)
+    setShowSuggestions(false)
+    setSelectedSuggestionIndex(-1)
+  }
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowSuggestions(false)
+    if (showSuggestions) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showSuggestions])
 
   useEffect(() => {
     fetch('/api/products')
@@ -133,15 +191,60 @@ export default function MenuPage() {
 
           {/* Search and Categories */}
           <div className="mb-16">
-            <div className="relative mb-10">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/50" />
+            <div className="relative mb-10" onClick={(e) => e.stopPropagation()}>
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/50 z-10" />
               <input
                 type="text"
                 placeholder="Search our menu..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setShowSuggestions(true)
+                  setSelectedSuggestionIndex(-1)
+                }}
+                onFocus={() => {
+                  if (searchQuery.trim()) setShowSuggestions(true)
+                }}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full pl-16 pr-8 py-5 text-lg bg-white border-2 border-border/40 rounded-2xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-300 shadow-sm hover:shadow-md"
+                autoComplete="off"
               />
+
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border/40 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {searchSuggestions.map((suggestion, index) => (
+                    <div
+                      key={suggestion.product.id}
+                      onClick={() => handleSuggestionClick(suggestion.text)}
+                      className={`flex items-center gap-4 px-6 py-3.5 cursor-pointer transition-colors ${
+                        index === selectedSuggestionIndex
+                          ? 'bg-muted/70'
+                          : 'hover:bg-muted/50'
+                      } ${index !== 0 ? 'border-t border-border/20' : ''}`}
+                    >
+                      <Search className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base text-foreground truncate">
+                          {suggestion.text}
+                        </p>
+                        <p className="text-sm text-muted-foreground/70">
+                          {suggestion.category}
+                        </p>
+                      </div>
+                      {suggestion.product.image &&
+                       suggestion.product.image.trim() !== '' &&
+                       !suggestion.product.image.includes('/placeholder') && (
+                        <img
+                          src={suggestion.product.image}
+                          alt={suggestion.text}
+                          className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="overflow-x-auto scrollbar-hide border-b-2 border-border/30">
               <div className="flex gap-10 pb-5 min-w-min">
