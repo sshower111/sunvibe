@@ -35,8 +35,8 @@ export function ContactSection() {
               <p className="text-muted-foreground text-base">
                 702-889-8897
                 <br />
-                <a href="mailto:sunvillebakery@gmail.com" className="text-accent hover:underline">
-                  sunvillebakery@gmail.com
+                <a href="mailto:sunvillebakerylv@gmail.com" className="text-accent hover:underline">
+                  sunvillebakerylv@gmail.com
                 </a>
               </p>
             </div>
