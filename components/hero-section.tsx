@@ -33,7 +33,7 @@ export function HeroSection() {
                 href="/menu"
                 className="inline-flex items-center justify-center px-8 py-4 bg-accent text-accent-foreground font-semibold text-base rounded-lg transition-all duration-300 hover:bg-accent/90 hover:scale-105 hover:shadow-xl hover:shadow-accent/30"
               >
-                Order Now
+                View Menu
               </Link>
               <Link
                 href="/#about"
