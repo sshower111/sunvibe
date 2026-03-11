@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Card, CardContent } from "@/components/ui/card"
@@ -25,6 +25,9 @@ export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
+  const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
+  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 })
+  const previewTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Get current store hours status
   const getStoreStatus = () => {
@@ -143,6 +146,20 @@ export default function MenuPage() {
         setLoading(false)
       })
   }, [])
+
+  const handleCardMouseEnter = (product: Product, e: React.MouseEvent) => {
+    if (previewTimeout.current) clearTimeout(previewTimeout.current)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + window.scrollY
+    setPreviewPos({ x, y })
+    previewTimeout.current = setTimeout(() => setHoveredProduct(product), 80)
+  }
+
+  const handleCardMouseLeave = () => {
+    if (previewTimeout.current) clearTimeout(previewTimeout.current)
+    setHoveredProduct(null)
+  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -277,6 +294,41 @@ export default function MenuPage() {
             </div>
           )}
 
+          {/* Hover Image Preview */}
+          {hoveredProduct && hoveredProduct.image && (
+            <div
+              className="fixed z-[9999] pointer-events-none"
+              style={{
+                left: `${previewPos.x}px`,
+                top: `${previewPos.y}px`,
+                transform: 'translate(-50%, -110%)',
+              }}
+            >
+              <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-border/30 animate-in fade-in zoom-in-95 duration-200"
+                   style={{ width: '280px' }}>
+                <div className="relative h-48 bg-muted/30">
+                  <img
+                    src={hoveredProduct.image}
+                    alt={hoveredProduct.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="px-4 py-3">
+                  <p className="font-serif font-semibold text-primary text-base leading-tight">{hoveredProduct.name}</p>
+                  {hoveredProduct.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">{hoveredProduct.description}</p>
+                  )}
+                  <p className="font-bold text-primary text-lg mt-2">${hoveredProduct.price}</p>
+                </div>
+              </div>
+              {/* Arrow */}
+              <div className="flex justify-center">
+                <div className="w-0 h-0"
+                     style={{ borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderTop: '10px solid white', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }} />
+              </div>
+            </div>
+          )}
+
           {!loading && !error && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 mb-16">
             {filteredProducts.map((product) => {
@@ -288,6 +340,8 @@ export default function MenuPage() {
               return (
               <Card
                 key={product.id}
+                onMouseEnter={hasImage ? (e) => handleCardMouseEnter(product, e) : undefined}
+                onMouseLeave={hasImage ? handleCardMouseLeave : undefined}
                 className={`group overflow-hidden rounded-lg shadow-md hover:shadow-xl border border-border/30 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'min-h-[260px] md:min-h-[280px]' : 'min-h-[120px] md:min-h-[130px]'}`}
               >
                 {hasImage && (

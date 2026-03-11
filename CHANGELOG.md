@@ -2,7 +2,20 @@
 
 All notable changes to the Sunville Bakery website will be documented in this file.
 
-## [Latest] - 2025-10-06
+## [Latest] - 2026-03-11
+
+### Added
+- **Menu Page – Image Hover Preview**: Hovering over any product card that has an image now shows a floating preview popup above the card
+  - Displays a larger (280×192px) version of the product image
+  - Shows the product name, description snippet, and price
+  - Smooth fade + zoom-in animation on appear
+  - 80ms delay to prevent accidental flickers when moving the mouse across cards
+  - Downward arrow points from the popup to the card being hovered
+  - `pointer-events-none` so the popup never blocks clicks
+  - Only activates on cards with a valid image; text-only items are unaffected
+  - **File modified:** `app/menu/page.tsx`
+
+## [Previous] - 2025-10-06
 
 ### Fixed
 - **Pickup Time Selector**: Past times are now hidden when today's date is selected
