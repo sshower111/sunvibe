@@ -33,7 +33,7 @@ export function ContactSection() {
               </div>
               <h3 className="font-semibold text-xl mb-3 text-primary">Phone</h3>
               <p className="text-muted-foreground text-base">
-                702-889-8897
+                702-889-9887
                 <br />
                 <a href="mailto:sunvillebakerylv@gmail.com" className="text-accent hover:underline">
                   sunvillebakerylv@gmail.com

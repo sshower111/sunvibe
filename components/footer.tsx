@@ -30,7 +30,7 @@ export function Footer() {
             <h3 className="text-xs md:text-sm font-semibold tracking-[0.12em] uppercase mb-4 md:mb-5 text-primary-foreground/95">Contact</h3>
             <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-primary-foreground/75 leading-relaxed">
               <li className="leading-relaxed">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</li>
-              <li className="pt-1 font-medium text-primary-foreground/85">702-889-8897</li>
+              <li className="pt-1 font-medium text-primary-foreground/85">702-889-9887</li>
               <li className="hover:text-accent transition-colors duration-300 cursor-pointer">sunvillebakerylv@gmail.com</li>
             </ul>
           </div>

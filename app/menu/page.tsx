@@ -198,7 +198,7 @@ export default function MenuPage() {
                     <Phone className="h-6 w-6 md:h-7 md:w-7 text-accent mt-0.5" />
                     <div className="text-base md:text-lg">
                       <p className="font-semibold mb-2 text-foreground">Phone</p>
-                      <p className="text-muted-foreground/80">702-889-8897</p>
+                      <p className="text-muted-foreground/80">702-889-9887</p>
                     </div>
                   </div>
                 </div>
