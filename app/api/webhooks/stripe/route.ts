@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
                 </div>
 
                 <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
-                  Questions? Call 702-889-8897 or email sunvillebakerylv@gmail.com
+                  Questions? Call 702-889-9887 or email sunvillebakerylv@gmail.com
                 </p>
               </div>
             </div>
