@@ -9,8 +9,8 @@ export async function GET() {
     const filePath = path.join(process.cwd(), 'lib', 'gallery-images.ts')
     const fileContent = await fs.readFile(filePath, 'utf-8')
 
-    // Extract URLs from the file
-    const urlMatches = fileContent.match(/"(https?:\/\/[^"]+)"/g)
+    // Extract URLs from the file (both external https:// URLs and local /gallery/ paths)
+    const urlMatches = fileContent.match(/"(https?:\/\/[^"]+|\/gallery\/[^"]+)"/g)
     const images = urlMatches ? urlMatches.map(match => match.replace(/"/g, '')) : []
 
     return NextResponse.json({ images })
