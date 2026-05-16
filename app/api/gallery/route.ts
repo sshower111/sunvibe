@@ -20,6 +20,7 @@ async function writeGalleryImages(images: string[]): Promise<void> {
   await put(GALLERY_DATA_KEY, JSON.stringify({ images }), {
     access: 'public',
     addRandomSuffix: false,
+    allowOverwrite: true,
     contentType: 'application/json',
   })
 }
