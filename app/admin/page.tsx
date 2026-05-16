@@ -30,6 +30,9 @@ export default function AdminPage() {
   const [images, setImages] = useState<string[]>([])
   const [newImageUrl, setNewImageUrl] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadLoading, setUploadLoading] = useState(false)
+  const [urlLoading, setUrlLoading] = useState(false)
+  const [galleryMessage, setGalleryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   // Check authentication on mount
   useEffect(() => {
@@ -138,6 +141,11 @@ export default function AdminPage() {
   }
 
   // Gallery functions
+  const showGalleryMessage = (type: "success" | "error", text: string) => {
+    setGalleryMessage({ type, text })
+    setTimeout(() => setGalleryMessage(null), 4000)
+  }
+
   const uploadImage = async () => {
     if (!selectedFile) return null
 
@@ -150,32 +158,59 @@ export default function AdminPage() {
       body: formData
     })
     const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || 'Upload failed')
+    }
     return data.url
   }
 
   const addImageFromFile = async () => {
-    const url = await uploadImage()
-    if (url) {
-      await fetch('/api/gallery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add', url, password })
-      })
-      setSelectedFile(null)
-      fetchGalleryImages()
+    if (!selectedFile) return
+    setUploadLoading(true)
+    try {
+      const url = await uploadImage()
+      if (url) {
+        const res = await fetch('/api/gallery', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', url, password })
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to save image')
+        }
+        setSelectedFile(null)
+        fetchGalleryImages()
+        showGalleryMessage('success', 'Image uploaded successfully!')
+      }
+    } catch (err) {
+      showGalleryMessage('error', err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadLoading(false)
     }
   }
 
   const addImageFromUrl = async () => {
     if (!newImageUrl.trim()) return
-
-    await fetch('/api/gallery', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add', url: newImageUrl, password })
-    })
-    setNewImageUrl("")
-    fetchGalleryImages()
+    setUrlLoading(true)
+    try {
+      const res = await fetch('/api/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', url: newImageUrl.trim(), password })
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to add image')
+      }
+      setNewImageUrl("")
+      fetchGalleryImages()
+      showGalleryMessage('success', 'Image URL added successfully!')
+    } catch (err) {
+      showGalleryMessage('error', err instanceof Error ? err.message : 'Failed to add URL')
+    } finally {
+      setUrlLoading(false)
+    }
   }
 
   const removeImage = async (url: string) => {
@@ -340,40 +375,69 @@ export default function AdminPage() {
             <div className="bg-white rounded border p-4 mb-6">
               <h2 className="font-bold mb-4">Add Image</h2>
 
-              {/* Upload file */}
+              {/* Status message */}
+              {galleryMessage && (
+                <div className={`mb-4 p-3 rounded text-sm ${galleryMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                  {galleryMessage.text}
+                </div>
+              )}
+
+              {/* Upload from computer */}
               <div className="mb-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  className="mb-2"
-                />
-                <button
-                  onClick={addImageFromFile}
-                  disabled={!selectedFile}
-                  className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-                >
-                  Upload
-                </button>
+                <p className="text-sm font-medium text-gray-700 mb-2">Upload from your computer</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded hover:border-gray-500 transition-colors text-sm text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {selectedFile ? selectedFile.name : "Browse image files..."}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                  </label>
+                  {selectedFile && (
+                    <span className="text-xs text-gray-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                  )}
+                  <button
+                    onClick={addImageFromFile}
+                    disabled={!selectedFile || uploadLoading}
+                    className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+                  >
+                    {uploadLoading ? "Uploading..." : "Upload"}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Accepted: JPG, PNG, WebP, GIF — max 5 MB</p>
               </div>
 
-              <div className="text-center text-sm text-gray-500 my-2">OR</div>
+              <div className="text-center text-sm text-gray-500 my-4 flex items-center gap-2">
+                <div className="flex-1 border-t border-gray-200" />
+                OR
+                <div className="flex-1 border-t border-gray-200" />
+              </div>
 
               {/* Add from URL */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded"
-                />
-                <button
-                  onClick={addImageFromUrl}
-                  className="px-4 py-2 bg-black text-white rounded"
-                >
-                  Add URL
-                </button>
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Add from URL</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="https://example.com/image.jpg"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addImageFromUrl()}
+                    className="flex-1 px-3 py-2 border rounded"
+                  />
+                  <button
+                    onClick={addImageFromUrl}
+                    disabled={urlLoading || !newImageUrl.trim()}
+                    className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
+                  >
+                    {urlLoading ? "Adding..." : "Add URL"}
+                  </button>
+                </div>
               </div>
             </div>
 

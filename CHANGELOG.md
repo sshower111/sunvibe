@@ -2,7 +2,25 @@
 
 All notable changes to the Sunville Bakery website will be documented in this file.
 
-## [Latest] - 2026-03-11
+## [Latest] - 2026-05-16
+
+### Fixed
+- **Admin Gallery – File Upload**: Fixed uploaded images not appearing after upload
+  - The gallery API was only returning external `https://` URLs; local uploads stored as `/gallery/...` paths were silently ignored
+  - Updated URL extraction regex to also match local `/gallery/` paths
+  - **File modified:** `app/api/gallery/route.ts`
+
+- **Admin Gallery – Browse Button**: Replaced the unstyled raw file input with a clearly labeled dashed-border button showing an image icon and "Browse image files..." text
+  - Selected filename and file size (MB) display next to the button once a file is chosen
+  - **File modified:** `app/admin/page.tsx`
+
+- **Admin Gallery – Upload & Add URL Buttons**: Both previously failed silently with no feedback
+  - Upload button now shows "Uploading..." while in progress and is disabled until a file is selected
+  - Add URL button now shows "Adding...", is disabled when the field is empty, and responds to the Enter key
+  - Both actions now show a green success banner or a red error banner (with the exact error message) that auto-dismisses after 4 seconds
+  - **File modified:** `app/admin/page.tsx`
+
+## [Previous] - 2026-03-11
 
 ### Added
 - **Menu Page – Image Hover Preview**: Hovering over any product card that has an image now shows a floating preview popup above the card
