@@ -1,12 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
-import { galleryImages } from "@/lib/gallery-images"
 
 export default function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [images, setImages] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/gallery')
+      .then(r => r.json())
+      .then(d => setImages(d.images || []))
+  }, [])
 
   return (
     <main className="min-h-screen">
@@ -26,7 +32,7 @@ export default function GalleryPage() {
 
           {/* Masonry Grid Layout */}
           <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8">
-            {galleryImages.map((image, index) => (
+            {images.map((image, index) => (
               <div
                 key={index}
                 className="break-inside-avoid cursor-pointer group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-700 ease-out hover:-translate-y-1"
