@@ -1,16 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { galleryImages } from "@/lib/gallery-images"
 
 export function FeaturedGallery() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [featuredImages, setFeaturedImages] = useState<string[]>([])
 
-  // Randomly select 9 images on component mount
   useEffect(() => {
-    const shuffled = [...galleryImages].sort(() => Math.random() - 0.5)
-    setFeaturedImages(shuffled.slice(0, 9))
+    fetch('/api/gallery')
+      .then(r => r.json())
+      .then(d => {
+        const all: string[] = d.images || []
+        const shuffled = [...all].sort(() => Math.random() - 0.5)
+        setFeaturedImages(shuffled.slice(0, 9))
+      })
   }, [])
 
   return (
