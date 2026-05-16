@@ -3,16 +3,12 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
-})
-
-const resend = new Resend(process.env.RESEND_API_KEY!)
-
-// This is your Stripe webhook secret
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
-
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2024-12-18.acacia',
+  })
+  const resend = new Resend(process.env.RESEND_API_KEY!)
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
   try {
     const body = await req.text()
     const headersList = await headers()
