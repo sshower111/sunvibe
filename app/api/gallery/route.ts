@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating gallery:', error)
-    return NextResponse.json({ error: 'Failed to update gallery' }, { status: 500 })
+    const message = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: `Failed to update gallery: ${message}` }, { status: 500 })
   }
 }
