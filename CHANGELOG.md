@@ -2,9 +2,16 @@
 
 All notable changes to the Sunville Bakery website will be documented in this file.
 
-## [Latest] - 2026-05-16
+## [Latest] - 2026-05-16 (update 2)
 
 ### Fixed
+- **Admin Gallery – Vercel Blob Storage**: Switched gallery storage from the local filesystem (which is read-only on Vercel) to Vercel Blob
+  - Image files now upload to Vercel Blob instead of `public/gallery/` — works in production
+  - Gallery URL list now stored as a `gallery-data.json` blob instead of `lib/gallery-images.ts` — persists across deployments
+  - Existing Yelp/ImgBB images in `lib/gallery-images.ts` are used as the initial seed if no blob data exists yet
+  - Requires `BLOB_READ_WRITE_TOKEN` env var (set automatically when Vercel Blob store is linked to the project)
+  - **Files modified:** `app/api/gallery/route.ts`, `app/api/gallery/upload/route.ts`, `package.json`
+
 - **Admin Gallery – File Upload**: Fixed uploaded images not appearing after upload
   - The gallery API was only returning external `https://` URLs; local uploads stored as `/gallery/...` paths were silently ignored
   - Updated URL extraction regex to also match local `/gallery/` paths

@@ -1,18 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { put, list } from '@vercel/blob'
+import { constantTimeCompare } from '@/lib/security'
+import { galleryImages } from '@/lib/gallery-images'
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+const GALLERY_DATA_KEY = 'gallery-data.json'
+
+async function readGalleryImages(): Promise<string[]> {
+  const { blobs } = await list({ prefix: GALLERY_DATA_KEY, limit: 1 })
+  if (blobs.length === 0) {
+    return galleryImages
+  }
+  const res = await fetch(`${blobs[0].url}?t=${Date.now()}`)
+  const data = await res.json()
+  return data.images || []
+}
+
+async function writeGalleryImages(images: string[]): Promise<void> {
+  await put(GALLERY_DATA_KEY, JSON.stringify({ images }), {
+    access: 'public',
+    addRandomSuffix: false,
+    contentType: 'application/json',
+  })
+}
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'lib', 'gallery-images.ts')
-    const fileContent = await fs.readFile(filePath, 'utf-8')
-
-    // Extract URLs from the file (both external https:// URLs and local /gallery/ paths)
-    const urlMatches = fileContent.match(/"(https?:\/\/[^"]+|\/gallery\/[^"]+)"/g)
-    const images = urlMatches ? urlMatches.map(match => match.replace(/"/g, '')) : []
-
+    const images = await readGalleryImages()
     return NextResponse.json({ images })
   } catch (error) {
     console.error('Error reading gallery images:', error)
@@ -25,29 +39,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { action, url, password } = body
 
-    // Verify password
-    if (password !== ADMIN_PASSWORD) {
+    if (!ADMIN_PASSWORD || !constantTimeCompare(password, ADMIN_PASSWORD)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const filePath = path.join(process.cwd(), 'lib', 'gallery-images.ts')
-    let fileContent = await fs.readFile(filePath, 'utf-8')
+    const images = await readGalleryImages()
 
+    let updated: string[]
     if (action === 'add') {
-      // Add new image URL before the closing bracket
-      const insertPosition = fileContent.lastIndexOf(']')
-      const newImageLine = `  "${url}",\n`
-      fileContent = fileContent.slice(0, insertPosition) + newImageLine + fileContent.slice(insertPosition)
+      updated = images.includes(url) ? images : [...images, url]
     } else if (action === 'remove') {
-      // Remove the image URL line
-      const lines = fileContent.split('\n')
-      const filteredLines = lines.filter(line => !line.includes(`"${url}"`))
-      fileContent = filteredLines.join('\n')
+      updated = images.filter(img => img !== url)
+    } else {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    // Write back to file
-    await fs.writeFile(filePath, fileContent, 'utf-8')
-
+    await writeGalleryImages(updated)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating gallery:', error)
