@@ -53,7 +53,7 @@ export function PickupTimeAlert({ open, onOpenChange, message }: PickupTimeAlert
               <Clock className="h-8 w-8 text-accent" />
             </div>
           </div>
-          <DialogTitle className="text-center font-serif text-xl">
+          <DialogTitle className="heading-3 text-center">
             Pickup Time Required
           </DialogTitle>
           <DialogDescription className="text-center pt-2">
@@ -63,7 +63,7 @@ export function PickupTimeAlert({ open, onOpenChange, message }: PickupTimeAlert
         <div className="flex justify-center pt-2">
           <Button
             onClick={handleGotIt}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground px-8"
+            className=""
           >
             Got it
           </Button>

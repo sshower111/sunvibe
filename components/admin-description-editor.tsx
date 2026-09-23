@@ -42,7 +42,7 @@ export function AdminDescriptionEditor({ product, password, onSaved }: {
           <label htmlFor={"description-" + product.id} className="block text-sm font-medium">Description for {product.name}</label>
           <textarea id={"description-" + product.id} value={draft}
             onChange={(event) => setDraft(event.target.value)} maxLength={2000} rows={4}
-            disabled={saving} autoFocus className="w-full rounded border px-3 py-2 text-sm" />
+            disabled={saving} autoFocus className="form-control w-full" />
           <p className="text-xs text-gray-500">{draft.length}/2000 characters. Leave blank to remove the description.</p>
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <div className="flex flex-wrap gap-2">

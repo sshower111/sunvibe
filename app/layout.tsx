@@ -1,3 +1,4 @@
+import { headers } from "next/headers"
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
@@ -9,13 +10,13 @@ import "./globals.css"
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
   display: "swap",
 })
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-playfair",
   display: "swap",
 })
 
@@ -79,11 +80,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const nonce = (await headers()).get("x-nonce") || undefined
   return (
     <html lang="en">
       <head>
@@ -91,7 +93,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/sitelogo.png" />
         <meta name="theme-color" content="#000000" />
         {/* Chatbase AI Widget */}
-        <script
+        <script nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
 window.embeddedChatbotConfig = {
@@ -102,13 +104,13 @@ buttonPosition: "right"
     `
           }}
         />
-        <script
+        <script nonce={nonce}
           src="https://www.chatbase.co/embed.min.js"
           data-chatbot-id="uPyP6VyjYrGcYs9Mz0f3V"
           data-domain="www.chatbase.co"
           defer
         />
-        <script
+        <script nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({

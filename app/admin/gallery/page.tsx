@@ -183,7 +183,7 @@ export default function AdminGalleryPage() {
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="p-8">
-            <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+            <h1 className="heading-1 mb-6 text-center">Admin Login</h1>
             <div className="space-y-4">
               <input
                 type="password"
@@ -191,9 +191,9 @@ export default function AdminGalleryPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                className="form-control w-full"
               />
-              <Button onClick={handleLogin} className="w-full bg-accent hover:bg-accent/90">
+              <Button onClick={handleLogin} className="w-full  ">
                 Login
               </Button>
             </div>
@@ -208,16 +208,16 @@ export default function AdminGalleryPage() {
       <Navigation />
 
       <div className="pt-36 pb-16">
-        <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+        <div className="site-container">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Gallery Management</h1>
+            <h1 className="heading-1 mb-2">Gallery Management</h1>
             <p className="text-muted-foreground">Add or remove images from your gallery</p>
           </div>
 
           {/* Add Image Section */}
           <Card className="mb-8">
             <CardContent className="p-6">
-              <h2 className="text-xl font-bold mb-4">Add New Image</h2>
+              <h2 className="heading-2 mb-4">Add New Image</h2>
               <div className="space-y-6">
                 {/* Upload from Computer */}
                 <div>
@@ -236,7 +236,7 @@ export default function AdminGalleryPage() {
                       <Button
                         onClick={uploadImage}
                         disabled={loading || !selectedFile}
-                        className="bg-accent hover:bg-accent/90"
+                        className=" "
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         Upload
@@ -275,12 +275,12 @@ export default function AdminGalleryPage() {
                       placeholder="https://i.ibb.co/your-image-url.jpg"
                       value={newImageUrl}
                       onChange={(e) => setNewImageUrl(e.target.value)}
-                      className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="form-control flex-1"
                     />
                     <Button
                       onClick={addImageFromUrl}
                       disabled={loading}
-                      className="bg-accent hover:bg-accent/90"
+                      className=" "
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add
@@ -299,7 +299,7 @@ export default function AdminGalleryPage() {
 
           {/* Current Images */}
           <div className="mb-4">
-            <h2 className="text-xl font-bold mb-4">Current Images ({images.length})</h2>
+            <h2 className="heading-2 mb-4">Current Images ({images.length})</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

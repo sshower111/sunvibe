@@ -1,3 +1,4 @@
+import { verifyTurnstile } from "@/lib/turnstile"
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { escapeHtml, isValidEmail, rateLimiter, getClientIp } from "@/lib/security"
@@ -5,7 +6,6 @@ import { escapeHtml, isValidEmail, rateLimiter, getClientIp } from "@/lib/securi
 
 export async function POST(request: NextRequest) {
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY)
     // Rate limiting: 3 messages per 10 minutes per IP
     const clientIp = getClientIp(request)
     if (!rateLimiter.check(`contact:${clientIp}`, 3, 10 * 60 * 1000)) {
@@ -15,7 +15,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, phone, message } = await request.json()
+    if (!request.headers.get('content-type')?.includes('application/json')) {
+      return NextResponse.json({ error: 'JSON required' }, { status: 415 })
+    }
+    // Bound the actual stream, not just the caller-controlled Content-Length.
+    const reader = request.body?.getReader()
+    if (!reader) return NextResponse.json({ error: 'Body required' }, { status: 400 })
+    const chunks: Uint8Array[] = []
+    let bytes = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      bytes += value.byteLength
+      if (bytes > 32768) { await reader.cancel(); return NextResponse.json({ error: 'Request too large' }, { status: 413 }) }
+      chunks.push(value)
+    }
+    let body
+    try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')) } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+    const { name, email, phone, message, captchaToken } = body || {}
 
     // Validate required fields
     if (!name || !email || !message) {
@@ -46,13 +65,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate length limits
-    if (name.length > 100 || email.length > 100 || message.length > 5000) {
+    if (name.length > 100 || email.length > 100 || message.length > 5000 || (phone && phone.length > 30)) {
       return NextResponse.json(
         { error: "Input exceeds maximum length" },
         { status: 400 }
       )
     }
 
+    if (!process.env.TURNSTILE_SECRET_KEY || !process.env.TURNSTILE_ALLOWED_HOSTNAMES) {
+      return NextResponse.json({ error: 'Online messages are temporarily unavailable. Please call the bakery.' }, { status: 503 })
+    }
+    if (!await verifyTurnstile(captchaToken, 'contact')) {
+      return NextResponse.json({ error: 'Please complete the verification and try again.' }, { status: 403 })
+    }
+    const resend = new Resend(process.env.RESEND_API_KEY)
     // Sanitize inputs to prevent XSS
     const safeName = escapeHtml(name.trim())
     const safeEmail = escapeHtml(email.trim().toLowerCase())

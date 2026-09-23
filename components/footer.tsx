@@ -2,12 +2,12 @@ import Link from "next/link"
 import { ArrowUpRight, MapPin, Phone } from "lucide-react"
 
 const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
-const linkStyle = "inline-flex min-h-11 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+const linkStyle = "inline-flex min-h-12 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
 
 export function Footer() {
   return (
     <footer aria-label="Sunville Bakery information" className="bg-primary text-white">
-      <div className="mx-auto max-w-[1280px] px-4 pb-6 pt-6 sm:px-6 sm:pt-10 lg:px-8 lg:pt-12">
+      <div className="site-container section-space">
         <div className="sm:hidden">
           <p className="font-serif text-xl font-semibold">Sunville Bakery</p>
           <div className="mt-2 flex flex-wrap gap-x-6">
@@ -15,7 +15,7 @@ export function Footer() {
             <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle}>Directions<span className="sr-only"> (opens a new tab)</span></a>
           </div>
           <details className="mt-3 border-t border-white/20">
-            <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-white">Location, hours & email</summary>
+            <summary className="min-h-12 cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-white">Location, hours & email</summary>
             <div className="space-y-3 pb-4 text-sm leading-relaxed text-white/90">
               <address className="not-italic">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address>
               <p>Mon–Tue, Thu–Sun: 8 AM–8 PM<br />Wednesday: 8 AM–3 PM<br /><span className="text-xs">Las Vegas local time (Pacific)</span></p>
@@ -32,11 +32,11 @@ export function Footer() {
               <img src="/logoWhite.png" alt="Sunville Bakery" loading="lazy" className="h-12 w-auto max-w-full object-contain" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/85">Your neighborhood Asian bakery in Las Vegas. Family-owned since 2002.</p>
-            <a href="tel:+17028899887" className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Phone aria-hidden="true" className="h-4 w-4" />Call to order</a>
+            <a href="tel:+17028899887" className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Phone aria-hidden="true" className="h-4 w-4" />Call to order</a>
           </div>
 
           <section aria-labelledby="footer-visit" className="min-w-0">
-            <h2 id="footer-visit" className="mb-3 text-base font-semibold">Visit & contact</h2>
+            <h2 id="footer-visit" className="heading-label mb-3">Visit & contact</h2>
             <address className="text-sm not-italic leading-relaxed text-white/90">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address>
             <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle + " gap-2"}><MapPin aria-hidden="true" className="h-4 w-4" />Get directions<ArrowUpRight aria-hidden="true" className="h-4 w-4" /><span className="sr-only"> (opens a new tab)</span></a>
             <div><a href="tel:+17028899887" className={linkStyle}>702-889-9887</a></div>
@@ -44,7 +44,7 @@ export function Footer() {
           </section>
 
           <section aria-labelledby="footer-hours">
-            <h2 id="footer-hours" className="mb-3 text-base font-semibold">Bakery hours</h2>
+            <h2 id="footer-hours" className="heading-label mb-3">Bakery hours</h2>
             <dl className="space-y-3 text-sm leading-relaxed">
               <div><dt className="text-white/90">Mon–Tue, Thu–Sun</dt><dd className="font-medium">8 AM–8 PM</dd></div>
               <div><dt className="text-white/90">Wednesday</dt><dd className="font-medium">8 AM–3 PM</dd></div>
@@ -53,7 +53,7 @@ export function Footer() {
           </section>
 
           <nav aria-label="Footer navigation">
-            <h2 className="mb-1 text-base font-semibold">Explore</h2>
+            <h2 className="heading-label mb-1">Explore</h2>
             <ul>
               <li><Link href="/menu" className={linkStyle}>Menu</Link></li>
               <li><Link href="/#about" className={linkStyle}>Our story</Link></li>
