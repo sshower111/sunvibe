@@ -25,9 +25,6 @@ export const cakeCatalog: CakeSpec[] = [
   { value: 'tier-8-12-14', label: '3-Tier · 8" / 12" / 14"', category: 'Multi-tier', wedding: 158, prices: [356] },
   { value: 'tier-8-12-16', label: '3-Tier · 8" / 12" / 16"', category: 'Multi-tier', wedding: 180, prices: [422] },
   { value: 'tier-10-14-16', label: '3-Tier · 10" / 14" / 16"', category: 'Multi-tier', wedding: 216, prices: [478] },
-  { value: 'tier-8-10-12-14', label: '4-Tier · 8" / 10" / 12" / 14"', category: 'Multi-tier', wedding: 196, prices: [508] },
-  { value: 'tier-8-10-12-16', label: '4-Tier · 8" / 10" / 12" / 16"', category: 'Multi-tier', wedding: 218, prices: [538] },
-  { value: 'tier-6-10-12-16-18', label: '5-Tier · 6" / 10" / 12" / 16" / 18"', category: 'Multi-tier', wedding: 334, prices: [812] },
 ]
 export const deliveryOptions = ['Pickup', 'Local delivery (within 10 miles) — $30', 'Casino / Hotel delivery — $50', 'Other delivery — please advise'] as const
 export const cakeLabel = (value: string) => cakeCatalog.find(cake => cake.value === value)?.label || value

@@ -7,10 +7,15 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from "lucide-react"
-import { getStoreStatus, matchesMenuSearch, type MenuProduct } from "@/lib/menu"
+import { getStoreStatus, matchesMenuSearch, menuCategories, menuGroup, menuLeadTime, type MenuProduct } from "@/lib/menu"
 
 const phone = "tel:+17028899887"
 const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
+
+function LeadTimeBadge({ product }: { product: MenuProduct }) {
+  const lead = menuLeadTime(product)
+  return <span className={'mb-3 inline-flex w-fit items-center self-start rounded-md px-2.5 py-1.5 text-left text-xs font-medium sm:mb-0 ' + (lead.tone === 'notice' ? 'bg-amber-100 text-amber-950' : lead.tone === 'daily' ? 'bg-green-50 text-green-900' : 'bg-secondary text-foreground')}>{lead.text}</span>
+}
 
 function ProductImage({ product, detail = false }: { product: MenuProduct; detail?: boolean }) {
   const [failed, setFailed] = useState(false)
@@ -28,7 +33,7 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [query, setQuery] = useState("")
-  const [category, setCategory] = useState("All")
+  const [category, setCategory] = useState("All Items")
   const [suggesting, setSuggesting] = useState(false)
   const [activeSuggestion, setActiveSuggestion] = useState(-1)
   const [hoursOpen, setHoursOpen] = useState(false)
@@ -69,13 +74,13 @@ export default function MenuPage() {
     if (activeSuggestion >= 0) document.getElementById('suggestion-' + activeSuggestion)?.scrollIntoView({ block: 'nearest' })
   }, [activeSuggestion])
 
-  const categories = ['All', ...Array.from(new Set(products.map(product => product.category))).sort()]
+  const categories = menuCategories
   const suggestions = query.trim() ? products.filter(product => matchesMenuSearch(product, query)).slice(0, 6) : []
   const showSuggestions = suggesting && suggestions.length > 0
-  const filtered = products.filter(product => matchesMenuSearch(product, query) && (category === 'All' || product.category === category))
+  const filtered = products.filter(product => matchesMenuSearch(product, query) && (category === 'All Items' || menuGroup(product) === category))
   const selectSuggestion = (product: MenuProduct) => {
     setQuery(product.name)
-    setCategory('All')
+    setCategory('All Items')
     setSuggesting(false)
     setActiveSuggestion(-1)
     searchRef.current?.focus()
@@ -136,25 +141,32 @@ export default function MenuPage() {
               </li>)}
             </ul>
           </div>
-          <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2">
-            {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); setSuggesting(false); setActiveSuggestion(-1) }} className={'action-button shrink-0 border focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
+          <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap">
+            {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); if (item === 'Custom Cakes') setQuery(''); setSuggesting(false); setActiveSuggestion(-1) }} className={'action-button shrink-0 border focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
           </div>
         </section>
 
-        {loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
+        {category === 'Custom Cakes' ? <section aria-labelledby="custom-menu-title" className="rounded-xl border border-amber-300 bg-amber-50 p-6 sm:p-8">
+          <span className="inline-flex rounded-md bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950">Requires 3-5 Days Notice</span>
+          <h2 id="custom-menu-title" className="heading-2 mt-4">A cake made for your celebration</h2>
+          <p className="mt-3 max-w-2xl text-muted-foreground">Explore cake sizes, flavors, fillings, and pricing. Share your ideas and preferred date to request a custom quote.</p>
+          <Button asChild className="mt-5 w-full sm:w-auto"><a href="/custom-cakes">Explore Custom Cakes & Inquire</a></Button>
+          <p className="mt-3 text-sm text-muted-foreground">Availability and your final design are confirmed by the bakery.</p>
+        </section> : loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
           <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="heading-2">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call 702-889-9887 for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All' ? ' in ' + category : ''}{query.trim() ? ' matching “' + query.trim() + '”' : ''}</p>{(query || category !== 'All') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All Items' ? ' in ' + category : ''}{query.trim() ? ' matching “' + query.trim() + '”' : ''}</p>{(query || category !== 'All Items') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
             {filtered.length === 0 ? <div className="rounded-xl border bg-white px-4 py-12 text-center"><h2 className="heading-2">No items found</h2><p className="my-3 text-muted-foreground">Try another flavor or category, or explore the full menu.</p><Button onClick={clearFilters}>Clear filters</Button></div> :
-              <div className="menu-card-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="menu-card-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map(product => <Dialog key={product.id}>
                   <DialogTrigger asChild><button type="button" aria-label={'View details for ' + product.name} className="menu-card focus-visible:outline-2 focus-visible:outline-primary">
                     <ProductImage product={product} />
-                    <span className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{product.category}</span><span className="heading-3">{product.name}</span><span className="mb-3 mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:my-0">{product.description || 'Ask us for more details about this item.'}</span><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
+                    <span className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{menuGroup(product)}</span><span className="heading-3">{product.name}</span><span className="mb-3 mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:my-0">{product.description || 'Ask us for more details about this item.'}</span><LeadTimeBadge product={product} /><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
                   </button></DialogTrigger>
                   <DialogContent className="max-h-[85dvh] overflow-y-auto bg-white">
                     <DialogTitle className="heading-3 pr-12">{product.name}</DialogTitle>
                     <ProductImage product={product} detail />
-                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                    <p className="text-sm text-muted-foreground">{menuGroup(product)}</p>
+                    <LeadTimeBadge product={product} />
                     <DialogDescription className="whitespace-pre-wrap break-words text-base leading-relaxed">{product.description || 'Call us for more details about this item.'}</DialogDescription>
                     <p className="text-2xl font-semibold text-primary">${product.price}</p>
                     <Button asChild className="min-h-12"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
