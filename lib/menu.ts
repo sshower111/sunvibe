@@ -25,3 +25,18 @@ export function getStoreStatus(now: Date) {
   if (minutes >= 480 && minutes < closing) return { open: true, text: 'Open · Closes at ' + (day === 'Wed' ? '3 PM' : '8 PM') }
   return { open: false, text: 'Closed · Opens ' + (minutes < 480 ? 'today' : 'tomorrow') + ' at 8 AM' }
 }
+
+export const menuCategories = ['All Items', 'Savory Buns', 'Sweet Buns & Rolls', 'Specialty Items', 'Custom Cakes'] as const
+export function menuGroup(product: MenuProduct): typeof menuCategories[number] {
+  if (/custom cakes?/i.test(product.category)) return 'Custom Cakes'
+  if (/^(buns|breads)$/i.test(product.category)) {
+    return /ham|sausage|pork|hot dog|scallion|tuna|cheese/i.test(product.name) ? 'Savory Buns' : 'Sweet Buns & Rolls'
+  }
+  if (/roll cakes/i.test(product.category)) return 'Sweet Buns & Rolls'
+  return 'Specialty Items'
+}
+export function menuLeadTime(product: MenuProduct) {
+  if (menuGroup(product) === 'Custom Cakes') return { text: 'Requires 3-5 Days Notice', tone: 'notice' }
+  if (/^(buns|breads)$/i.test(product.category)) return { text: 'Same-Day Pickup / Fresh Daily', tone: 'daily' }
+  return { text: 'Call to confirm availability', tone: 'availability' }
+}

@@ -34,6 +34,8 @@ async function post(overrides = {}, photos = []) {
   assert.equal((await post({ eventDate: '2026-02-30' })).status, 400)
   assert.equal((await post({ eventDate: '2000-01-01' })).status, 400)
   assert.equal((await post({ email: 'invalid' })).status, 400)
+  assert.equal((await post({ size: 'tier-8-10-12-14' })).status, 400)
+  assert.equal((await post({ size: 'tier-6-10-12-16-18' })).status, 400)
   assert.equal((await post({ acknowledged: '' })).status, 400)
   assert.equal((await post({}, [new File(['fake'], 'fake.jpg', { type: 'image/jpeg' })])).status, 400)
   assert.equal((await post({}, [new File([new Uint8Array(schema.MAX_PHOTO_BYTES + 1)], 'big.png', { type: 'image/png' })])).status, 400)

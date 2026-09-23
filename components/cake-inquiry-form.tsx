@@ -105,6 +105,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
           {field('flavor', 'Flavor preference', <NativeSelect {...control('flavor')}>{flavors.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
           {field('filling', 'Filling preference', <NativeSelect {...control('filling')}>{fillings.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
         </div>
+        <p className="text-sm text-muted-foreground">For 4+ tier cakes, <a href="tel:+17028899887" className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4">call 702-889-9887 to discuss your design</a>.</p>
         <p className="text-sm text-muted-foreground">Choose from our cake flavors and fillings. Custom fillings are available upon request. We’ll confirm your combination and serving size with your quote.</p>
         {field('budget', 'Your cake budget', <NativeSelect {...control('budget')}>{budgets.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
         <p className="text-sm text-muted-foreground">Budget ranges help us understand your request. They are not listed cake prices.</p>
