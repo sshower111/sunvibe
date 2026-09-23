@@ -46,10 +46,10 @@ export function ProductsSection() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   return (
-    <section id="products" className="py-32 bg-gray-50">
-      <div className="container mx-auto px-4 lg:px-8">
+    <section id="products" className="section-space bg-background">
+      <div className="site-container">
         <div className="text-center mb-16">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold text-primary mb-6 text-balance">
+          <h2 className="heading-2 mb-6 text-balance">
             Our Signature Products
           </h2>
           <div className="w-24 h-1 bg-accent mx-auto mb-6" />
@@ -91,7 +91,7 @@ export function ProductsSection() {
               </div>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-xl font-bold text-primary">{product.name}</h3>
+                  <h3 className="heading-3">{product.name}</h3>
                   <span className="text-lg font-bold text-accent">{product.price}</span>
                 </div>
               </CardContent>

@@ -134,7 +134,7 @@ export default function AdminMenuPage() {
       <main className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="p-8">
-            <h1 className="text-2xl font-bold mb-6 text-center">Menu Admin Login</h1>
+            <h1 className="heading-1 mb-6 text-center">Menu Admin Login</h1>
             <div className="space-y-4">
               <input
                 type="password"
@@ -142,9 +142,9 @@ export default function AdminMenuPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                className="form-control w-full"
               />
-              <Button onClick={handleLogin} className="w-full bg-accent hover:bg-accent/90">
+              <Button onClick={handleLogin} className="w-full  ">
                 Login
               </Button>
             </div>
@@ -159,9 +159,9 @@ export default function AdminMenuPage() {
       <Navigation />
 
       <div className="pt-36 pb-16">
-        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
+        <div className="site-container">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Menu Management</h1>
+            <h1 className="heading-1 mb-2">Menu Management</h1>
             <p className="text-muted-foreground">Edit descriptions, update prices, and show/hide products</p>
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
@@ -271,7 +271,7 @@ export default function AdminMenuPage() {
           <Card className="w-full max-w-md">
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Update Price</h2>
+                <h2 className="heading-2 ">Update Price</h2>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -289,7 +289,7 @@ export default function AdminMenuPage() {
                     step="0.01"
                     value={newPrice}
                     onChange={(e) => setNewPrice(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-lg"
+                    className="form-control w-full text-lg"
                     placeholder="15.00"
                     autoFocus
                   />
@@ -302,7 +302,7 @@ export default function AdminMenuPage() {
                   <Button
                     onClick={handleSavePrice}
                     disabled={loading || !newPrice || newPrice === editingPrice.currentPrice}
-                    className="flex-1 bg-accent hover:bg-accent/90"
+                    className="flex-1  "
                   >
                     {loading ? "Updating..." : "Update Price"}
                   </Button>

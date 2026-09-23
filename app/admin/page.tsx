@@ -230,14 +230,14 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded border max-w-sm w-full">
-          <h1 className="text-xl font-bold mb-4">Admin Login</h1>
+          <h1 className="heading-1 mb-4">Admin Login</h1>
           <input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-            className="w-full px-3 py-2 border rounded mb-4"
+            className="form-control w-full mb-4"
           />
           <Button onClick={handleLogin} className="w-full">
             Login
@@ -251,7 +251,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
+          <h1 className="heading-1 ">Admin Panel</h1>
           <Button onClick={handleLogout} variant="outline">
             Logout
           </Button>
@@ -310,7 +310,7 @@ export default function AdminPage() {
                           step="0.01"
                           value={editingPrice}
                           onChange={(e) => setEditingPrice(e.target.value)}
-                          className="w-24 px-2 py-1 border rounded"
+                          className="form-control w-24"
                           autoFocus
                         />
                       ) : (
@@ -375,7 +375,7 @@ export default function AdminPage() {
           <div>
             {/* Add Image */}
             <div className="bg-white rounded border p-4 mb-6">
-              <h2 className="font-bold mb-4">Add Image</h2>
+              <h2 className="heading-2 mb-4">Add Image</h2>
 
               {/* Status message */}
               {galleryMessage && (
@@ -430,7 +430,7 @@ export default function AdminPage() {
                     value={newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addImageFromUrl()}
-                    className="flex-1 px-3 py-2 border rounded"
+                    className="form-control flex-1"
                   />
                   <button
                     onClick={addImageFromUrl}
@@ -465,14 +465,14 @@ export default function AdminPage() {
         {/* Settings Tab */}
         {activeTab === "settings" && (
           <div className="bg-white rounded border p-6">
-            <h2 className="text-xl font-bold mb-6">Settings</h2>
+            <h2 className="heading-2 mb-6">Settings</h2>
 
             <div className="space-y-6">
               {/* Maintenance Mode */}
               <div className="border-b pb-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold mb-2">Maintenance Mode</h3>
+                    <h3 className="heading-3 mb-2">Maintenance Mode</h3>
                     <p className="text-sm text-gray-600">
                       When enabled, customers will see a maintenance message and cannot place orders.
                     </p>

@@ -133,7 +133,7 @@ export function CartSheet() {
                       className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0 flex flex-col">
-                      <h3 className="font-serif font-bold text-sm mb-1 truncate">
+                      <h3 className="heading-3 mb-1 truncate">
                         {item.name}
                       </h3>
                       <p className="text-sm text-accent font-bold mb-2">
@@ -143,7 +143,7 @@ export function CartSheet() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7"
+                          className="w-7"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         >
                           <Minus className="h-3 w-3" />
@@ -154,7 +154,7 @@ export function CartSheet() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7"
+                          className="w-7"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         >
                           <Plus className="h-3 w-3" />
@@ -165,7 +165,7 @@ export function CartSheet() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
                         onClick={() => removeItem(item.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -188,7 +188,7 @@ export function CartSheet() {
                   <Button
                     onClick={handleCheckout}
                     disabled={checkingOut}
-                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                    className="w-full"
                   >
                     {checkingOut ? "Processing..." : "Proceed to Checkout"}
                   </Button>

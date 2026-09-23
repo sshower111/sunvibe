@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from "lucide-react"
@@ -89,13 +90,13 @@ export default function MenuPage() {
   return (
     <main className="min-h-screen bg-background">
       <Navigation />
-      <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-20 sm:px-6 md:pt-28 lg:px-8">
+      <div className="site-container page-space">
         <header className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <p className="mb-1 text-sm font-medium text-primary">Sunville Bakery · Las Vegas</p>
-            <h1 className="font-serif text-3xl text-foreground md:text-4xl">Our menu</h1>
+            <h1 className="heading-1">Our menu</h1>
             <p className="mt-2 text-sm text-muted-foreground">Explore your favorites. Call us to order or ask about availability.</p>
-            <button type="button" aria-expanded={hoursOpen} aria-controls="menu-hours" onClick={() => setHoursOpen(!hoursOpen)} className="mt-2 flex min-h-11 items-center gap-2 rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
+            <button type="button" aria-expanded={hoursOpen} aria-controls="menu-hours" onClick={() => setHoursOpen(!hoursOpen)} className="mt-2 flex min-h-12 items-center gap-2 rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden="true" className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-green-700' : 'bg-gray-500')} />
               {status?.text || 'View store hours'} <span className="text-muted-foreground">(Las Vegas)</span>
               <ChevronDown aria-hidden="true" className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')} />
@@ -105,8 +106,8 @@ export default function MenuPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 sm:pt-2">
-            <Button asChild className="min-h-11"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
-            <Button asChild variant="outline" className="min-h-11"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
+            <Button asChild className="min-h-12"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
+            <Button asChild variant="outline" className="min-h-12"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
           </div>
         </header>
         <a href={directions} target="_blank" rel="noopener noreferrer" className="mb-5 inline-block text-sm text-muted-foreground underline underline-offset-4">4053 Spring Mountain Rd, Las Vegas, NV 89102<span className="sr-only"> (opens a new tab)</span></a>
@@ -117,7 +118,7 @@ export default function MenuPage() {
           }}>
             <label htmlFor="menu-search" className="sr-only">Search menu by name, description, or category</label>
             <Search aria-hidden="true" className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
-            <input id="menu-search" ref={searchRef} role="combobox" aria-autocomplete="list" aria-expanded={showSuggestions} aria-controls="menu-suggestions" aria-activedescendant={showSuggestions && activeSuggestion >= 0 ? 'suggestion-' + activeSuggestion : undefined}
+            <Input id="menu-search" ref={searchRef} role="combobox" aria-autocomplete="list" aria-expanded={showSuggestions} aria-controls="menu-suggestions" aria-activedescendant={showSuggestions && activeSuggestion >= 0 ? 'suggestion-' + activeSuggestion : undefined}
               value={query} placeholder="Search cakes, buns, flavors…" autoComplete="off"
               onChange={event => { setQuery(event.target.value); setSuggesting(true); setActiveSuggestion(-1) }}
               onFocus={() => setSuggesting(true)}
@@ -127,7 +128,7 @@ export default function MenuPage() {
                 if (event.key === 'ArrowUp' && showSuggestions) { event.preventDefault(); setActiveSuggestion(index => Math.max(index - 1, -1)) }
                 if (event.key === 'Enter' && showSuggestions && activeSuggestion >= 0 && suggestions[activeSuggestion]) { event.preventDefault(); selectSuggestion(suggestions[activeSuggestion]) }
               }}
-              className="h-12 w-full rounded-xl border border-border bg-white pl-11 pr-12 text-base focus-visible:outline-2 focus-visible:outline-primary" />
+              className="pl-11 pr-12" />
             {query && <button type="button" aria-label="Clear search" className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { setQuery(''); setSuggesting(false); setActiveSuggestion(-1); searchRef.current?.focus() }}><X aria-hidden="true" className="h-5 w-5" /></button>}
             <ul id="menu-suggestions" hidden={!showSuggestions} role="listbox" aria-label="Suggested menu items" className="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-xl border bg-white p-1 shadow-lg">
               {suggestions.map((product, index) => <li key={product.id} id={'suggestion-' + index} role="option" aria-selected={index === activeSuggestion} onMouseDown={event => event.preventDefault()} onClick={() => selectSuggestion(product)} className={'cursor-pointer rounded-lg px-3 py-3 text-sm hover:bg-secondary ' + (index === activeSuggestion ? 'bg-secondary' : '')}>
@@ -136,27 +137,27 @@ export default function MenuPage() {
             </ul>
           </div>
           <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2">
-            {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); setSuggesting(false); setActiveSuggestion(-1) }} className={'min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
+            {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); setSuggesting(false); setActiveSuggestion(-1) }} className={'action-button shrink-0 border focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
           </div>
         </section>
 
         {loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
-          <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="text-xl font-semibold">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call 702-889-9887 for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
+          <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="heading-2">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call 702-889-9887 for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All' ? ' in ' + category : ''}{query.trim() ? ' matching “' + query.trim() + '”' : ''}</p>{(query || category !== 'All') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
-            {filtered.length === 0 ? <div className="rounded-xl border bg-white px-4 py-12 text-center"><h2 className="font-serif text-2xl">No items found</h2><p className="my-3 text-muted-foreground">Try another flavor or category, or explore the full menu.</p><Button onClick={clearFilters}>Clear filters</Button></div> :
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.length === 0 ? <div className="rounded-xl border bg-white px-4 py-12 text-center"><h2 className="heading-2">No items found</h2><p className="my-3 text-muted-foreground">Try another flavor or category, or explore the full menu.</p><Button onClick={clearFilters}>Clear filters</Button></div> :
+              <div className="menu-card-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filtered.map(product => <Dialog key={product.id}>
-                  <DialogTrigger asChild><button type="button" aria-label={'View details for ' + product.name} className="flex h-full gap-3 overflow-hidden rounded-xl border border-border bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-primary sm:flex-col sm:gap-0 sm:p-0">
+                  <DialogTrigger asChild><button type="button" aria-label={'View details for ' + product.name} className="menu-card focus-visible:outline-2 focus-visible:outline-primary">
                     <ProductImage product={product} />
-                    <span className="flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{product.category}</span><span className="font-serif text-lg font-semibold leading-snug text-primary">{product.name}</span><span className="mb-3 mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{product.description || 'Ask us for more details about this item.'}</span><span className="mt-auto flex items-center justify-between gap-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
+                    <span className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{product.category}</span><span className="heading-3">{product.name}</span><span className="mb-3 mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:my-0">{product.description || 'Ask us for more details about this item.'}</span><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
                   </button></DialogTrigger>
                   <DialogContent className="max-h-[85dvh] overflow-y-auto bg-white">
-                    <DialogTitle className="pr-12 font-serif text-2xl leading-snug text-primary">{product.name}</DialogTitle>
+                    <DialogTitle className="heading-3 pr-12">{product.name}</DialogTitle>
                     <ProductImage product={product} detail />
                     <p className="text-sm text-muted-foreground">{product.category}</p>
                     <DialogDescription className="whitespace-pre-wrap break-words text-base leading-relaxed">{product.description || 'Call us for more details about this item.'}</DialogDescription>
                     <p className="text-2xl font-semibold text-primary">${product.price}</p>
-                    <Button asChild className="min-h-11"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
+                    <Button asChild className="min-h-12"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
                     <p className="text-xs text-muted-foreground">Call to confirm availability and arrange pickup.</p>
                   </DialogContent>
                 </Dialog>)}
