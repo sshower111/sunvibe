@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
+import { AdminDescriptionEditor } from "@/components/admin-description-editor"
 import { Card, CardContent } from "@/components/ui/card"
 import { Eye, EyeOff, DollarSign, X } from "lucide-react"
 
@@ -26,7 +27,7 @@ export default function AdminMenuPage() {
   const [editingPrice, setEditingPrice] = useState<{ productId: string, priceId: string, currentPrice: string } | null>(null)
   const [newPrice, setNewPrice] = useState("")
 
-  const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD
+  const ADMIN_PASSWORD = password
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,12 +49,17 @@ export default function AdminMenuPage() {
     }
   }
 
-  const handleLogin = () => {
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true)
-      setPassword("")
-    } else {
-      alert("Incorrect password!")
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      if (response.ok) setIsAuthenticated(true)
+      else alert("Incorrect password or too many attempts. Please try again.")
+    } catch {
+      alert("Unable to sign in. Please try again.")
     }
   }
 
@@ -156,10 +162,10 @@ export default function AdminMenuPage() {
         <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2">Menu Management</h1>
-            <p className="text-muted-foreground">Quick price updates and show/hide products</p>
+            <p className="text-muted-foreground">Edit descriptions, update prices, and show/hide products</p>
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>💡 Tip:</strong> To add new products, change images, or edit descriptions, go to your{" "}
+                <strong>💡 Tip:</strong> To add new products or change images, go to your{" "}
                 <a href="https://dashboard.stripe.com/products" target="_blank" className="underline font-semibold">
                   Stripe Dashboard
                 </a>
@@ -192,9 +198,9 @@ export default function AdminMenuPage() {
                         />
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {product.description}
-                          </p>
+                          <AdminDescriptionEditor product={product} password={password} onSaved={(description) => {
+                            setProducts((current) => current.map((item) => item.id === product.id ? { ...item, description } : item))
+                          }} />
                         </div>
                       </div>
                     </td>

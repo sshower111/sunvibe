@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { AdminDescriptionEditor } from "@/components/admin-description-editor"
 
 interface Product {
   id: string
   name: string
+  description: string
   price: string
   priceId: string
   active: boolean
@@ -300,7 +302,7 @@ export default function AdminPage() {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-b">
-                    <td className="p-4">{product.name}</td>
+                    <td className="p-4"><p className="font-medium">{product.name}</p><AdminDescriptionEditor product={product} password={password} onSaved={(description) => setProducts(current => current.map(item => item.id === product.id ? { ...item, description } : item))} /></td>
                     <td className="p-4">
                       {editingId === product.id ? (
                         <input

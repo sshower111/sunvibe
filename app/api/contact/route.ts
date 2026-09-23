@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { escapeHtml, isValidEmail, rateLimiter, getClientIp } from "@/lib/security"
 
+
 export async function POST(request: NextRequest) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!name.trim() || !message.trim() || (phone != null && typeof phone !== "string")) {
+      return NextResponse.json({ error: "Please provide a valid name, message, and phone number" }, { status: 400 })
+    }
+
     // Validate email format
     if (!isValidEmail(email)) {
       return NextResponse.json(
@@ -55,7 +60,7 @@ export async function POST(request: NextRequest) {
     const safeMessage = escapeHtml(message.trim()).replace(/\n/g, "<br>")
 
     // Send email notification to bakery
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: "Sunville Bakery Website <onboarding@resend.dev>",
       to: process.env.NOTIFICATION_EMAIL || "sunvillebakerylv@gmail.com",
       subject: `New Contact Form Submission from ${safeName}`,
@@ -68,6 +73,11 @@ export async function POST(request: NextRequest) {
         <p>${safeMessage}</p>
       `,
     })
+
+    if (result.error) {
+      console.error("Contact email provider error:", result.error.message)
+      return NextResponse.json({ error: "Your message could not be sent. Please try again or call us." }, { status: 502 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
