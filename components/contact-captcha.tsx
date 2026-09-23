@@ -38,7 +38,7 @@ function loadTurnstile(): Promise<TurnstileApi> {
   return loading
 }
 
-export function ContactCaptcha({ onToken, resetKey }: { onToken: (token: string) => void; resetKey: number }) {
+export function ContactCaptcha({ onToken, resetKey, action = "contact" }: { onToken: (token: string) => void; resetKey: number; action?: "contact" | "custom_cake" }) {
   const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   const container = useRef<HTMLDivElement>(null)
   const callback = useRef(onToken)
@@ -68,7 +68,7 @@ export function ContactCaptcha({ onToken, resetKey }: { onToken: (token: string)
       api = loaded
       setStatus('verifying')
       widget = api.render(container.current, {
-        sitekey, action: 'contact', size: 'flexible', appearance: 'always',
+        sitekey, action, size: 'flexible', appearance: 'always',
         callback: (token: string) => {
           if (!active) return
           window.clearTimeout(timer)
@@ -91,15 +91,15 @@ export function ContactCaptcha({ onToken, resetKey }: { onToken: (token: string)
       window.clearTimeout(timer)
       if (widget !== undefined) api?.remove(widget)
     }
-  }, [sitekey, resetKey, attempt])
+  }, [sitekey, resetKey, attempt, action])
 
   if (!sitekey) return <p role="status" className="text-sm text-muted-foreground">Online messages are temporarily unavailable. Please call the bakery.</p>
   return <div className="min-w-0 space-y-2">
     <div ref={container} />
     <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
       {status === 'loading' && 'Loading security verification…'}
-      {status === 'verifying' && 'Verifying your connection… Send Message will become available when verification finishes.'}
-      {status === 'verified' && 'Verification complete. You can send your message.'}
+      {status === 'verifying' && 'Verifying your connection… You can submit when verification finishes.'}
+      {status === 'verified' && 'Verification complete. You can submit your inquiry.'}
     </p>
     {status === 'error' && <div>
       <p role="alert" className="text-sm text-red-700">{error}</p>
@@ -107,4 +107,3 @@ export function ContactCaptcha({ onToken, resetKey }: { onToken: (token: string)
     </div>}
   </div>
 }
-
