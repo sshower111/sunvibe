@@ -1,60 +1,30 @@
+"use client"
+
+import { useState } from "react"
+import Link from "next/link"
+
 export function AboutSection() {
+  const [photoFailed, setPhotoFailed] = useState(false)
   return (
-    <section id="about" className="py-24 sm:py-32 bg-gradient-to-b from-white via-secondary/30 to-white relative">
-      {/* Subtle Background Pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(0 0 0) 1px, transparent 0)',
-          backgroundSize: '40px 40px'
-        }}
-      />
-
-      <div className="container mx-auto px-6 md:px-12 lg:px-16 max-w-6xl relative">
-        <div className="max-w-3xl mx-auto text-center mb-20">
-          <p className="text-accent font-semibold text-sm tracking-[0.2em] uppercase mb-4">
-            Our Story
-          </p>
-          <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-primary mb-6 leading-tight">
-            A Family Tradition Since 2002
-          </h2>
-          <div className="w-20 h-1 bg-accent/60 mx-auto mb-12" />
-
-          <div className="space-y-6 text-base sm:text-lg text-foreground/80 leading-relaxed text-left">
-            <p>
-              Founded by Johnny, who honed his craft in San Francisco, Sunville Bakery was born from a simple dream:
-              to bring authentic Chinese baked goods to Las Vegas with his own unique twist. What started as one baker's
-              passion has grown into a beloved family tradition, with Johnny as head baker and May leading the front
-              of house and cake decorating.
-            </p>
-            <p>
-              We specialize in soft Asian chiffon cakes, mini mooncakes, and traditional buns including our popular
-              BBQ pork buns, pineapple buns, milk cream buns, and pork floss buns. Every item is handmade fresh daily
-              using traditional techniques and the finest ingredients.
-            </p>
-            <p className="font-semibold text-primary">
-              Pre-orders welcome – we'll have your favorites ready the same day. Available in single servings or
-              party quantities for any occasion.
-            </p>
+    <section id="about" aria-labelledby="about-heading" className="scroll-mt-20 bg-background py-12 md:scroll-mt-28 md:py-16">
+      <div className="mx-auto grid max-w-[1280px] items-start gap-8 px-4 sm:px-6 md:grid-cols-[1.5fr_1fr] md:gap-12 lg:px-8">
+        <div>
+          <p className="mb-2 text-sm font-semibold text-primary">Our story</p>
+          <h2 id="about-heading" className="mb-5 font-serif text-3xl leading-tight text-primary md:text-4xl">A family tradition since 2002</h2>
+          <div className="max-w-2xl space-y-4 text-base leading-relaxed text-foreground">
+            <p>After honing his craft in San Francisco, Johnny brought his passion for Chinese baked goods to Las Vegas. Today, he leads the baking at Sunville, while May welcomes customers and decorates cakes.</p>
+            <p>Our specialties include soft Asian chiffon cakes, mini mooncakes, and traditional favorites such as BBQ pork buns, pineapple buns, milk cream buns, and pork floss buns.</p>
+            <p>Picking up a treat or planning for a celebration? Call us to discuss quantities, availability, and pickup timing.</p>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/menu" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Find your favorites</Link>
+            <Link href="/contact" className="inline-flex min-h-11 items-center px-3 font-medium text-primary underline underline-offset-4">Plan your visit</Link>
           </div>
         </div>
-
-        {/* Founder Profile */}
-        <div className="flex justify-center items-center">
-          <div className="text-center">
-            <div className="relative w-44 h-44 sm:w-52 sm:h-52 mx-auto mb-6 rounded-2xl overflow-hidden bg-white shadow-xl ring-1 ring-border/50 transition-all duration-500 hover:shadow-2xl hover:scale-105">
-              <img
-                src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg"
-                alt="Johnny - Head Baker"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-primary mb-2">Johnny</h3>
-            <p className="text-sm sm:text-base text-muted-foreground tracking-[0.1em] uppercase font-medium">
-              Head Baker & Founder
-            </p>
-          </div>
-        </div>
+        <figure className="overflow-hidden rounded-xl border bg-white">
+          {!photoFailed ? <img src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg" alt="Johnny, Sunville Bakery’s founder and head baker" loading="lazy" decoding="async" onError={() => setPhotoFailed(true)} className="block h-auto w-full" /> : <div className="flex aspect-[4/3] items-center justify-center bg-secondary p-6 font-serif text-2xl text-primary">Meet our founder</div>}
+          <figcaption className="p-5"><p className="font-serif text-xl font-semibold text-primary">Johnny</p><p className="mt-1 text-sm text-muted-foreground">Founder & head baker</p></figcaption>
+        </figure>
       </div>
     </section>
   )

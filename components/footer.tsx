@@ -1,57 +1,70 @@
 import Link from "next/link"
+import { ArrowUpRight, MapPin, Phone } from "lucide-react"
+
+const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
+const linkStyle = "inline-flex min-h-11 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
 
 export function Footer() {
   return (
-    <footer className="bg-primary text-primary-foreground py-8 md:py-12">
-      <div className="container mx-auto px-8 lg:px-16 max-w-[1400px]">
-        <div className="grid md:grid-cols-3 gap-8 md:gap-10 mb-8 md:mb-10 md:items-start">
-          <div className="flex flex-col md:-mt-1">
-            <div className="mb-3 md:mb-4">
-              <img
-                src="/logoWhite.png"
-                alt="Sunville Bakery"
-                className="h-10 w-auto opacity-95"
-              />
+    <footer aria-label="Sunville Bakery information" className="bg-primary text-white">
+      <div className="mx-auto max-w-[1280px] px-4 pb-6 pt-6 sm:px-6 sm:pt-10 lg:px-8 lg:pt-12">
+        <div className="sm:hidden">
+          <p className="font-serif text-xl font-semibold">Sunville Bakery</p>
+          <div className="mt-2 flex flex-wrap gap-x-6">
+            <a href="tel:+17028899887" className={linkStyle}>Call the bakery</a>
+            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle}>Directions<span className="sr-only"> (opens a new tab)</span></a>
+          </div>
+          <details className="mt-3 border-t border-white/20">
+            <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-white">Location, hours & email</summary>
+            <div className="space-y-3 pb-4 text-sm leading-relaxed text-white/90">
+              <address className="not-italic">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address>
+              <p>Mon–Tue, Thu–Sun: 8 AM–8 PM<br />Wednesday: 8 AM–3 PM<br /><span className="text-xs">Las Vegas local time (Pacific)</span></p>
+              <a href="mailto:sunvillebakerylv@gmail.com" className={linkStyle + " max-w-full break-all"}>sunvillebakerylv@gmail.com</a>
             </div>
-            <div className="rounded-lg overflow-hidden shadow-xl ring-2 ring-white/10">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3220.8527743586677!2d-115.19991842394843!3d36.13007247247373!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c8c7fe24c0e7c1%3A0x7b3e84e5f1c5e8c0!2s4053%20Spring%20Mountain%20Rd%2C%20Las%20Vegas%2C%20NV%2089102!5e0!3m2!1sen!2sus!4v1234567890123"
-                width="100%"
-                height="180"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              ></iframe>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-xs md:text-sm font-semibold tracking-[0.12em] uppercase mb-4 md:mb-5 text-primary-foreground/95">Contact</h3>
-            <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-primary-foreground/75 leading-relaxed">
-              <li className="leading-relaxed">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</li>
-              <li className="pt-1 font-medium text-primary-foreground/85">702-889-9887</li>
-              <li className="hover:text-accent transition-colors duration-300 cursor-pointer">sunvillebakerylv@gmail.com</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs md:text-sm font-semibold tracking-[0.12em] uppercase mb-4 md:mb-5 text-primary-foreground/95">Hours</h3>
-            <ul className="space-y-2 md:space-y-3 text-sm md:text-base text-primary-foreground/75 leading-relaxed">
-              <li>
-                <div className="font-medium text-primary-foreground/85">Monday - Tuesday, Thursday - Sunday</div>
-                <div>8:00 AM - 8:00 PM</div>
-              </li>
-              <li className="pt-1 md:pt-2">
-                <div className="font-medium text-primary-foreground/85">Wednesday</div>
-                <div>8:00 AM - 3:00 PM</div>
-              </li>
-            </ul>
-          </div>
+          </details>
+          <nav aria-label="Mobile footer navigation" className="flex flex-wrap gap-x-5 border-t border-white/20">
+            <Link href="/menu" className={linkStyle}>Menu</Link><Link href="/#about" className={linkStyle}>About</Link><Link href="/gallery" className={linkStyle}>Gallery</Link><Link href="/contact" className={linkStyle}>Contact</Link>
+          </nav>
         </div>
+        <div className="hidden sm:grid gap-8 border-b border-white/20 pb-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_1fr_0.7fr] lg:gap-10">
+          <div className="min-w-0">
+            <Link href="/" aria-label="Sunville Bakery home" className="inline-block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+              <img src="/logoWhite.png" alt="Sunville Bakery" loading="lazy" className="h-12 w-auto max-w-full object-contain" />
+            </Link>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/85">Your neighborhood Asian bakery in Las Vegas. Family-owned since 2002.</p>
+            <a href="tel:+17028899887" className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Phone aria-hidden="true" className="h-4 w-4" />Call to order</a>
+          </div>
 
-        <div className="border-t border-primary-foreground/15 pt-5 md:pt-6 text-center text-xs md:text-sm text-primary-foreground/60 tracking-wide">
+          <section aria-labelledby="footer-visit" className="min-w-0">
+            <h2 id="footer-visit" className="mb-3 text-base font-semibold">Visit & contact</h2>
+            <address className="text-sm not-italic leading-relaxed text-white/90">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address>
+            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle + " gap-2"}><MapPin aria-hidden="true" className="h-4 w-4" />Get directions<ArrowUpRight aria-hidden="true" className="h-4 w-4" /><span className="sr-only"> (opens a new tab)</span></a>
+            <div><a href="tel:+17028899887" className={linkStyle}>702-889-9887</a></div>
+            <a href="mailto:sunvillebakerylv@gmail.com" className={linkStyle + " max-w-full break-all"}>sunvillebakerylv@gmail.com</a>
+          </section>
+
+          <section aria-labelledby="footer-hours">
+            <h2 id="footer-hours" className="mb-3 text-base font-semibold">Bakery hours</h2>
+            <dl className="space-y-3 text-sm leading-relaxed">
+              <div><dt className="text-white/90">Mon–Tue, Thu–Sun</dt><dd className="font-medium">8 AM–8 PM</dd></div>
+              <div><dt className="text-white/90">Wednesday</dt><dd className="font-medium">8 AM–3 PM</dd></div>
+            </dl>
+            <p className="mt-3 text-xs leading-relaxed text-white/80">All hours are Las Vegas local time (Pacific).</p>
+          </section>
+
+          <nav aria-label="Footer navigation">
+            <h2 className="mb-1 text-base font-semibold">Explore</h2>
+            <ul>
+              <li><Link href="/menu" className={linkStyle}>Menu</Link></li>
+              <li><Link href="/#about" className={linkStyle}>Our story</Link></li>
+              <li><Link href="/gallery" className={linkStyle}>Gallery</Link></li>
+              <li><Link href="/contact" className={linkStyle}>Contact</Link></li>
+            </ul>
+          </nav>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-5 text-xs leading-relaxed text-white/80">
           <p>&copy; {new Date().getFullYear()} Sunville Bakery. All rights reserved.</p>
+          <p className="hidden sm:block">Call to confirm availability and arrange pickup.</p>
         </div>
       </div>
     </footer>

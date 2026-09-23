@@ -1,76 +1,67 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
+import { galleryImages as fallbackImages } from "@/lib/gallery-images"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { ArrowLeft, ArrowRight, ImageIcon, ZoomIn } from "lucide-react"
+
+function GalleryPhoto({ src, index, expanded = false }: { src: string; index: number; expanded?: boolean }) {
+  const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  return <span className={'relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-secondary ' + (expanded ? 'h-[55dvh]' : 'aspect-square')}>
+    {!loaded && !failed && <span role="status" className="absolute text-sm text-muted-foreground">Loading photo…</span>}
+    {failed ? <span role="status" className="flex flex-col items-center gap-3 p-4 text-center text-sm text-muted-foreground"><ImageIcon aria-hidden="true" />Photo unavailable{expanded && <Button type="button" variant="outline" onClick={() => { setFailed(false); setLoaded(false) }}>Retry photo</Button>}</span> :
+      <img src={src} alt={'Sunville Bakery gallery photo ' + (index + 1)} loading={expanded ? 'eager' : 'lazy'} decoding="async" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} className={'h-full w-full ' + (expanded ? 'object-contain' : 'object-cover') + (loaded ? '' : ' opacity-0')} />}
+  </span>
+}
 
 export default function GalleryPage() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [images, setImages] = useState<string[]>([])
-
+  const [galleryImages, setGalleryImages] = useState(fallbackImages)
   useEffect(() => {
-    fetch('/api/gallery')
-      .then(r => r.json())
-      .then(d => setImages(d.images || []))
+    const controller = new AbortController()
+    fetch('/api/gallery', { cache: 'no-store', signal: controller.signal })
+      .then(response => { if (!response.ok) throw new Error('Gallery unavailable'); return response.json() })
+      .then(data => { if (Array.isArray(data.images)) setGalleryImages(data.images.filter((image: unknown): image is string => typeof image === 'string')) })
+      .catch(() => {})
+    return () => controller.abort()
   }, [])
 
-  return (
-    <main className="min-h-screen">
-      <Navigation />
-
-      <div className="pt-36 pb-20 sm:pb-24 bg-gradient-to-b from-white via-background/20 to-white">
-        <div className="container mx-auto px-6 sm:px-8 lg:px-16 max-w-[1400px]">
-          <div className="text-center mb-16 sm:mb-20">
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-light text-primary mb-6 tracking-[-0.02em] leading-tight">
-              Our Gallery
-            </h1>
-            <div className="w-20 h-[3px] bg-accent mx-auto mb-8" />
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Explore our handcrafted breads, pastries, and baked goods
-            </p>
-          </div>
-
-          {/* Masonry Grid Layout */}
-          <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-8 space-y-8">
-            {images.map((image, index) => (
-              <div
-                key={index}
-                className="break-inside-avoid cursor-pointer group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-700 ease-out hover:-translate-y-1"
-                onClick={() => setSelectedImage(image)}
-              >
-                <img
-                  src={image}
-                  alt={`Gallery image ${index + 1}`}
-                  className="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500" />
-              </div>
-            ))}
-          </div>
+  const [selected, setSelected] = useState<number | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const count = galleryImages.length
+  const move = (direction: number) => setSelected(index => index === null ? null : (index + direction + count) % count)
+  return <main className="min-h-screen bg-background">
+    <Navigation />
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-20 sm:px-6 md:pt-28 lg:px-8">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div><p className="mb-1 text-sm font-medium text-primary">A look inside Sunville Bakery</p><h1 className="font-serif text-3xl text-primary md:text-4xl">Our gallery</h1><p className="mt-3 text-muted-foreground">Explore our breads, pastries, and baked goods. Select a photo for a closer look.</p></div>
+        <Button asChild variant="outline" className="min-h-11"><a href="/menu">Explore the menu <ArrowRight aria-hidden="true" /></a></Button>
+      </header>
+      <p className="mb-4 text-sm text-muted-foreground">{count} photos</p>
+      {count ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+        {galleryImages.map((src, index) => <button type="button" key={src + index} aria-label={'Open bakery photo ' + (index + 1)} onClick={event => { triggerRef.current = event.currentTarget; setSelected(index) }} className="group relative rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+          <GalleryPhoto src={src} index={index} /><span aria-hidden="true" className="absolute bottom-2 right-2 rounded-full bg-white/95 p-2 text-primary shadow-sm"><ZoomIn className="h-4 w-4" /></span>
+        </button>)}
+      </div> : <div className="rounded-xl border bg-white p-8 text-center"><h2 className="text-xl font-semibold">More photos coming soon</h2><p className="mt-2 text-muted-foreground">Explore our menu to see what’s baking.</p></div>}
+    </div>
+    <Dialog open={selected !== null} onOpenChange={open => { if (!open) setSelected(null) }}>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto bg-white sm:max-w-4xl" onCloseAutoFocus={event => { event.preventDefault(); triggerRef.current?.focus() }} onKeyDown={event => {
+        if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1) }
+        if (event.key === 'ArrowRight') { event.preventDefault(); move(1) }
+      }}>
+        <DialogTitle className="pr-12 font-serif text-xl">Sunville Bakery gallery</DialogTitle>
+        <DialogDescription>Use the arrows to explore photos. Press Escape to close.</DialogDescription>
+        {selected !== null && <GalleryPhoto key={galleryImages[selected] + selected} src={galleryImages[selected]} index={selected} expanded />}
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="outline" className="min-h-11" aria-label="Previous photo" disabled={count < 2} onClick={() => move(-1)}><ArrowLeft aria-hidden="true" /><span className="hidden sm:inline">Previous</span></Button>
+          <p role="status" className="text-sm text-muted-foreground">Photo {(selected ?? 0) + 1} of {count}</p>
+          <Button variant="outline" className="min-h-11" aria-label="Next photo" disabled={count < 2} onClick={() => move(1)}><span className="hidden sm:inline">Next</span><ArrowRight aria-hidden="true" /></Button>
         </div>
-      </div>
-
-      {/* Lightbox Modal */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in"
-          onClick={() => setSelectedImage(null)}
-        >
-          <img
-            src={selectedImage}
-            alt="Gallery image"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-          />
-          <button
-            className="absolute top-6 right-6 text-white text-5xl hover:text-accent transition-all duration-300 hover:scale-110"
-            onClick={() => setSelectedImage(null)}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      <Footer />
-    </main>
-  )
+      </DialogContent>
+    </Dialog>
+    <Footer />
+  </main>
 }

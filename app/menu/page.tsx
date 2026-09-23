@@ -1,384 +1,168 @@
-﻿"use client"
+"use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
-import { Search, ChevronRight, Clock, Phone, Info } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from "lucide-react"
+import { getStoreStatus, matchesMenuSearch, type MenuProduct } from "@/lib/menu"
 
-interface Product {
-  id: string
-  name: string
-  description: string
-  price: string
-  priceId: string
-  image: string
-  category: string
+const phone = "tel:+17028899887"
+const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
+
+function ProductImage({ product, detail = false }: { product: MenuProduct; detail?: boolean }) {
+  const [failed, setFailed] = useState(false)
+  const valid = product.image && !product.image.includes('/placeholder') && !['null', 'undefined'].includes(product.image)
+  return (
+    <span className={detail ? "block aspect-[4/3] overflow-hidden rounded-xl bg-secondary" : "block h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-44 sm:w-full sm:rounded-none"}>
+      {valid && !failed ? <img src={product.image} alt={detail ? product.name : ""} loading={detail ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} className="h-full w-full object-cover" /> :
+        <span className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground"><ImageIcon aria-hidden="true" className="h-7 w-7" /><span className="text-center text-xs">Photo coming soon</span></span>}
+    </span>
+  )
 }
 
 export default function MenuPage() {
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<MenuProduct[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showHoursInfo, setShowHoursInfo] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
-  const [hoveredProduct, setHoveredProduct] = useState<Product | null>(null)
-  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 })
-  const previewTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [error, setError] = useState(false)
+  const [query, setQuery] = useState("")
+  const [category, setCategory] = useState("All")
+  const [suggesting, setSuggesting] = useState(false)
+  const [activeSuggestion, setActiveSuggestion] = useState(-1)
+  const [hoursOpen, setHoursOpen] = useState(false)
+  const [status, setStatus] = useState<ReturnType<typeof getStoreStatus> | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const requestRef = useRef<AbortController | null>(null)
 
-  // Get current store hours status
-  const getStoreStatus = () => {
-    const now = new Date()
-    const day = now.getDay() // 0 = Sunday, 3 = Wednesday
-    const hours = now.getHours()
-    const minutes = now.getMinutes()
-    const currentTime = hours * 60 + minutes // Convert to minutes
-
-    if (day === 3) {
-      // Wednesday: 8 AM - 3 PM (480 - 900 minutes)
-      if (currentTime >= 480 && currentTime < 900) {
-        return "Pickup Available • Closes at 3pm"
-      }
-    } else {
-      // Other days: 8 AM - 8 PM (480 - 1200 minutes)
-      if (currentTime >= 480 && currentTime < 1200) {
-        return "Pickup Available • Closes at 8pm"
-      }
+  const loadProducts = useCallback(async () => {
+    requestRef.current?.abort()
+    const controller = new AbortController()
+    requestRef.current = controller
+    setLoading(true)
+    setError(false)
+    try {
+      const response = await fetch('/api/products', { signal: controller.signal, cache: 'no-store' })
+      if (!response.ok) throw new Error('Unable to load menu')
+      const data = await response.json()
+      if (!Array.isArray(data)) throw new Error('Invalid menu')
+      setProducts(data)
+    } catch {
+      if (!controller.signal.aborted) setError(true)
+    } finally {
+      if (!controller.signal.aborted) setLoading(false)
     }
-
-    // Closed
-    if (day === 3) {
-      return "Closed • Opens Wed 8am-3pm"
-    }
-    return "Closed • Opens 8am-8pm"
-  }
-
-  const [storeStatus, setStoreStatus] = useState(getStoreStatus())
-
-  // Update store status every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStoreStatus(getStoreStatus())
-    }, 60000) // Update every minute
-
-    return () => clearInterval(interval)
   }, [])
 
-  const categories = ["All", ...Array.from(new Set(products.map(p => p.category))).sort()]
-
-  // Generate search suggestions based on current query
-  const searchSuggestions = searchQuery.trim()
-    ? products
-        .filter(product =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 8) // Limit to 8 suggestions like Google
-        .map(product => ({
-          text: product.name,
-          category: product.category,
-          product
-        }))
-    : []
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "All" || product.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
-
-  // Handle keyboard navigation for search suggestions
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || searchSuggestions.length === 0) return
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSelectedSuggestionIndex(prev =>
-        prev < searchSuggestions.length - 1 ? prev + 1 : prev
-      )
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1)
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-      if (selectedSuggestionIndex >= 0) {
-        const suggestion = searchSuggestions[selectedSuggestionIndex]
-        setSearchQuery(suggestion.text)
-        setShowSuggestions(false)
-        setSelectedSuggestionIndex(-1)
-      }
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false)
-      setSelectedSuggestionIndex(-1)
-    }
-  }
-
-  const handleSuggestionClick = (suggestionText: string) => {
-    setSearchQuery(suggestionText)
-    setShowSuggestions(false)
-    setSelectedSuggestionIndex(-1)
-  }
-
-  // Close suggestions when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => setShowSuggestions(false)
-    if (showSuggestions) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [showSuggestions])
-
+    loadProducts()
+    return () => requestRef.current?.abort()
+  }, [loadProducts])
   useEffect(() => {
-    fetch('/api/products')
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch products')
-        return res.json()
-      })
-      .then((data) => {
-        setProducts(data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError(err.message)
-        setLoading(false)
-      })
+    const update = () => setStatus(getStoreStatus(new Date()))
+    update()
+    const timer = setInterval(update, 60000)
+    return () => clearInterval(timer)
   }, [])
+  useEffect(() => {
+    if (activeSuggestion >= 0) document.getElementById('suggestion-' + activeSuggestion)?.scrollIntoView({ block: 'nearest' })
+  }, [activeSuggestion])
 
-  const handleCardMouseEnter = (product: Product, e: React.MouseEvent) => {
-    if (previewTimeout.current) clearTimeout(previewTimeout.current)
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const x = rect.left + rect.width / 2
-    const y = rect.top + window.scrollY
-    setPreviewPos({ x, y })
-    previewTimeout.current = setTimeout(() => setHoveredProduct(product), 80)
+  const categories = ['All', ...Array.from(new Set(products.map(product => product.category))).sort()]
+  const suggestions = query.trim() ? products.filter(product => matchesMenuSearch(product, query)).slice(0, 6) : []
+  const showSuggestions = suggesting && suggestions.length > 0
+  const filtered = products.filter(product => matchesMenuSearch(product, query) && (category === 'All' || product.category === category))
+  const selectSuggestion = (product: MenuProduct) => {
+    setQuery(product.name)
+    setCategory('All')
+    setSuggesting(false)
+    setActiveSuggestion(-1)
+    searchRef.current?.focus()
   }
-
-  const handleCardMouseLeave = () => {
-    if (previewTimeout.current) clearTimeout(previewTimeout.current)
-    setHoveredProduct(null)
+  const clearFilters = () => {
+    setQuery('')
+    setCategory('All')
+    setSuggesting(false)
+    setActiveSuggestion(-1)
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <Navigation />
-
-      <div className="pt-36 pb-24">
-        <div className="container mx-auto px-8 lg:px-16 max-w-[1400px]">
-          {/* Combined Store Info & Hours Section */}
-          <Card className="mb-12 cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative z-0 border-border/50 rounded-2xl" onClick={() => setShowHoursInfo(!showHoursInfo)}>
-            <CardContent className="p-6 md:p-8">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h1 className="font-serif text-2xl md:text-3xl font-normal mb-3 tracking-tight text-primary">Sunville Bakery</h1>
-                  <p className="text-base md:text-lg text-muted-foreground/80 mb-3">
-                    4053 Spring Mountain Rd, Las Vegas, NV 89102
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <Info className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-                    <span className="text-base md:text-lg font-medium text-foreground">{storeStatus}</span>
-                  </div>
-                </div>
-                <ChevronRight className={`h-6 w-6 text-muted-foreground/60 transition-transform duration-300 ${showHoursInfo ? 'rotate-90' : ''}`} />
-              </div>
-
-              {showHoursInfo && (
-                <div className="mt-6 pt-6 border-t border-border/50 space-y-6" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-start gap-4">
-                    <Clock className="h-6 w-6 md:h-7 md:w-7 text-accent mt-0.5" />
-                    <div className="text-base md:text-lg">
-                      <p className="font-semibold mb-2 text-foreground">Hours</p>
-                      <p className="text-muted-foreground/80 leading-relaxed">Mon-Tue, Thu-Sun: 8:00 AM - 8:00 PM</p>
-                      <p className="text-muted-foreground/80 leading-relaxed">Wednesday: 8:00 AM - 3:00 PM</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <Phone className="h-6 w-6 md:h-7 md:w-7 text-accent mt-0.5" />
-                    <div className="text-base md:text-lg">
-                      <p className="font-semibold mb-2 text-foreground">Phone</p>
-                      <p className="text-muted-foreground/80">702-889-9887</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Search and Categories */}
-          <div className="mb-16">
-            <div className="relative mb-10" onClick={(e) => e.stopPropagation()}>
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground/50 z-10" />
-              <input
-                type="text"
-                placeholder="Search our menu..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setShowSuggestions(true)
-                  setSelectedSuggestionIndex(-1)
-                }}
-                onFocus={() => {
-                  if (searchQuery.trim()) setShowSuggestions(true)
-                }}
-                onKeyDown={handleSearchKeyDown}
-                className="w-full pl-16 pr-8 py-5 text-lg bg-white border-2 border-border/40 rounded-2xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-300 shadow-sm hover:shadow-md"
-                autoComplete="off"
-              />
-
-              {/* Search Suggestions Dropdown */}
-              {showSuggestions && searchSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border/40 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {searchSuggestions.map((suggestion, index) => (
-                    <div
-                      key={suggestion.product.id}
-                      onClick={() => handleSuggestionClick(suggestion.text)}
-                      className={`flex items-center gap-4 px-6 py-3.5 cursor-pointer transition-colors ${
-                        index === selectedSuggestionIndex
-                          ? 'bg-muted/70'
-                          : 'hover:bg-muted/50'
-                      } ${index !== 0 ? 'border-t border-border/20' : ''}`}
-                    >
-                      <Search className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base text-foreground truncate">
-                          {suggestion.text}
-                        </p>
-                        <p className="text-sm text-muted-foreground/70">
-                          {suggestion.category}
-                        </p>
-                      </div>
-                      {suggestion.product.image &&
-                       suggestion.product.image.trim() !== '' &&
-                       !suggestion.product.image.includes('/placeholder') && (
-                        <img
-                          src={suggestion.product.image}
-                          alt={suggestion.text}
-                          className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="overflow-x-auto scrollbar-hide border-b-2 border-border/30">
-              <div className="flex gap-10 pb-5 min-w-min">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`text-sm font-semibold tracking-[0.08em] uppercase transition-all duration-300 whitespace-nowrap pb-3 border-b-3 ${
-                      selectedCategory === category
-                        ? 'text-foreground border-accent scale-105'
-                        : 'text-muted-foreground/70 border-transparent hover:text-foreground hover:border-border/50'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+      <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-20 sm:px-6 md:pt-28 lg:px-8">
+        <header className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div>
+            <p className="mb-1 text-sm font-medium text-primary">Sunville Bakery · Las Vegas</p>
+            <h1 className="font-serif text-3xl text-foreground md:text-4xl">Our menu</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Explore your favorites. Call us to order or ask about availability.</p>
+            <button type="button" aria-expanded={hoursOpen} aria-controls="menu-hours" onClick={() => setHoursOpen(!hoursOpen)} className="mt-2 flex min-h-11 items-center gap-2 rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
+              <span aria-hidden="true" className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-green-700' : 'bg-gray-500')} />
+              {status?.text || 'View store hours'} <span className="text-muted-foreground">(Las Vegas)</span>
+              <ChevronDown aria-hidden="true" className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')} />
+            </button>
+            <div id="menu-hours" hidden={!hoursOpen} className="mt-1 rounded-lg border bg-white p-4 text-sm leading-7">
+              <p>Mon–Tue, Thu–Sun: 8 AM–8 PM</p><p>Wednesday: 8 AM–3 PM</p><p className="text-muted-foreground">All hours are Pacific Time.</p>
             </div>
           </div>
+          <div className="flex flex-wrap gap-2 sm:pt-2">
+            <Button asChild className="min-h-11"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
+            <Button asChild variant="outline" className="min-h-11"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
+          </div>
+        </header>
+        <a href={directions} target="_blank" rel="noopener noreferrer" className="mb-5 inline-block text-sm text-muted-foreground underline underline-offset-4">4053 Spring Mountain Rd, Las Vegas, NV 89102<span className="sr-only"> (opens a new tab)</span></a>
 
-          {loading && (
-            <div className="text-center py-12">
-              <p className="text-xl text-muted-foreground">Loading menu...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-center py-12">
-              <p className="text-xl text-red-500">Error loading menu: {error}</p>
-            </div>
-          )}
-
-          {/* Hover Image Preview */}
-          {hoveredProduct && hoveredProduct.image && (
-            <div
-              className="fixed z-[9999] pointer-events-none"
-              style={{
-                left: `${previewPos.x}px`,
-                top: `${previewPos.y}px`,
-                transform: 'translate(-50%, -110%)',
+        <section aria-label="Find menu items" className="sticky top-16 z-30 -mx-4 mb-6 border-b bg-background px-4 py-3 md:top-24 sm:mx-0 sm:px-0">
+          <div className="relative mb-3" onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) { setSuggesting(false); setActiveSuggestion(-1) }
+          }}>
+            <label htmlFor="menu-search" className="sr-only">Search menu by name, description, or category</label>
+            <Search aria-hidden="true" className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
+            <input id="menu-search" ref={searchRef} role="combobox" aria-autocomplete="list" aria-expanded={showSuggestions} aria-controls="menu-suggestions" aria-activedescendant={showSuggestions && activeSuggestion >= 0 ? 'suggestion-' + activeSuggestion : undefined}
+              value={query} placeholder="Search cakes, buns, flavors…" autoComplete="off"
+              onChange={event => { setQuery(event.target.value); setSuggesting(true); setActiveSuggestion(-1) }}
+              onFocus={() => setSuggesting(true)}
+              onKeyDown={event => {
+                if (event.key === 'Escape') { setSuggesting(false); setActiveSuggestion(-1) }
+                if (event.key === 'ArrowDown' && suggestions.length) { event.preventDefault(); setSuggesting(true); setActiveSuggestion(index => Math.min(index + 1, suggestions.length - 1)) }
+                if (event.key === 'ArrowUp' && showSuggestions) { event.preventDefault(); setActiveSuggestion(index => Math.max(index - 1, -1)) }
+                if (event.key === 'Enter' && showSuggestions && activeSuggestion >= 0 && suggestions[activeSuggestion]) { event.preventDefault(); selectSuggestion(suggestions[activeSuggestion]) }
               }}
-            >
-              <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-border/30 animate-in fade-in zoom-in-95 duration-200"
-                   style={{ width: '280px' }}>
-                <div className="relative h-48 bg-muted/30">
-                  <img
-                    src={hoveredProduct.image}
-                    alt={hoveredProduct.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="px-4 py-3">
-                  <p className="font-serif font-semibold text-primary text-base leading-tight">{hoveredProduct.name}</p>
-                  {hoveredProduct.description && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">{hoveredProduct.description}</p>
-                  )}
-                  <p className="font-bold text-primary text-lg mt-2">${hoveredProduct.price}</p>
-                </div>
-              </div>
-              {/* Arrow */}
-              <div className="flex justify-center">
-                <div className="w-0 h-0"
-                     style={{ borderLeft: '10px solid transparent', borderRight: '10px solid transparent', borderTop: '10px solid white', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }} />
-              </div>
-            </div>
-          )}
+              className="h-12 w-full rounded-xl border border-border bg-white pl-11 pr-12 text-base focus-visible:outline-2 focus-visible:outline-primary" />
+            {query && <button type="button" aria-label="Clear search" className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { setQuery(''); setSuggesting(false); setActiveSuggestion(-1); searchRef.current?.focus() }}><X aria-hidden="true" className="h-5 w-5" /></button>}
+            <ul id="menu-suggestions" hidden={!showSuggestions} role="listbox" aria-label="Suggested menu items" className="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-xl border bg-white p-1 shadow-lg">
+              {suggestions.map((product, index) => <li key={product.id} id={'suggestion-' + index} role="option" aria-selected={index === activeSuggestion} onMouseDown={event => event.preventDefault()} onClick={() => selectSuggestion(product)} className={'cursor-pointer rounded-lg px-3 py-3 text-sm hover:bg-secondary ' + (index === activeSuggestion ? 'bg-secondary' : '')}>
+                <span className="font-medium">{product.name}</span><span className="ml-2 text-muted-foreground">{product.category}</span>
+              </li>)}
+            </ul>
+          </div>
+          <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2">
+            {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); setSuggesting(false); setActiveSuggestion(-1) }} className={'min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
+          </div>
+        </section>
 
-          {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 mb-16">
-            {filteredProducts.map((product) => {
-              const hasImage = product.image &&
-                               product.image.trim() !== '' &&
-                               !product.image.includes('/placeholder') &&
-                               product.image !== 'null' &&
-                               product.image !== 'undefined'
-              return (
-              <Card
-                key={product.id}
-                onMouseEnter={hasImage ? (e) => handleCardMouseEnter(product, e) : undefined}
-                onMouseLeave={hasImage ? handleCardMouseLeave : undefined}
-                className={`group overflow-hidden rounded-lg shadow-md hover:shadow-xl border border-border/30 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 relative flex flex-col ${hasImage ? 'min-h-[260px] md:min-h-[280px]' : 'min-h-[120px] md:min-h-[130px]'}`}
-              >
-                {hasImage && (
-                  <div className="relative h-32 md:h-36 bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden flex-shrink-0">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                )}
-                <CardContent className={`${hasImage ? 'p-3 md:p-4' : 'p-3 md:p-3.5'} relative flex flex-col flex-grow justify-between`}>
-                  <div>
-                    <h3 className={`font-serif font-semibold text-primary group-hover:text-accent transition-colors duration-300 tracking-tight ${hasImage ? 'text-base md:text-lg mb-1 md:mb-2 line-clamp-2' : 'text-sm md:text-base mb-1 line-clamp-1'}`}>
-                      {product.name}
-                    </h3>
-                    {product.description && hasImage && (
-                      <p className="hidden md:block text-xs text-muted-foreground/70 mb-2 line-clamp-2 leading-snug">
-                        {product.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className={`flex items-center justify-between ${hasImage ? 'pt-2 md:pt-3' : 'pt-1.5'}`}>
-                    <p className={`font-bold text-primary ${hasImage ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'}`}>
-                      ${product.price}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              )
-            })}
-            </div>
-          )}
-        </div>
+        {loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
+          <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="text-xl font-semibold">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call 702-889-9887 for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All' ? ' in ' + category : ''}{query.trim() ? ' matching “' + query.trim() + '”' : ''}</p>{(query || category !== 'All') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
+            {filtered.length === 0 ? <div className="rounded-xl border bg-white px-4 py-12 text-center"><h2 className="font-serif text-2xl">No items found</h2><p className="my-3 text-muted-foreground">Try another flavor or category, or explore the full menu.</p><Button onClick={clearFilters}>Clear filters</Button></div> :
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filtered.map(product => <Dialog key={product.id}>
+                  <DialogTrigger asChild><button type="button" aria-label={'View details for ' + product.name} className="flex h-full gap-3 overflow-hidden rounded-xl border border-border bg-white p-3 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-primary sm:flex-col sm:gap-0 sm:p-0">
+                    <ProductImage product={product} />
+                    <span className="flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{product.category}</span><span className="font-serif text-lg font-semibold leading-snug text-primary">{product.name}</span><span className="mb-3 mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{product.description || 'Ask us for more details about this item.'}</span><span className="mt-auto flex items-center justify-between gap-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
+                  </button></DialogTrigger>
+                  <DialogContent className="max-h-[85dvh] overflow-y-auto bg-white">
+                    <DialogTitle className="pr-12 font-serif text-2xl leading-snug text-primary">{product.name}</DialogTitle>
+                    <ProductImage product={product} detail />
+                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                    <DialogDescription className="whitespace-pre-wrap break-words text-base leading-relaxed">{product.description || 'Call us for more details about this item.'}</DialogDescription>
+                    <p className="text-2xl font-semibold text-primary">${product.price}</p>
+                    <Button asChild className="min-h-11"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
+                    <p className="text-xs text-muted-foreground">Call to confirm availability and arrange pickup.</p>
+                  </DialogContent>
+                </Dialog>)}
+              </div>}
+          </>}
       </div>
-
       <Footer />
     </main>
   )

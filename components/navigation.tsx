@@ -1,149 +1,41 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 
+const links = [{ href: '/', label: 'Home' }, { href: '/#about', label: 'About' }, { href: '/menu', label: 'Menu' }, { href: '/gallery', label: 'Gallery' }, { href: '/contact', label: 'Contact' }]
+
 export function Navigation() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isAtTop, setIsAtTop] = useState(true)
+  const [open, setOpen] = useState(false)
   const pathname = usePathname()
-
-  // Only use transparent nav on homepage
-  const isHomePage = pathname === "/"
-
+  const toggle = useRef<HTMLButtonElement>(null)
+  const header = useRef<HTMLElement>(null)
+  useEffect(() => { setOpen(false) }, [pathname])
   useEffect(() => {
-    const handleScroll = () => {
-      // Only transparent when at the very top
-      setIsAtTop(window.scrollY < 50)
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isHomePage && isAtTop ? "bg-transparent" : "bg-white/98 backdrop-blur-xl shadow-sm border-b border-border/30"
-      }`}
-    >
-      <div className="container mx-auto px-8 lg:px-16 max-w-[1400px]">
-        <div className="flex items-center justify-between h-24">
-          {/* Logo */}
-          <a href="/" className="flex items-center group">
-            <img
-              src={isHomePage && isAtTop ? "/logoWhite.png" : "/logoBlack.png"}
-              alt="Sunville Bakery"
-              className="h-12 w-auto transition-all duration-500 group-hover:scale-105"
-            />
-          </a>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-12">
-            <a
-              href="/"
-              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
-                isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
-              }`}
-            >
-              Home
-            </a>
-            <a
-              href="/#about"
-              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
-                isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
-              }`}
-            >
-              About
-            </a>
-            <a
-              href="/menu"
-              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
-                isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
-              }`}
-            >
-              Menu
-            </a>
-            <a
-              href="/gallery"
-              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
-                isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
-              }`}
-            >
-              Gallery
-            </a>
-            <a
-              href="/contact"
-              className={`transition-all duration-300 font-semibold text-sm tracking-[0.08em] uppercase hover:text-accent relative after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-accent after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 ${
-                isHomePage && isAtTop ? "text-white after:bg-white" : "text-foreground"
-              }`}
-            >
-              Contact
-            </a>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-3">
-            <button
-              className={`p-2.5 rounded-lg transition-all duration-300 ${
-                isMobileMenuOpen
-                  ? "bg-accent text-white"
-                  : isHomePage && isAtTop
-                    ? "text-white hover:bg-white/10"
-                    : "text-foreground hover:bg-muted"
-              }`}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden py-8 border-t border-border/30 bg-white/98 backdrop-blur-xl">
-            <div className="flex flex-col gap-1">
-              <a
-                href="/"
-                className="text-center text-foreground hover:bg-accent/5 hover:text-accent transition-all font-medium text-base tracking-wide uppercase py-4 px-6 rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </a>
-              <a
-                href="/#about"
-                className="text-center text-foreground hover:bg-accent/5 hover:text-accent transition-all font-medium text-base tracking-wide uppercase py-4 px-6 rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                About
-              </a>
-              <a
-                href="/menu"
-                className="text-center text-foreground hover:bg-accent/5 hover:text-accent transition-all font-medium text-base tracking-wide uppercase py-4 px-6 rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Menu
-              </a>
-              <a
-                href="/gallery"
-                className="text-center text-foreground hover:bg-accent/5 hover:text-accent transition-all font-medium text-base tracking-wide uppercase py-4 px-6 rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Gallery
-              </a>
-              <a
-                href="/contact"
-                className="text-center text-foreground hover:bg-accent/5 hover:text-accent transition-all font-medium text-base tracking-wide uppercase py-4 px-6 rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Contact
-              </a>
-            </div>
-          </div>
-        )}
+    if (!open) return
+    const closeOutside = (event: PointerEvent) => { if (!header.current?.contains(event.target as Node)) setOpen(false) }
+    const closeEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setOpen(false); toggle.current?.focus() } }
+    const media = window.matchMedia('(min-width: 768px)')
+    const resize = () => { if (media.matches) setOpen(false) }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeEscape)
+    media.addEventListener('change', resize)
+    return () => { document.removeEventListener('pointerdown', closeOutside); document.removeEventListener('keydown', closeEscape); media.removeEventListener('change', resize) }
+  }, [open])
+  return <header ref={header} className="fixed inset-x-0 top-0 z-50 border-b border-border bg-white shadow-sm" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}>
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
+      <div className="flex h-16 items-center justify-between gap-4 md:h-24">
+        <Link href="/" aria-label="Sunville Bakery home" onClick={() => setOpen(false)} className="flex min-h-11 min-w-0 items-center rounded focus-visible:outline-2 focus-visible:outline-primary"><img src="/logoBlack.png" alt="Sunville Bakery" className="h-9 w-auto max-w-[180px] object-contain md:h-12" /></Link>
+        <nav aria-label="Main navigation" className="hidden items-center gap-5 md:flex lg:gap-8">
+          {links.map(link => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? 'page' : undefined} className={'inline-flex min-h-11 items-center rounded text-sm font-medium underline-offset-8 hover:underline focus-visible:outline-2 focus-visible:outline-primary ' + (pathname === link.href ? 'text-primary underline' : 'text-foreground')}>{link.label}</Link>)}
+        </nav>
+        <button ref={toggle} type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? 'Close navigation' : 'Open navigation'} onClick={() => setOpen(!open)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary md:hidden">{open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</button>
       </div>
-    </nav>
-  )
+      <nav id="mobile-navigation" aria-label="Mobile navigation" hidden={!open} className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t py-3 md:hidden">
+        {links.map(link => <Link key={link.href} href={link.href} onClick={() => setOpen(false)} aria-current={pathname === link.href ? 'page' : undefined} className={'flex min-h-12 items-center rounded-lg px-3 text-base font-medium focus-visible:outline-2 focus-visible:outline-primary ' + (pathname === link.href ? 'bg-secondary text-primary' : 'text-foreground hover:bg-secondary')}>{link.label}</Link>)}
+      </nav>
+    </div>
+  </header>
 }
