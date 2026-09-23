@@ -100,7 +100,7 @@ export default function MenuPage() {
           <div>
             <p className="mb-1 text-sm font-medium text-primary">Sunville Bakery · Las Vegas</p>
             <h1 className="heading-1">Our menu</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Explore your favorites. Call us to order or ask about availability.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Fresh daily buns. Call to confirm availability and pickup.</p>
             <button type="button" aria-expanded={hoursOpen} aria-controls="menu-hours" onClick={() => setHoursOpen(!hoursOpen)} className="mt-2 flex min-h-12 items-center gap-2 rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden="true" className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-green-700' : 'bg-gray-500')} />
               {status?.text || 'View store hours'} <span className="text-muted-foreground">(Las Vegas)</span>
@@ -149,7 +149,7 @@ export default function MenuPage() {
         {category === 'Custom Cakes' ? <section aria-labelledby="custom-menu-title" className="rounded-xl border border-amber-300 bg-amber-50 p-6 sm:p-8">
           <span className="inline-flex rounded-md bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950">Requires 3-5 Days Notice</span>
           <h2 id="custom-menu-title" className="heading-2 mt-4">A cake made for your celebration</h2>
-          <p className="mt-3 max-w-2xl text-muted-foreground">Explore cake sizes, flavors, fillings, and pricing. Share your ideas and preferred date to request a custom quote.</p>
+          <p className="mt-3 max-w-2xl text-muted-foreground">Choose a size, explore flavors, and request a quote.</p>
           <Button asChild className="mt-5 w-full sm:w-auto"><a href="/custom-cakes">Explore Custom Cakes & Inquire</a></Button>
           <p className="mt-3 text-sm text-muted-foreground">Availability and your final design are confirmed by the bakery.</p>
         </section> : loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
@@ -160,7 +160,7 @@ export default function MenuPage() {
                 {filtered.map(product => <Dialog key={product.id}>
                   <DialogTrigger asChild><button type="button" aria-label={'View details for ' + product.name} className="menu-card focus-visible:outline-2 focus-visible:outline-primary">
                     <ProductImage product={product} />
-                    <span className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{menuGroup(product)}</span><span className="heading-3">{product.name}</span><span className="mb-3 mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground sm:my-0">{product.description || 'Ask us for more details about this item.'}</span><LeadTimeBadge product={product} /><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
+                    <span className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{menuGroup(product)}</span><span className="heading-3">{product.name}</span><span className="mb-3 mt-2 line-clamp-1 text-sm leading-relaxed text-muted-foreground sm:my-0">{product.description || 'View details'}</span><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></span>
                   </button></DialogTrigger>
                   <DialogContent className="max-h-[85dvh] overflow-y-auto bg-white">
                     <DialogTitle className="heading-3 pr-12">{product.name}</DialogTitle>
