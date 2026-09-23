@@ -23,7 +23,7 @@ export function Footer() {
             </div>
           </details>
           <nav aria-label="Mobile footer navigation" className="flex flex-wrap gap-x-5 border-t border-white/20">
-            <Link href="/menu" className={linkStyle}>Menu</Link><Link href="/#about" className={linkStyle}>About</Link><Link href="/gallery" className={linkStyle}>Gallery</Link><Link href="/contact" className={linkStyle}>Contact</Link>
+            <Link href="/menu" className={linkStyle}>Menu</Link><Link href="/custom-cakes" className={linkStyle}>Custom Cakes</Link><Link href="/#about" className={linkStyle}>About</Link><Link href="/gallery" className={linkStyle}>Gallery</Link><Link href="/contact" className={linkStyle}>Contact</Link>
           </nav>
         </div>
         <div className="hidden sm:grid gap-8 border-b border-white/20 pb-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_1fr_0.7fr] lg:gap-10">
@@ -56,6 +56,7 @@ export function Footer() {
             <h2 className="heading-label mb-1">Explore</h2>
             <ul>
               <li><Link href="/menu" className={linkStyle}>Menu</Link></li>
+              <li><Link href="/custom-cakes" className={linkStyle}>Custom Cakes</Link></li>
               <li><Link href="/#about" className={linkStyle}>Our story</Link></li>
               <li><Link href="/gallery" className={linkStyle}>Gallery</Link></li>
               <li><Link href="/contact" className={linkStyle}>Contact</Link></li>
