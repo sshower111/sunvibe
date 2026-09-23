@@ -13,7 +13,7 @@ export function HeroSection() {
         <div className="max-w-2xl">
           <p className="mb-4 text-sm font-semibold tracking-wide text-white">Las Vegas · Family-owned since 2002</p>
           <h1 id="home-heading" className="heading-1 heading-on-dark">Fresh baked<br /><span className="text-accent">goodness daily</span></h1>
-          <p className="mb-7 mt-5 max-w-xl text-base leading-relaxed text-white sm:text-lg">Asian pastries, soft cakes, and traditional buns. Discover your favorites from our family bakery in Las Vegas.</p>
+          <p className="mb-7 mt-5 max-w-xl text-base leading-relaxed text-white sm:text-lg">Soft cakes, sweet and savory buns—baked fresh in Las Vegas.</p>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link href="/custom-cakes" className={buttonVariants({ className: 'w-full sm:w-auto' })}>Inquire for Custom Cakes <ArrowRight aria-hidden="true" /></Link>
             <Link href="/menu" className={buttonVariants({ variant: 'outline', className: 'w-full sm:w-auto' })}>Explore Daily Menu</Link>
