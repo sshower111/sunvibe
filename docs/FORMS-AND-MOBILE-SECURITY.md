@@ -36,3 +36,7 @@ The contact widget waits for Turnstile's script load event and attaches the curr
 
 Browser checks on September 23 covered delayed readiness, successful verification enabling Send, expiry disabling Send, retry, blocked scripts, hostname errors, and a 48px mobile retry target with mocked Cloudflare responses. These checks do not prove a real Cloudflare challenge succeeds on every network. No contact email was sent during testing.
 
+
+## September 24 update: invisible verification
+
+The new form flow in PUNCH-LIST-2026-09-24.md supersedes the earlier visible-widget status/retry UI. The owner confirmed Invisible mode in Cloudflare. ContactCaptcha exposes an imperative verify() promise, renders with execution=execute and appearance=interaction-only, and obtains a fresh token at submit time. No verification status is displayed while editing the form. Server validation remains unchanged. Privacy links point to /privacy, which references Cloudflare's required addendum. Physical-phone verification remains outstanding.

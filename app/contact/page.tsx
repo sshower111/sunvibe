@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
-import { ContactCaptcha } from "@/components/contact-captcha"
+import { ContactCaptcha, type CaptchaHandle } from "@/components/contact-captcha"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -16,8 +16,7 @@ export default function ContactPage() {
     phone: "",
     message: ""
   })
-  const [captchaToken, setCaptchaToken] = useState("")
-  const [captchaReset, setCaptchaReset] = useState(0)
+  const captcha = useRef<CaptchaHandle>(null)
   const feedbackRef = useRef<HTMLDivElement>(null)
   const sendingRef = useRef(false)
   const [submitting, setSubmitting] = useState(false)
@@ -68,11 +67,12 @@ export default function ContactPage() {
       requestAnimationFrame(() => feedbackRef.current?.focus())
       return
     }
-    if (!captchaToken) { setError("Please complete the verification first."); return }
     sendingRef.current = true
     setSubmitting(true)
 
     try {
+      const captchaToken = await captcha.current?.verify()
+      if (!captchaToken) throw new Error('Unable to verify your request. Please try again.')
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,10 +89,8 @@ export default function ContactPage() {
         setError(data.error || "Failed to send message. Please try again.")
       }
     } catch (err) {
-      setError("Failed to send message. Please try again.")
+      setError(err instanceof Error ? err.message : "Failed to send message. Please try again.")
     } finally {
-      setCaptchaToken("")
-      setCaptchaReset(value => value + 1)
       sendingRef.current = false
       setSubmitting(false)
       requestAnimationFrame(() => feedbackRef.current?.focus())
@@ -163,7 +161,7 @@ export default function ContactPage() {
 
                 </div>
                 <p className="hidden sm:block mb-4 text-sm text-muted-foreground">* Required fields. For questions, not order confirmation.</p>
-                <form onSubmit={handleSubmit} aria-busy={submitting} className="space-y-4 sm:space-y-5">
+                <form method="post" onSubmit={handleSubmit} aria-busy={submitting} className="space-y-4 sm:space-y-5">
                   <fieldset disabled={submitting} className="space-y-4 sm:space-y-5">
                   <div>
                     <label htmlFor="name" className="mb-2 block text-sm font-semibold text-foreground">
@@ -245,10 +243,10 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <ContactCaptcha onToken={setCaptchaToken} resetKey={captchaReset} />
+                  <ContactCaptcha ref={captcha} /><a href="/privacy" className="inline-flex min-h-12 items-center text-xs text-muted-foreground underline underline-offset-4">Privacy</a>
                   <Button
                     type="submit"
-                    disabled={submitting || !captchaToken}
+                    disabled={submitting}
                     className="w-full"
                   >
                     {submitting ? "Sending..." : "Send Message"}

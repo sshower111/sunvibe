@@ -32,11 +32,37 @@ export function menuGroup(product: MenuProduct): typeof menuCategories[number] {
   if (/^(buns|breads)$/i.test(product.category)) {
     return /ham|sausage|pork|hot dog|scallion|tuna|cheese/i.test(product.name) ? 'Savory Buns' : 'Sweet Buns & Rolls'
   }
-  if (/roll cakes/i.test(product.category)) return 'Sweet Buns & Rolls'
+  if (/roll cakes/i.test(product.category)) return 'Specialty Items'
   return 'Specialty Items'
 }
 export function menuLeadTime(product: MenuProduct) {
   if (menuGroup(product) === 'Custom Cakes') return { text: 'Requires 3-5 Days Notice', tone: 'notice' }
   if (/^(buns|breads)$/i.test(product.category)) return { text: 'Same-Day Pickup / Fresh Daily', tone: 'daily' }
   return { text: 'Call to confirm availability', tone: 'availability' }
+}
+
+// Search relevance: full/partial name matches first, then description, then category.
+export function rankMenuSearch(products: MenuProduct[], query: string): MenuProduct[] {
+  const normalized = query.trim().toLocaleLowerCase()
+  if (!normalized) return products
+  const terms = normalized.split(/\s+/)
+  const score = (product: MenuProduct) => {
+    const name = product.name.toLocaleLowerCase()
+    const description = product.description.toLocaleLowerCase()
+    return (name === normalized ? 10000 : name.startsWith(normalized) ? 5000 : name.includes(normalized) ? 3000 : 0)
+      + terms.reduce((total, term) => total + (name.includes(term) ? 100 : description.includes(term) ? 10 : 1), 0)
+  }
+  return products.filter(product => matchesMenuSearch(product, query)).sort((a, b) => score(b) - score(a))
+}
+export function menuDescription(text: string, limit = 60): string {
+  const normalized = text.trim().replace(/\s+/g, ' ')
+  if (normalized.length <= limit) return normalized
+  const words = normalized.split(' ')
+  let excerpt = words.shift() || ''
+  for (const word of words) {
+    if ((excerpt + ' ' + word).length > limit) break
+    excerpt += ' ' + word
+  }
+  // Keep a single long word intact instead of cutting it mid-word.
+  return excerpt + (excerpt.length < normalized.length ? '…' : '')
 }
