@@ -10,7 +10,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } 
 function FeaturedPhoto({ src, detail = false }: { src: string; detail?: boolean }) {
   const [failed, setFailed] = useState(false)
   return <span className={'relative flex items-center justify-center overflow-hidden rounded-lg bg-secondary ' + (detail ? 'h-[50dvh]' : 'aspect-square')}>
-    {failed ? <span className="p-4 text-center text-sm text-muted-foreground">Photo unavailable</span> : <Image src={src} unoptimized={!canOptimizeGalleryImage(src)} fill sizes={detail ? "(min-width: 768px) 720px, 95vw" : "(min-width: 768px) 33vw, 50vw"} alt={detail ? galleryAlt(src) : ''} loading={detail ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} className={'h-full w-full ' + (detail ? 'object-contain' : 'object-cover')} />}
+    {failed ? <span className="p-4 text-center text-sm text-muted-foreground">Photo unavailable</span> : <Image src={src} unoptimized={!canOptimizeGalleryImage(src)} fill sizes={detail ? "(min-width: 768px) 720px, 95vw" : "(min-width: 768px) 33vw, 50vw"} alt={galleryAlt(src)} loading={detail ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} className={'h-full w-full ' + (detail ? 'object-contain' : 'object-cover')} />}
   </span>
 }
 

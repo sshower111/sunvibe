@@ -65,7 +65,7 @@ export function Footer() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-5 text-xs leading-relaxed text-white/80">
           <p>&copy; {new Date().getFullYear()} Sunville Bakery. All rights reserved.</p>
-          <p className="hidden sm:block">Call to confirm availability and arrange pickup.</p>
+          <Link href="/privacy" className="inline-flex min-h-12 items-center underline underline-offset-4">Privacy</Link>
         </div>
       </div>
     </footer>

@@ -14,7 +14,7 @@ function GalleryPhoto({ src, index, expanded = false }: { src: string; index: nu
   const [loaded, setLoaded] = useState(false)
   return <span className={'relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-secondary ' + (expanded ? 'h-[55dvh]' : 'aspect-square')}>
     {failed ? <span role="status" className="flex flex-col items-center gap-3 p-4 text-center text-sm text-muted-foreground"><ImageIcon aria-hidden="true" />Photo unavailable{expanded && <Button type="button" variant="outline" onClick={() => { setFailed(false) }}>Retry photo</Button>}</span> :
-      <Image src={src} unoptimized={!canOptimizeGalleryImage(src)} fill sizes={expanded ? "(min-width: 900px) 850px, 95vw" : "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"} alt={expanded ? galleryAlt(src) : ""} loading={expanded ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} className={'h-full w-full ' + (expanded ? 'object-contain' : 'object-cover')} />}
+      <Image src={src} unoptimized={!canOptimizeGalleryImage(src)} fill sizes={expanded ? "(min-width: 900px) 850px, 95vw" : "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"} alt={galleryAlt(src)} loading={expanded ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} className={'h-full w-full ' + (expanded ? 'object-contain' : 'object-cover')} />}
   </span>
 }
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect } from '@/components/ui/select'
-import { ContactCaptcha } from '@/components/contact-captcha'
+import { ContactCaptcha, type CaptchaHandle } from '@/components/contact-captcha'
 import { cakeInquirySchema, eventTypes, budgets, flavors, fillings, MAX_PHOTO_BYTES, MAX_PHOTOS } from '@/lib/cake-inquiry'
 
 import { cakeCatalog, cakeLabel, deliveryOptions } from '@/lib/cake-catalog'
@@ -28,8 +28,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
-  const [token, setToken] = useState('')
-  const [reset, setReset] = useState(0)
+  const captcha = useRef<CaptchaHandle>(null)
   const requestId = useRef('')
   const sending = useRef(false)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -55,14 +54,16 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
     if (sending.current) return
     if (step < 3) { if (validate()) navigate(step + 1); return }
     if (!validate(true)) return
-    if (!token) { setError('Please complete security verification before submitting.'); return }
     sending.current = true; setBusy(true); setError('')
     requestId.current ||= crypto.randomUUID()
     const form = new FormData()
     Object.entries(data).forEach(([key, value]) => form.set(key, value))
     photos.forEach(file => form.append('photos', file))
-    form.set('captchaToken', token); form.set('requestId', requestId.current)
+    form.set('requestId', requestId.current)
     try {
+      const token = await captcha.current?.verify()
+      if (!token) throw new Error('Unable to verify your request. Please try again.')
+      form.set('captchaToken', token)
       const response = await fetch('/api/custom-cakes', { method: 'POST', body: form })
       const result = await response.json()
       if (!response.ok) {
@@ -77,10 +78,10 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       }
       setSent(true); setPhotos([])
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to send your inquiry. Please try again.') }
-    finally { sending.current = false; setBusy(false); setToken(''); setReset(value => value + 1); requestAnimationFrame(() => feedback.current?.focus()) }
+    finally { sending.current = false; setBusy(false); requestAnimationFrame(() => feedback.current?.focus()) }
   }
   if (sent) return <div ref={feedback} tabIndex={-1} role="status" className="rounded-xl border border-green-800/20 bg-green-50 p-6 sm:p-8"><h2 className="heading-2">Your cake inquiry is on its way</h2><p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p><p className="mt-3 font-semibold">Your order and date are not confirmed yet.</p><p className="mt-3">Need to follow up? Call <a href="tel:+17028899887" className="text-primary underline">702-889-9887</a>.</p></div>
-  return <form onSubmit={submit} noValidate aria-busy={busy} className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8">
+  return <form method="post" onSubmit={submit} noValidate aria-busy={busy} className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8">
     <ol aria-label="Inquiry progress" className="mb-8 grid grid-cols-4 gap-2">
       {steps.map((name, index) => <li key={name} aria-current={step === index ? 'step' : undefined} className={`border-t-4 pt-3 ${index <= step ? 'border-primary' : 'border-border'}`}><span className="block text-xs font-semibold text-primary">{index + 1}{index < step ? ' ✓' : ''}</span><span className={`mt-1 text-xs sm:text-sm ${step === index ? 'block font-semibold' : 'hidden sm:block text-muted-foreground'}`}>{name}</span></li>)}
     </ol>
@@ -131,10 +132,10 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         <div className="flex flex-wrap gap-2">{steps.slice(0,3).map((name,index) => <Button type="button" key={name} variant="outline" onClick={() => navigate(index)}>Edit {name.toLowerCase()}</Button>)}</div>
         <label htmlFor="cake-acknowledged" className="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm"><input id="cake-acknowledged" type="checkbox" className="mt-1 size-5 shrink-0 accent-primary" checked={data.acknowledged === 'yes'} aria-invalid={!!errors.acknowledged} aria-describedby={errors.acknowledged ? 'cake-acknowledged-error' : undefined} onChange={event => update('acknowledged', event.target.checked ? 'yes' : '')} /><span>I understand my order is confirmed only after the bakery approves the date, design, price, and pickup or delivery.</span></label>
         {errors.acknowledged && <p id="cake-acknowledged-error" className="text-sm text-red-700">{errors.acknowledged}</p>}
-        <ContactCaptcha action="custom_cake" onToken={setToken} resetKey={reset} />
+        <ContactCaptcha ref={captcha} action="custom_cake" /><a href="/privacy" className="inline-flex min-h-12 items-center text-xs text-muted-foreground underline underline-offset-4">Privacy</a>
       </>}
       <div ref={feedback} tabIndex={-1} className="focus:outline-none">{error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}</div>
-      <div className="flex flex-wrap justify-between gap-3 border-t pt-5">{step > 0 && <Button type="button" variant="outline" onClick={() => navigate(step - 1)}>Back</Button>}<Button type="submit" disabled={busy || (step === 3 && !token)} className="ml-auto flex-1 sm:flex-none">{busy ? 'Sending inquiry…' : step === 3 ? 'Send cake inquiry' : 'Continue'}</Button></div>
+      <div className="flex flex-wrap justify-between gap-3 border-t pt-5">{step > 0 && <Button type="button" variant="outline" onClick={() => navigate(step - 1)}>Back</Button>}<Button type="submit" disabled={busy} className="ml-auto flex-1 sm:flex-none">{busy ? 'Sending inquiry…' : step === 3 ? 'Send cake inquiry' : 'Continue'}</Button></div>
     </fieldset>
     <p className="mt-4 text-xs text-muted-foreground">Your details and photos go to the bakery for this inquiry. Questions? <a href="tel:+17028899887" className="text-primary underline">call 702-889-9887</a>.</p>
   </form>

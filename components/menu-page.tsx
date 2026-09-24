@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from "lucide-react"
-import { getStoreStatus, matchesMenuSearch, menuCategories, menuGroup, menuLeadTime, type MenuProduct } from "@/lib/menu"
+import { getStoreStatus, rankMenuSearch, menuDescription, menuCategories, menuGroup, menuLeadTime, type MenuProduct } from "@/lib/menu"
 
 const phone = "tel:+17028899887"
 const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
@@ -74,9 +74,10 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
   }, [activeSuggestion])
 
   const categories = menuCategories
-  const suggestions = query.trim() ? products.filter(product => matchesMenuSearch(product, query)).slice(0, 6) : []
+  const ranked = rankMenuSearch(products, query)
+  const suggestions = query.trim() ? ranked : []
   const showSuggestions = suggesting && suggestions.length > 0
-  const filtered = products.filter(product => matchesMenuSearch(product, query) && (category === 'All Items' || menuGroup(product) === category))
+  const filtered = ranked.filter(product => category === 'All Items' || menuGroup(product) === category)
   const selectSuggestion = (product: MenuProduct) => {
     setQuery(product.name)
     setCategory('All Items')
@@ -136,11 +137,12 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
               className="pl-11 pr-12" />
             {query && <button type="button" aria-label="Clear search" className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { setQuery(''); setSuggesting(false); setActiveSuggestion(-1); searchRef.current?.focus() }}><X aria-hidden="true" className="h-5 w-5" /></button>}
             <ul id="menu-suggestions" hidden={!showSuggestions} role="listbox" aria-label="Suggested menu items" className="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-xl border bg-white p-1 shadow-lg">
-              {suggestions.map((product, index) => <li key={product.id} id={'suggestion-' + index} role="option" aria-selected={index === activeSuggestion} onMouseDown={event => event.preventDefault()} onClick={() => selectSuggestion(product)} className={'cursor-pointer rounded-lg px-3 py-3 text-sm hover:bg-secondary ' + (index === activeSuggestion ? 'bg-secondary' : '')}>
+              {suggestions.map((product, index) => <li key={product.id} id={'suggestion-' + index} role="option" aria-selected={index === activeSuggestion} onMouseDown={event => event.preventDefault()} onClick={() => selectSuggestion(product)} className={'min-h-12 cursor-pointer rounded-lg px-3 py-3 text-sm hover:bg-secondary ' + (index === activeSuggestion ? 'bg-secondary' : '')}>
                 <span className="font-medium">{product.name}</span><span className="ml-2 text-muted-foreground">{product.category}</span>
               </li>)}
             </ul>
           </div>
+          <div className="mb-3"><Button asChild className="w-full sm:w-auto"><a href={phone} aria-label="Call Sunville Bakery to order: 702-889-9887"><Phone aria-hidden="true" />Call to order</a></Button></div>
           <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap">
             {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); if (item === 'Custom Cakes') setQuery(''); setSuggesting(false); setActiveSuggestion(-1) }} className={'action-button shrink-0 border focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
           </div>
@@ -161,7 +163,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
                   <article className="menu-card relative focus-within:outline-2 focus-within:outline-primary">
                     <DialogTrigger asChild><button type="button" aria-label={'View details for ' + product.name} className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-primary"><span className="sr-only">View details for {product.name}</span></button></DialogTrigger>
                     <ProductImage product={product} />
-                    <div className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{menuGroup(product)}</span><h2 className="heading-3">{product.name}</h2><span className="mb-3 mt-2 line-clamp-1 text-sm leading-relaxed text-muted-foreground sm:my-0">{product.description || 'View details'}</span><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></div>
+                    <div className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4"><span className="mb-1 text-xs text-muted-foreground">{menuGroup(product)}</span><h2 className="heading-3">{product.name}</h2><span className="mb-3 mt-2 break-words text-sm leading-relaxed text-muted-foreground sm:my-0">{menuDescription(product.description) || 'View details'}</span><span className="mt-auto flex items-center justify-between gap-2 sm:pt-2"><span className="text-lg font-semibold text-primary">${product.price}</span><span className="text-xs font-medium underline underline-offset-4">Details</span></span></div>
                   </article>
                   <DialogContent className="max-h-[85dvh] overflow-y-auto bg-white">
                     <DialogTitle className="heading-3 pr-12">{product.name}</DialogTitle>
