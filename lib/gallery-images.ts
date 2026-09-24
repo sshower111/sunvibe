@@ -27,3 +27,28 @@ export const galleryImages = [
 // 3. Copy the direct image URL (starts with https://i.ibb.co/)
 // 4. Paste it into the array above
 // 5. Save this file - both Gallery and Featured Gallery will automatically update!
+
+// Descriptions verified visually; keep each caption paired with its image URL.
+const galleryDescriptions = [
+  "Tall pink tiered cake decorated with roses and gold accents",
+  "White tiered cake decorated with white flowers and green leaves",
+  "Golden round bun on a patterned plate",
+  "Wrapped golden bun with a crackled topping",
+  "Pink tiered celebration cake with roses and a topper",
+  "Golden bun with a pale textured topping",
+  "Round pastry with purple swirled layers",
+  "Tray of yellow custard egg tarts",
+  "Yellow glazed round cake topped with fruit",
+  "Fresh egg tarts arranged on a baking tray",
+  "Soft bun cut open to show its savory filling",
+  "White tiered cake with pink flowers and delicate greenery",
+  "Two-tier cake decorated with a train track and trees",
+  "Blue birthday cake decorated with sea creatures and character toppers"
+]
+const galleryAltByUrl = new Map(galleryImages.map((url, index) => [url, galleryDescriptions[index]]))
+export function galleryAlt(src: string) { return galleryAltByUrl.get(src) || "A baked creation from Sunville Bakery in Las Vegas" }
+
+// Unrecognized admin-upload hosts retain normal image delivery, never a broad proxy allowlist.
+export function canOptimizeGalleryImage(src: string) {
+  try { const url = new URL(src); return url.protocol === 'https:' && (url.hostname === 'i.ibb.co' || (url.hostname === 's3-media0.fl.yelpcdn.com' && url.pathname.startsWith('/bphoto/'))) } catch { return false }
+}

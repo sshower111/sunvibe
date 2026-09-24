@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { AdminDescriptionEditor } from "@/components/admin-description-editor"
+import { AdminProductEditor } from "@/components/admin-product-editor"
 
 interface Product {
   id: string
@@ -25,8 +25,6 @@ export default function AdminPage() {
 
   // Menu state
   const [products, setProducts] = useState<Product[]>([])
-  const [editingPrice, setEditingPrice] = useState<string>("")
-  const [editingId, setEditingId] = useState<string>("")
 
   // Gallery state
   const [images, setImages] = useState<string[]>([])
@@ -120,19 +118,6 @@ export default function AdminPage() {
   }
 
   // Menu functions
-  const updatePrice = async (productId: string, priceId: string, newPrice: string) => {
-    const response = await fetch('/api/admin/products/price', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId, priceId, price: newPrice, password })
-    })
-    if (response.ok) {
-      setEditingId("")
-      setEditingPrice("")
-      fetchProducts()
-    }
-  }
-
   const toggleProduct = async (productId: string, active: boolean) => {
     await fetch('/api/admin/products/toggle', {
       method: 'POST',
@@ -281,7 +266,7 @@ export default function AdminPage() {
 
         {/* Menu Tab */}
         {activeTab === "menu" && (
-          <div className="bg-white rounded border">
+          <div className="bg-white rounded border overflow-x-auto">
             <div className="p-4 border-b flex items-center justify-between">
               <p className="text-sm text-gray-600">
                 Add products in <a href="https://dashboard.stripe.com/products" target="_blank" className="underline">Stripe</a>
@@ -300,71 +285,17 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b">
-                    <td className="p-4"><p className="font-medium">{product.name}</p><AdminDescriptionEditor product={product} password={password} onSaved={(description) => setProducts(current => current.map(item => item.id === product.id ? { ...item, description } : item))} /></td>
-                    <td className="p-4">
-                      {editingId === product.id ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editingPrice}
-                          onChange={(e) => setEditingPrice(e.target.value)}
-                          className="form-control w-24"
-                          autoFocus
-                        />
-                      ) : (
-                        `$${product.price}`
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded text-sm ${product.active ? "bg-green-100" : "bg-gray-100"}`}>
-                        {product.active ? "Visible" : "Hidden"}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        {editingId === product.id ? (
-                          <>
-                            <button
-                              onClick={() => updatePrice(product.id, product.priceId, editingPrice)}
-                              className="px-3 py-1 bg-black text-white rounded text-sm"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingId("")
-                                setEditingPrice("")
-                              }}
-                              className="px-3 py-1 border rounded text-sm"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => {
-                                setEditingId(product.id)
-                                setEditingPrice(product.price)
-                              }}
-                              className="px-3 py-1 border rounded text-sm"
-                            >
-                              Edit Price
-                            </button>
-                            <button
-                              onClick={() => toggleProduct(product.id, product.active)}
-                              className="px-3 py-1 border rounded text-sm"
-                            >
-                              {product.active ? "Hide" : "Show"}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {products.map(product => <tr key={product.id} className="border-b">
+                  <td className="p-4"><p className="font-medium">{product.name}</p><p className="mt-1 max-w-lg whitespace-pre-wrap break-words text-sm text-muted-foreground">{product.description || 'No description'}</p></td>
+                  <td className="p-4">${product.price}</td>
+                  <td className="p-4"><span className={`px-2 py-1 rounded text-sm ${product.active ? 'bg-green-100' : 'bg-gray-100'}`}>{product.active ? 'Visible' : 'Hidden'}</span></td>
+                  <td className="p-4"><div className="flex gap-2">
+                    <AdminProductEditor product={product} password={password} onSaved={updated => {
+                      setProducts(current => current.map(item => item.id === updated.id ? { ...item, ...updated } : item))
+                    }} />
+                    <Button size="sm" variant="outline" onClick={() => toggleProduct(product.id, product.active)}>{product.active ? 'Hide' : 'Show'}</Button>
+                  </div></td>
+                </tr>)}
               </tbody>
             </table>
           </div>

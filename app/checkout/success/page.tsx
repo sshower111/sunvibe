@@ -38,7 +38,7 @@ function SuccessContent() {
   }, [sessionId, clearCart])
 
   return (
-    <main className="min-h-screen flex flex-col">
+    <main id="main-content" tabIndex={-1} className="min-h-screen flex flex-col">
       <Navigation />
 
       <div className="flex-1 page-space bg-background">

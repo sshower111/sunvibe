@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { AdminDescriptionEditor } from "@/components/admin-description-editor"
+import { AdminProductEditor } from "@/components/admin-product-editor"
 import { Card, CardContent } from "@/components/ui/card"
-import { Eye, EyeOff, DollarSign, X } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 
 interface Product {
   id: string
@@ -24,8 +24,6 @@ export default function AdminMenuPage() {
   const [password, setPassword] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [editingPrice, setEditingPrice] = useState<{ productId: string, priceId: string, currentPrice: string } | null>(null)
-  const [newPrice, setNewPrice] = useState("")
 
   const ADMIN_PASSWORD = password
 
@@ -89,49 +87,9 @@ export default function AdminMenuPage() {
     setLoading(false)
   }
 
-  const handleEditPrice = (product: Product) => {
-    setEditingPrice({
-      productId: product.id,
-      priceId: product.priceId,
-      currentPrice: product.price
-    })
-    setNewPrice(product.price)
-  }
-
-  const handleSavePrice = async () => {
-    if (!editingPrice) return
-
-    setLoading(true)
-    try {
-      const response = await fetch('/api/admin/products/price', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: editingPrice.productId,
-          priceId: editingPrice.priceId,
-          price: newPrice,
-          password: ADMIN_PASSWORD,
-        })
-      })
-
-      if (response.ok) {
-        alert("Price updated successfully!")
-        setEditingPrice(null)
-        fetchProducts()
-      } else {
-        const error = await response.json()
-        alert(`Failed to update price: ${error.error}`)
-      }
-    } catch (error) {
-      console.error('Error updating price:', error)
-      alert("Error updating price")
-    }
-    setLoading(false)
-  }
-
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="p-8">
             <h1 className="heading-1 mb-6 text-center">Menu Admin Login</h1>
@@ -144,7 +102,7 @@ export default function AdminMenuPage() {
                 onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                 className="form-control w-full"
               />
-              <Button onClick={handleLogin} className="w-full  ">
+              <Button onClick={handleLogin} className="w-full">
                 Login
               </Button>
             </div>
@@ -155,14 +113,14 @@ export default function AdminMenuPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-gray-50">
       <Navigation />
 
       <div className="pt-36 pb-16">
         <div className="site-container">
           <div className="mb-8">
             <h1 className="heading-1 mb-2">Menu Management</h1>
-            <p className="text-muted-foreground">Edit descriptions, update prices, and show/hide products</p>
+            <p className="text-muted-foreground">Edit item names, descriptions, and prices, or show/hide products</p>
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
                 <strong>💡 Tip:</strong> To add new products or change images, go to your{" "}
@@ -175,7 +133,7 @@ export default function AdminMenuPage() {
           </div>
 
           {/* Products Table */}
-          <div className="bg-white rounded-lg border overflow-hidden">
+          <div className="bg-white rounded-lg border overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
@@ -198,9 +156,7 @@ export default function AdminMenuPage() {
                         />
                         <div>
                           <p className="font-medium">{product.name}</p>
-                          <AdminDescriptionEditor product={product} password={password} onSaved={(description) => {
-                            setProducts((current) => current.map((item) => item.id === product.id ? { ...item, description } : item))
-                          }} />
+                          <p className="mt-1 max-w-lg whitespace-pre-wrap break-words text-sm text-muted-foreground">{product.description || "No description"}</p>
                         </div>
                       </div>
                     </td>
@@ -227,15 +183,9 @@ export default function AdminMenuPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditPrice(product)}
-                          disabled={loading}
-                          title="Edit price"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                        </Button>
+<AdminProductEditor product={product} password={password} disabled={loading} onSaved={updated => {
+                            setProducts(current => current.map(item => item.id === updated.id ? { ...item, ...updated } : item))
+                          }} />
                         <Button
                           size="sm"
                           variant={product.active ? "outline" : "default"}
@@ -264,60 +214,6 @@ export default function AdminMenuPage() {
           )}
         </div>
       </div>
-
-      {/* Edit Price Modal */}
-      {editingPrice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="heading-2 ">Update Price</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingPrice(null)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">New Price ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newPrice}
-                    onChange={(e) => setNewPrice(e.target.value)}
-                    className="form-control w-full text-lg"
-                    placeholder="15.00"
-                    autoFocus
-                  />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Current price: ${editingPrice.currentPrice}
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    onClick={handleSavePrice}
-                    disabled={loading || !newPrice || newPrice === editingPrice.currentPrice}
-                    className="flex-1  "
-                  >
-                    {loading ? "Updating..." : "Update Price"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditingPrice(null)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       <Footer />
     </main>
