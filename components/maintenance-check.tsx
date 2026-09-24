@@ -3,38 +3,14 @@
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 
-export function MaintenanceCheck({ children }: { children: React.ReactNode }) {
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+export function MaintenanceCheck({ children, isMaintenanceMode = false }: { children: React.ReactNode; isMaintenanceMode?: boolean }) {
   const pathname = usePathname()
-
-  // Check if current path is admin route
-  const isAdminRoute = pathname?.startsWith('/admin')
-
-  useEffect(() => {
-    const checkMaintenance = async () => {
-      try {
-        const response = await fetch('/api/admin/maintenance')
-        const data = await response.json()
-        setIsMaintenanceMode(data.maintenanceMode || false)
-      } catch (error) {
-        console.error("Failed to check maintenance mode:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkMaintenance()
-  }, [])
-
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
+  const isAdminRoute = pathname === '/admin' || pathname?.startsWith('/admin/')
 
   // Skip maintenance check for admin routes
   if (isMaintenanceMode && !isAdminRoute) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="mb-6">
             <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -56,11 +32,11 @@ export function MaintenanceCheck({ children }: { children: React.ReactNode }) {
               📍 4053 Spring Mountain Rd, Las Vegas, NV 89102
             </p>
             <p className="text-sm text-gray-600">
-              📞 (702) 909-2253
+              📞 (702) 889-9887
             </p>
           </div>
         </div>
-      </div>
+      </main>
     )
   }
 

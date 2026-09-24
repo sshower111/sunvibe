@@ -19,7 +19,11 @@ const nextConfig = {
     ] }]
   },
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 's3-media0.fl.yelpcdn.com', pathname: '/bphoto/**' },
+      { protocol: 'https', hostname: 'i.ibb.co', pathname: '/**' },
+    ],
   },
 }
 

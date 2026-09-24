@@ -16,7 +16,7 @@ The public contact endpoint verifies the token with Cloudflare, checks success, 
 CAPTCHA covers /api/contact, the public message form. Existing admin authentication routes and legacy checkout are not claimed to be CAPTCHA-protected or remediated by this change. Outstanding audit findings remain separate.
 
 ## Headers
-Middleware adds per-request nonces to CSP and request headers for Next's scripts; layout scripts carry the same nonce. HTML is dynamically rendered and marked private/no-store; this has a caching/performance cost. Production script-src does not permit unsafe-inline or unsafe-eval. Development permits unsafe-eval for Next development tooling. Inline styles remain permitted for existing UI components. CSP permits Turnstile and current Chatbase/analytics integrations; browser integration testing is still required before deployment.
+Middleware adds per-request nonces to CSP and request headers for Next's scripts; layout scripts carry the same nonce. HTML is dynamically rendered and marked private/no-store; this has a caching/performance cost. Production script-src does not permit unsafe-inline or unsafe-eval. Development permits unsafe-eval for Next development tooling. Inline styles remain permitted for existing UI components. CSP permits Turnstile and analytics integrations; browser integration testing is still required before deployment.
 
 Global headers include nosniff, DENY framing, strict-origin-when-cross-origin and restricted device permissions. Production emits HSTS max-age=63072000; HTTP localhost does not. HSTS deliberately omits includeSubDomains/preload. API responses receive a restrictive CSP. Existing API cache headers can override global defaults and should be reviewed as endpoints evolve.
 

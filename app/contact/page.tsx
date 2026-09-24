@@ -118,11 +118,11 @@ export default function ContactPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
 
-      <main className="flex-1 page-space">
+      <main id="main-content" tabIndex={-1} className="flex-1 page-space">
         <div className="site-container">
           <div className="mb-5 sm:mb-8">
             <h1 className="heading-1 mb-3">
-              Contact us
+              Contact Sunville Bakery in Las Vegas
             </h1>
 
             <p className="hidden sm:block text-base text-muted-foreground max-w-2xl leading-relaxed">
@@ -144,7 +144,7 @@ export default function ContactPage() {
           <div className="order-1 min-w-0 lg:order-2">
             <Card className="gap-0 border-0 bg-transparent py-0 shadow-none sm:rounded-xl sm:border sm:border-border sm:bg-white sm:py-6 sm:shadow-sm">
               <CardContent className="p-0 sm:p-6">
-                <h2 className="heading-2 hidden sm:block mb-4">Send us a Message</h2>
+                <h2 className="heading-2 sr-only sm:not-sr-only mb-4">Send us a Message</h2>
 
                 <div ref={feedbackRef} tabIndex={-1} className="focus:outline-none">
                 {submitted && (

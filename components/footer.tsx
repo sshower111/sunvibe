@@ -29,7 +29,7 @@ export function Footer() {
         <div className="hidden sm:grid gap-8 border-b border-white/20 pb-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_1fr_0.7fr] lg:gap-10">
           <div className="min-w-0">
             <Link href="/" aria-label="Sunville Bakery home" className="inline-block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-              <img src="/logoWhite.png" alt="Sunville Bakery" loading="lazy" className="h-12 w-auto max-w-full object-contain" />
+              <img src="/logoWhite.png" width={600} height={204} alt="Sunville Bakery" loading="lazy" className="h-12 w-auto max-w-full object-contain" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/85">Your neighborhood Asian bakery in Las Vegas. Family-owned since 2002.</p>
             <a href="tel:+17028899887" className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Phone aria-hidden="true" className="h-4 w-4" />Call to order</a>

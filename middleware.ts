@@ -5,12 +5,12 @@ export function middleware(request: NextRequest) {
   const development = process.env.NODE_ENV !== 'production'
   const policy = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://challenges.cloudflare.com https://www.chatbase.co https://va.vercel-scripts.com ${development ? "'unsafe-eval'" : ''}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://challenges.cloudflare.com https://va.vercel-scripts.com ${development ? "'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https: data: blob:",
     "font-src 'self' data:",
-    `connect-src 'self' https://challenges.cloudflare.com https://www.chatbase.co https://*.chatbase.co https://vitals.vercel-insights.com https://va.vercel-scripts.com ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
-    "frame-src https://challenges.cloudflare.com https://www.chatbase.co https://*.chatbase.co",
+    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
+    "frame-src https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

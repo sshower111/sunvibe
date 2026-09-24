@@ -27,7 +27,7 @@ export function Navigation() {
   return <header ref={header} className="fixed inset-x-0 top-0 z-50 border-b border-border bg-white shadow-sm" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}>
     <div className="site-container">
       <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
-        <Link href="/" aria-label="Sunville Bakery home" onClick={() => setOpen(false)} className="flex h-12 w-[180px] shrink-0 items-center rounded focus-visible:outline-2 focus-visible:outline-primary"><img src="/logoBlack.png" alt="Sunville Bakery" className="h-9 w-full object-contain object-left md:h-12" /></Link>
+        <Link href="/" aria-label="Sunville Bakery home" onClick={() => setOpen(false)} className="flex h-12 w-[180px] shrink-0 items-center rounded focus-visible:outline-2 focus-visible:outline-primary"><img src="/logoBlack.png" width={600} height={204} alt="Sunville Bakery" className="h-9 w-full object-contain object-left md:h-12" /></Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-3 md:flex lg:gap-6">
           {links.map(link => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? 'page' : undefined} className={'inline-flex min-h-12 items-center rounded text-sm font-medium underline-offset-8 hover:underline focus-visible:outline-2 focus-visible:outline-primary ' + (pathname === link.href ? 'text-primary underline' : 'text-foreground')}>{link.label}</Link>)}
         </nav>
