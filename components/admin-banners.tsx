@@ -31,7 +31,7 @@ export function AdminBanners({ password }: { password: string }) {
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Could not save banners') }
     finally { setBusy(false) }
   }
-  return <section className="rounded-xl border bg-card p-5"><h2 className="heading-2">Homepage banners</h2><p className="my-3 text-sm">Enabled banners appear during their dates in Las Vegas time. The first matching banner wins. Save changes to apply your edits.</p><p className="text-sm">Visitors who dismissed a banner will keep it hidden. Create a new banner for a new campaign.</p>
+  return <section className="rounded-xl border bg-card p-5"><h2 className="heading-2">Homepage banners</h2><p className="my-3 text-sm">Enabled banners appear during their dates in Las Vegas time. The first matching banner wins. Save changes to apply your edits.</p><p className="text-sm">Closing a banner hides it for 24 hours. It can appear again on the next visit while its campaign is active.</p>
     <p role="status" className="my-3">{message}</p>
     {!loaded ? <Button onClick={load} disabled={busy}>{busy ? 'Loading…' : 'Retry loading'}</Button> : <form onSubmit={save}><fieldset disabled={busy} className="space-y-6">
       {banners.map((banner, index) => <fieldset key={banner.id} className="space-y-4 rounded-lg border p-4"><legend className="px-2 font-semibold">{banner.id}</legend>

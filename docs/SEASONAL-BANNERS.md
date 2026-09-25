@@ -40,3 +40,7 @@ Validation: production build passed; schema checks rejected unsafe links, invali
 ### Local development storage
 
 `next dev` outside Vercel reads/writes `.local-data/seasonal-banners.json` (gitignored), with code seeds on the first load. Local edits persist across restarts and do not update live campaigns. Production still requires Vercel Blob and never falls back to the filesystem. Invalid saved data raises an error rather than silently resetting campaigns.
+
+## Dismissal update — September 24, 2026
+
+Supersedes the permanent-dismissal behavior described above: closing a banner now stores an expiry 24 hours from dismissal. After expiry it can reappear on the next visit or reload, if the campaign is still active. Legacy permanent dismissal values are cleared. No production configuration or campaign dates are changed.
