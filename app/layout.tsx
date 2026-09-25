@@ -1,3 +1,6 @@
+import { SiteSeasonalBanner } from '@/components/site-seasonal-banner'
+import { readSeasonalBanners } from '@/lib/seasonal-store'
+import { getActiveBanner } from '@/lib/seasonal'
 import { SITE_URL, pageMetadata, bakerySchema } from "@/lib/seo"
 import { StructuredData } from "@/components/structured-data"
 import type React from "react"
@@ -32,6 +35,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Fail closed if banner storage is unavailable.
+  const banners = await readSeasonalBanners().catch(() => [])
   return (
     <html lang="en">
       <head>
@@ -41,6 +46,7 @@ export default async function RootLayout({
         <StructuredData data={bakerySchema} />
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
+        <SiteSeasonalBanner banner={getActiveBanner(new Date(), banners)} />
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <CartProvider>
           <MaintenanceCheck isMaintenanceMode={process.env.MAINTENANCE_MODE === "true"}>
