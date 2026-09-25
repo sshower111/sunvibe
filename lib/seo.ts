@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 export const SITE_URL = 'https://sunvillebakerylv.com'
 export const publicPages = {
+  '/pre-order': { title: 'Festival Pre-orders in Las Vegas', description: 'Reserve seasonal bakery favorites at Sunville Bakery. Submit a request and our team will call to confirm availability and pickup.' },
   '/privacy': { title: 'Privacy Notice', description: 'How Sunville Bakery handles inquiry information, spam protection, and website measurement.' },
   '/': { title: 'Asian Bakery & Custom Cakes in Las Vegas', description: 'Visit Sunville Bakery in Las Vegas for fresh sweet and savory buns, chiffon cakes, and custom celebration cakes. Family-owned since 2002.' },
   '/menu': { title: 'Fresh Buns & Pastries Menu in Las Vegas', description: 'Explore Sunville Bakery’s savory buns, sweet buns, rolls, and specialty pastries in Las Vegas. Call to confirm availability and same-day pickup.' },

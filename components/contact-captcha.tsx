@@ -43,7 +43,7 @@ function loadTurnstile(): Promise<TurnstileApi> {
 
 // Widget mode is configured as Invisible in Cloudflare. No token/status UI is
 // shown while filling out the form; each submit requests a fresh, single-use token.
-export const ContactCaptcha = forwardRef<CaptchaHandle, { action?: 'contact' | 'custom_cake' }>(function ContactCaptcha({ action = 'contact' }, ref) {
+export const ContactCaptcha = forwardRef<CaptchaHandle, { action?: 'contact' | 'custom_cake' | 'pre_order' }>(function ContactCaptcha({ action = 'contact' }, ref) {
   const sitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   const container = useRef<HTMLDivElement>(null)
   const verify = useRef<() => Promise<string>>(() => Promise.reject(new Error('Please try sending again.')))

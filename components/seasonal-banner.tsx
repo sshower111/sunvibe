@@ -32,6 +32,7 @@ export function SeasonalBanner({ banner }: { banner: SeasonalBannerConfig | null
         <div className="min-w-0 flex-1">
           <p className="font-serif text-base font-semibold text-primary">{banner.headline}</p>
           <p className="text-sm">{banner.message}</p>
+          {banner.subline && <p className="text-sm">{banner.subline}</p>}
         </div>
         <div className="flex flex-wrap items-center gap-x-5">
           <a href={banner.ctaHref} className="inline-flex min-h-12 items-center rounded text-sm font-semibold text-primary underline underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-primary">{banner.ctaLabel}</a>
