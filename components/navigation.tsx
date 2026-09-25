@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react"
 
 const links = [{ href: '/', label: 'Home' }, { href: '/#about', label: 'About' }, { href: '/menu', label: 'Menu' }, { href: '/custom-cakes', label: 'Custom Cakes' }, { href: '/gallery', label: 'Gallery' }, { href: '/contact', label: 'Contact' }]
 
-export function Navigation() {
+export function Navigation({ sticky = false }: { sticky?: boolean }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const toggle = useRef<HTMLButtonElement>(null)
@@ -24,7 +24,7 @@ export function Navigation() {
     media.addEventListener('change', resize)
     return () => { document.removeEventListener('pointerdown', closeOutside); document.removeEventListener('keydown', closeEscape); media.removeEventListener('change', resize) }
   }, [open])
-  return <header ref={header} className="fixed inset-x-0 top-0 z-50 border-b border-border bg-white shadow-sm" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}>
+  return <header ref={header} className={(sticky ? 'sticky -mb-[var(--header-height)]' : 'fixed inset-x-0') + ' top-0 z-50 border-b border-border bg-white shadow-sm'} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}>
     <div className="site-container">
       <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
         <Link href="/" aria-label="Sunville Bakery home" onClick={() => setOpen(false)} className="flex h-12 w-[180px] shrink-0 items-center rounded focus-visible:outline-2 focus-visible:outline-primary"><img src="/logoBlack.png" width={600} height={204} alt="Sunville Bakery" className="h-9 w-full object-contain object-left md:h-12" /></Link>
