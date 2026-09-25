@@ -4,12 +4,19 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { SeasonalBannerConfig } from '@/lib/seasonal'
 
+const DISMISSAL_DURATION_MS = 24 * 60 * 60 * 1000
+
 export function SeasonalBanner({ banner }: { banner: SeasonalBannerConfig | null }) {
   const [dismissedId, setDismissedId] = useState<string | null>(null)
   useEffect(() => {
     if (!banner) return
     try {
-      setDismissedId(localStorage.getItem('seasonal-banner:' + banner.id) === 'dismissed' ? banner.id : null)
+      const key = 'seasonal-banner:' + banner.id
+      const expiresAt = Number(localStorage.getItem(key))
+      const hidden = Number.isFinite(expiresAt) && expiresAt > Date.now()
+      setDismissedId(hidden ? banner.id : null)
+      // Expired timestamps and legacy permanent dismissals no longer hide banners.
+      if (!hidden) localStorage.removeItem(key)
     } catch { /* Storage can be blocked; dismissal still works for this visit. */ }
   }, [banner?.id])
 
@@ -17,7 +24,7 @@ export function SeasonalBanner({ banner }: { banner: SeasonalBannerConfig | null
   function dismiss() {
     if (!banner) return
     setDismissedId(banner.id)
-    try { localStorage.setItem('seasonal-banner:' + banner.id, 'dismissed') } catch { /* Optional persistence. */ }
+    try { localStorage.setItem('seasonal-banner:' + banner.id, String(Date.now() + DISMISSAL_DURATION_MS)) } catch { /* Optional persistence. */ }
   }
   return (
     <div role="region" aria-label="Seasonal bakery announcement" className="border-b border-accent bg-secondary text-foreground">
