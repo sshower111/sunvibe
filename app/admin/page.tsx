@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { AdminBanners } from '@/components/admin-banners'
 import { AdminProductEditor } from "@/components/admin-product-editor"
 
 interface Product {
@@ -20,7 +21,7 @@ interface GalleryImage {
 export default function AdminPage() {
   const [password, setPassword] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [activeTab, setActiveTab] = useState<"menu" | "gallery" | "settings">("menu")
+  const [activeTab, setActiveTab] = useState<"menu" | "gallery" | "settings" | "banners">("menu")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
 
   // Menu state
@@ -242,27 +243,10 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setActiveTab("menu")}
-            className={`px-4 py-2 rounded ${activeTab === "menu" ? "bg-black text-white" : "bg-white"}`}
-          >
-            Menu
-          </button>
-          <button
-            onClick={() => setActiveTab("gallery")}
-            className={`px-4 py-2 rounded ${activeTab === "gallery" ? "bg-black text-white" : "bg-white"}`}
-          >
-            Gallery
-          </button>
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`px-4 py-2 rounded ${activeTab === "settings" ? "bg-black text-white" : "bg-white"}`}
-          >
-            Settings
-          </button>
-        </div>
+        <nav aria-label="Admin sections" className="mb-6 flex flex-wrap gap-3">
+          {(['menu', 'gallery', 'banners', 'settings'] as const).map(tab => <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab[0].toUpperCase() + tab.slice(1)}</Button>)}
+        </nav>
+        {activeTab === 'banners' && <AdminBanners password={password} />}
 
         {/* Menu Tab */}
         {activeTab === "menu" && (

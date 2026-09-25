@@ -29,3 +29,5 @@ scripts/switch-stripe-mode.bat
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Local development content (never deployed)
+/.local-data/
