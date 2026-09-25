@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react"
 
 const links = [{ href: '/', label: 'Home' }, { href: '/#about', label: 'About' }, { href: '/menu', label: 'Menu' }, { href: '/custom-cakes', label: 'Custom Cakes' }, { href: '/gallery', label: 'Gallery' }, { href: '/contact', label: 'Contact' }]
 
-export function Navigation({ sticky = false }: { sticky?: boolean }) {
+export function Navigation({ sticky = true }: { sticky?: boolean }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const toggle = useRef<HTMLButtonElement>(null)

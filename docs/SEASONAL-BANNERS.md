@@ -1,3 +1,5 @@
+> Superseded by the admin-managed Occasions system. See [OCCASIONS.md](./OCCASIONS.md) for the current workflow. The notes below describe the previous banner-only implementation.
+
 # Seasonal festival banners
 
 Configuration: `lib/seasonal.ts`. Copy an entry, choose a unique ID, fill in its copy and CTA, set inclusive dates, and redeploy. The first matching date range wins, evaluated in America/Los_Angeles. Homepage requests evaluate the date on the server. An already-open page updates on reload/navigation.

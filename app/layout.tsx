@@ -1,3 +1,6 @@
+import { SiteSeasonalBanner } from '@/components/site-seasonal-banner'
+import { getActiveCampaign } from '@/lib/campaigns'
+import { campaignBanner } from '@/lib/seasonal'
 import { SITE_URL, pageMetadata, bakerySchema } from "@/lib/seo"
 import { StructuredData } from "@/components/structured-data"
 import type React from "react"
@@ -32,6 +35,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Fail closed on storage outages so disabled campaigns cannot reappear.
+  const campaign = await getActiveCampaign().catch(() => null)
   return (
     <html lang="en">
       <head>
@@ -41,6 +46,7 @@ export default async function RootLayout({
         <StructuredData data={bakerySchema} />
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
+        <SiteSeasonalBanner banner={campaignBanner(campaign)} />
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <CartProvider>
           <MaintenanceCheck isMaintenanceMode={process.env.MAINTENANCE_MODE === "true"}>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { AdminBanners } from '@/components/admin-banners'
+import { AdminOccasions } from '@/components/admin-occasions'
+import { AdminPreOrders } from '@/components/admin-pre-orders'
 import { AdminProductEditor } from "@/components/admin-product-editor"
 
 interface Product {
@@ -21,7 +22,7 @@ interface GalleryImage {
 export default function AdminPage() {
   const [password, setPassword] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [activeTab, setActiveTab] = useState<"menu" | "gallery" | "settings" | "banners">("menu")
+  const [activeTab, setActiveTab] = useState<"menu" | "gallery" | "settings" | "occasions" | "pre-orders">("menu")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
 
   // Menu state
@@ -244,9 +245,10 @@ export default function AdminPage() {
         </div>
 
         <nav aria-label="Admin sections" className="mb-6 flex flex-wrap gap-3">
-          {(['menu', 'gallery', 'banners', 'settings'] as const).map(tab => <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab[0].toUpperCase() + tab.slice(1)}</Button>)}
+          {(['menu', 'gallery', 'occasions', 'pre-orders', 'settings'] as const).map(tab => <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab[0].toUpperCase() + tab.slice(1)}</Button>)}
         </nav>
-        {activeTab === 'banners' && <AdminBanners password={password} />}
+        {activeTab === 'occasions' && <AdminOccasions password={password} />}
+        {activeTab === 'pre-orders' && <AdminPreOrders password={password} />}
 
         {/* Menu Tab */}
         {activeTab === "menu" && (
