@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { verifyTurnstile } from "@/lib/turnstile"
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')) } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
-    const { name, email, phone, message, captchaToken } = body || {}
+    const { name, email, phone, message, captchaToken, website } = body || {}
 
     // Validate required fields
     if (!name || !email || !message) {
@@ -54,6 +56,13 @@ export async function POST(request: NextRequest) {
 
     if (!name.trim() || !message.trim() || (phone != null && typeof phone !== "string")) {
       return NextResponse.json({ error: "Please provide a valid name, message, and phone number" }, { status: 400 })
+    }
+
+    if ((website != null && (typeof website !== 'string' || website.trim() !== '')) || !hasMeaningfulMessage(message)) {
+      return NextResponse.json({ error: 'Please describe your question in words, not just numbers or a link.' }, { status: 400 })
+    }
+    if (phone && (!/^[+\d\s().-]+$/.test(phone) || phone.replace(/\D/g, '').length < 7)) {
+      return NextResponse.json({ error: 'Please enter a valid phone number.' }, { status: 400 })
     }
 
     // Validate email format
@@ -85,6 +94,9 @@ export async function POST(request: NextRequest) {
     const safePhone = phone ? escapeHtml(phone.trim()) : "Not provided"
     const safeMessage = escapeHtml(message.trim()).replace(/\n/g, "<br>")
 
+    // Provider-side idempotency suppresses identical deliveries across server instances
+    // for Resend's 24-hour retention window. This is not a shared IP rate limiter.
+    const duplicateKey = createHash('sha256').update(JSON.stringify([safeName, safeEmail, safePhone, safeMessage])).digest('hex')
     // Send email notification to bakery
     const result = await resend.emails.send({
       from: "Sunville Bakery Website <onboarding@resend.dev>",
@@ -98,7 +110,7 @@ export async function POST(request: NextRequest) {
         <p><strong>Message:</strong></p>
         <p>${safeMessage}</p>
       `,
-    })
+    }, { idempotencyKey: "contact-" + duplicateKey })
 
     if (result.error) {
       console.error("Contact email provider error:", result.error.message)
