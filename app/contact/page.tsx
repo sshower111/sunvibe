@@ -1,5 +1,6 @@
 "use client"
 
+import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { useRef, useState } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
@@ -16,6 +17,7 @@ export default function ContactPage() {
     phone: "",
     message: ""
   })
+  const website = useRef<HTMLInputElement>(null)
   const captcha = useRef<CaptchaHandle>(null)
   const feedbackRef = useRef<HTMLDivElement>(null)
   const sendingRef = useRef(false)
@@ -67,6 +69,11 @@ export default function ContactPage() {
       requestAnimationFrame(() => feedbackRef.current?.focus())
       return
     }
+    if (!hasMeaningfulMessage(formData.message)) {
+      setError('Please describe your question in words, not just numbers or a link.')
+      requestAnimationFrame(() => feedbackRef.current?.focus())
+      return
+    }
     sendingRef.current = true
     setSubmitting(true)
 
@@ -76,7 +83,7 @@ export default function ContactPage() {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, captchaToken, name: formData.name.trim(), email: formData.email.trim(), phone: formData.phone.trim(), message: formData.message.trim() })
+        body: JSON.stringify({ ...formData, website: website.current?.value || "", captchaToken, name: formData.name.trim(), email: formData.email.trim(), phone: formData.phone.trim(), message: formData.message.trim() })
       })
 
       const data = await response.json()
@@ -162,6 +169,7 @@ export default function ContactPage() {
                 </div>
                 <p className="hidden sm:block mb-4 text-sm text-muted-foreground">* Required fields. For questions, not order confirmation.</p>
                 <form method="post" onSubmit={handleSubmit} aria-busy={submitting} className="space-y-4 sm:space-y-5">
+                  <div hidden aria-hidden="true"><label>Leave this blank<input ref={website} name="website" type="text" tabIndex={-1} autoComplete="off" /></label></div>
                   <fieldset disabled={submitting} className="space-y-4 sm:space-y-5">
                   <div>
                     <label htmlFor="name" className="mb-2 block text-sm font-semibold text-foreground">

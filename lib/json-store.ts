@@ -2,7 +2,9 @@ import 'server-only'
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises'
 import path from 'node:path'
 import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'node:crypto'
-import { list, put } from '@vercel/blob'
+import { put } from '@vercel/blob'
+import { revalidateTag } from 'next/cache'
+import { blobLocation } from './blob-location'
 const local = !process.env.VERCEL && (process.env.NODE_ENV === 'development' || !process.env.BLOB_READ_WRITE_TOKEN)
 const queues = new Map<string, Promise<unknown>>()
 function secret() { const value = process.env.CAMPAIGN_STORAGE_SECRET || process.env.ADMIN_PASSWORD; if (!value) throw new Error('Storage encryption not configured'); return createHash('sha256').update(value).digest() }
@@ -10,10 +12,9 @@ function encode(value: unknown) { const iv = randomBytes(12); const cipher = cre
 function decode(text: string) { const value = JSON.parse(text); const cipher = createDecipheriv('aes-256-gcm', secret(), Buffer.from(value.iv,'base64')); cipher.setAuthTag(Buffer.from(value.tag,'base64')); return JSON.parse(Buffer.concat([cipher.update(Buffer.from(value.data,'base64')), cipher.final()]).toString()) }
 async function read<T>(key: string, fallback: T): Promise<{ value: T; etag?: string }> {
   if (local) { try { return { value: JSON.parse(await readFile(path.join(process.cwd(), '.local-data', key), 'utf8')) } } catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return { value: fallback }; throw e } }
-  const { blobs } = await list({ prefix: 'occasions/' + key, limit: 100 })
-  const blob = blobs.find(b => b.pathname === 'occasions/' + key)
-  if (!blob) return { value: fallback }
-  const response = await fetch(blob.url + '?v=' + randomUUID(), { cache: 'no-store' })
+  const url = await blobLocation('occasions/' + key)
+  if (!url) return { value: fallback }
+  const response = await fetch(url + '?v=' + randomUUID(), { cache: 'no-store', signal: AbortSignal.timeout(8000) })
   if (!response.ok) throw new Error('Storage unavailable')
   const etag = response.headers.get('etag')
   if (!etag) throw new Error('Storage version missing')
@@ -26,7 +27,7 @@ export async function updateJson<T>(key: string, fallback: T, change: (value: T)
     for (let attempt = 0; attempt < 5; attempt++) {
       const current = await read(key, fallback); const value = change(current.value)
       if (local) { const file = path.join(process.cwd(), '.local-data', key); await mkdir(path.dirname(file), { recursive: true }); const temp = file + '.' + randomUUID(); await writeFile(temp, JSON.stringify(value)); await rename(temp, file); return value }
-      try { await put('occasions/' + key, encode(value), { access: 'public', addRandomSuffix: false, allowOverwrite: !!current.etag, ...(current.etag ? { ifMatch: current.etag } : {}), contentType: 'application/json', cacheControlMaxAge: 60 }); return value }
+      try { await put('occasions/' + key, encode(value), { access: 'public', addRandomSuffix: false, allowOverwrite: !!current.etag, ...(current.etag ? { ifMatch: current.etag } : {}), contentType: 'application/json', cacheControlMaxAge: 60 }); revalidateTag('blob-locations'); return value }
       catch (error) { if (!/precondition|already exists|condition|412|409/i.test(String(error))) throw error }
     }
     throw new Error('Another update is in progress. Please retry.')
