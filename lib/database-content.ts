@@ -9,7 +9,7 @@ export async function contentDatabase() {
  return sql
 }
 export async function readCampaigns(): Promise<Campaign[]> { const sql=await contentDatabase(); return (await sql`SELECT payload FROM bakery_campaigns ORDER BY position,id`).map(r=>r.payload as Campaign) }
-export async function writeCampaign(c:Campaign) { const sql=await contentDatabase(); await sql`INSERT INTO bakery_campaigns(id,payload,position) VALUES (${c.id},${JSON.stringify(c)}::jsonb,(SELECT COALESCE(MAX(position),0)+1 FROM bakery_campaigns)) ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload` }
+export async function writeCampaign(c:Campaign) { const sql=await contentDatabase(); await sql`INSERT INTO bakery_campaigns(id,payload,position) VALUES (${c.id},${sql.json(c)},(SELECT COALESCE(MAX(position),0)+1 FROM bakery_campaigns)) ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload` }
 export async function removeCampaign(id:string) { const sql=await contentDatabase(); await sql`DELETE FROM bakery_campaigns WHERE id=${id}` }
 export async function readOrders():Promise<PreOrder[]> { const sql=await contentDatabase(); return (await sql`SELECT payload,status FROM bakery_orders ORDER BY created_at DESC`).map(r=>({...decode(r.payload),status:r.status})) }
 export async function writeOrder(order:PreOrder):Promise<PreOrder> {
