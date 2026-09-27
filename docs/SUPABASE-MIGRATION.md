@@ -75,3 +75,9 @@ Remaining: authoritative campaigns and gallery metadata are still unavailable fr
 ## Content recovery after Vercel upgrade
 
 Recovered and verified one campaign, 16 gallery entries, and zero reservations. Corrected postgres.js JSONB writes to use sql.json rather than a JSON string. Imported campaign data was verified before enabling it. Copied 14 owned photos (2 Vercel Blob, 12 Stripe-hosted) to Supabase with byte-hash verification and updated matching references transactionally. Source files are preserved; Yelp/ImgBB links remain unchanged. Private photo-map.json and post-photo-snapshot.json record source/destination mappings and verification. Original pre-photo snapshots intentionally have old photo URLs; compare against post-photo-snapshot.json after this step. Content source switch remains subject to preview and production verification.
+
+## Full production migration complete — 2026-09-27
+
+Release 834a1c5 is live with CONTENT_DATA_SOURCE=supabase, MENU_DATA_SOURCE=supabase and PHOTO_STORAGE=supabase. Verified campaign/gallery API values against the post-photo snapshot, all 14 public migrated photo URLs, mobile admin and authenticated draft preview. The old deployment confirms no late reservations (zero source records). Gallery and campaign save paths were verified in preview using unchanged content; no customer emails or test reservations were created.
+
+The recovered campaign is published=false with zero items; those original settings were preserved. The public no-campaign message is intentional until the owner adds items and publishes. All prior Blob migration blockers are resolved. Original Blob/Stripe assets and compatibility code remain for recovery; normal live operations use Supabase. Do not switch back to stale sources after new edits. Local settings are aligned with production.
