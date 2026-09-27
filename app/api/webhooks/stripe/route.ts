@@ -1,9 +1,11 @@
+import { usesDatabase } from '@/lib/database'
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
 
 export async function POST(req: NextRequest) {
+  if(usesDatabase('menu')) return NextResponse.json({error:'Online payments are not available. Please call the bakery.'},{status:410})
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-12-18.acacia',
   })

@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+import { uploadPhoto, usesSupabaseStorage } from '@/lib/photo-storage'
 import { NextRequest, NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
 import { constantTimeCompare, sanitizeFilename, rateLimiter, getClientIp } from '@/lib/security'
@@ -18,11 +20,11 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File
     const password = formData.get('password') as string
 
-    if (!ADMIN_PASSWORD || !constantTimeCompare(password, ADMIN_PASSWORD)) {
+    if (!ADMIN_PASSWORD || typeof password !== 'string' || !constantTimeCompare(password, ADMIN_PASSWORD)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!file) {
+    if (!file || typeof file === 'string' || typeof file.arrayBuffer !== 'function') {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
@@ -37,10 +39,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
     }
 
-    const timestamp = Date.now()
+    const timestamp = randomUUID()
     const sanitized = sanitizeFilename(file.name)
     const pathname = `gallery/${timestamp}-${sanitized}`
 
+    if (usesSupabaseStorage()) { const url=await uploadPhoto(pathname,file); return NextResponse.json({success:true,url,filename:pathname}) }
     const blob = await put(pathname, file, {
       access: 'public',
       contentType: file.type,
@@ -52,10 +55,9 @@ export async function POST(req: NextRequest) {
       filename: pathname,
     })
   } catch (error) {
-    console.error('Upload error:', error)
-    const message = error instanceof Error ? error.message : String(error)
+    // Never return storage credentials or provider internals to the browser.
     return NextResponse.json(
-      { error: `Upload failed: ${message}` },
+      { error: 'Photo uploads are temporarily unavailable. Please retry or check storage setup.' },
       { status: 500 }
     )
   }

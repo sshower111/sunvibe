@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { usesDatabase } from '@/lib/database'
+import { databaseProductRequest } from '@/lib/database-product-api'
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 // CREATE new product
 export async function POST(req: NextRequest) {
+  if (usesDatabase('menu')) return databaseProductRequest(req, 'POST')
+  const { stripe } = await import('@/lib/stripe')
   try {
     const { name, description, price, category, image, password } = await req.json()
 
     // Verify password
-    if (password !== ADMIN_PASSWORD) {
+    if (!ADMIN_PASSWORD || typeof password !== 'string' || password !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -67,11 +70,13 @@ export async function POST(req: NextRequest) {
 
 // UPDATE existing product
 export async function PUT(req: NextRequest) {
+  if (usesDatabase('menu')) return databaseProductRequest(req, 'PUT')
+  const { stripe } = await import('@/lib/stripe')
   try {
     const { productId, priceId, name, description, price, category, image, password } = await req.json()
 
     // Verify password
-    if (password !== ADMIN_PASSWORD) {
+    if (!ADMIN_PASSWORD || typeof password !== 'string' || password !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -141,11 +146,13 @@ export async function PUT(req: NextRequest) {
 
 // DELETE product
 export async function DELETE(req: NextRequest) {
+  if (usesDatabase('menu')) return databaseProductRequest(req, 'DELETE')
+  const { stripe } = await import('@/lib/stripe')
   try {
     const { productId, password } = await req.json()
 
     // Verify password
-    if (password !== ADMIN_PASSWORD) {
+    if (!ADMIN_PASSWORD || typeof password !== 'string' || password !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

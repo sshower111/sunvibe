@@ -1,9 +1,12 @@
+import { usesDatabase } from '@/lib/database'
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+
 import { sanitizePickupTime, rateLimiter, getClientIp, escapeHtml } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
+  if(usesDatabase('menu')) return NextResponse.json({error:'Online payments are not available. Please call the bakery.'},{status:410})
   try {
+    const { stripe } = await import('@/lib/stripe')
     // Rate limiting: 10 checkouts per hour per IP
     const clientIp = getClientIp(request)
     if (!rateLimiter.check(`checkout:${clientIp}`, 10, 60 * 60 * 1000)) {

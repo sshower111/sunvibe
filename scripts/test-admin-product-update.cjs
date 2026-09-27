@@ -9,7 +9,7 @@ const stripe = { products: {
 }, prices: { create: async (data,options) => { events.push(['create',data,options]);if(failCreate)throw Error('mock failure');return {id:'price_new'} } } }
 const moduleObj={exports:{}}
 const env={ADMIN_PASSWORD:'test-only'}
-vm.runInNewContext(code,{module:moduleObj,exports:moduleObj.exports,process:{env},console,require:name=>name==='@/lib/stripe'?{stripe}:name==='next/cache'?{revalidateTag:tag=>cacheTags.push(tag)}:require(name)})
+vm.runInNewContext(code,{module:moduleObj,exports:moduleObj.exports,process:{env},console,require:name=>name==='@/lib/database'?{usesDatabase:()=>false}:name==='@/lib/database-product-api'?{}:name==='@/lib/stripe'?{stripe}:name==='next/cache'?{revalidateTag:tag=>cacheTags.push(tag)}:require(name)})
 const valid={password:'test-only',productId:'prod_test',name:'Updated bun',description:'Fresh daily',price:'4.25',requestId:'11111111-1111-4111-8111-111111111111'}
 const post=body=>moduleObj.exports.POST(new Request('http://example.test/api/admin/products/update',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}))
 ;(async()=>{

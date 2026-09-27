@@ -21,6 +21,7 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
+      ...(process.env.SUPABASE_URL ? [{ protocol: 'https', hostname: new URL(process.env.SUPABASE_URL).hostname, pathname: '/storage/v1/object/public/' + (process.env.SUPABASE_STORAGE_BUCKET || 'bakery-images') + '/**' }] : []),
       { protocol: 'https', hostname: 's3-media0.fl.yelpcdn.com', pathname: '/bphoto/**' },
       { protocol: 'https', hostname: 'i.ibb.co', pathname: '/**' },
     ],

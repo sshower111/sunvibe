@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
-import { stripe } from '@/lib/stripe'
+import { usesDatabase } from '@/lib/database'
+import { databaseProductRequest } from '@/lib/database-product-api'
 
 const inputSchema = z.object({
   productId: z.string().regex(/^prod_[a-zA-Z0-9]+$/),
@@ -13,6 +14,8 @@ const inputSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  if (usesDatabase('menu')) return databaseProductRequest(req, 'update')
+  const { stripe } = await import('@/lib/stripe')
   let body
   try { body = await req.json() }
   catch { return NextResponse.json({ error: 'Invalid request.' }, { status: 400 }) }

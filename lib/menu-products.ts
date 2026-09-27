@@ -1,9 +1,12 @@
+import { usesDatabase } from './database'
+import { databaseMenu } from './database-menu'
 import 'server-only'
 import Stripe from 'stripe'
 import { unstable_cache } from 'next/cache'
 import type { MenuProduct } from '@/lib/menu'
 // Cache public catalog data only; no customer/payment fields leave this module.
 export const getMenuProducts = unstable_cache(async (): Promise<MenuProduct[]> => {
+  if (usesDatabase('menu')) return databaseMenu()
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('Menu service is not configured')
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { timeout: 8000, maxNetworkRetries: 0 })
   const products: MenuProduct[] = []
@@ -14,4 +17,4 @@ export const getMenuProducts = unstable_cache(async (): Promise<MenuProduct[]> =
       priceId: price?.id || '', image: product.images[0] || '/placeholder.svg', category: product.metadata?.category || 'Buns' })
   }
   return products
-}, ['public-menu-v1'], { revalidate: 60, tags: ['menu-products'] })
+}, ['public-menu-v2', process.env.MENU_DATA_SOURCE || 'stripe'], { revalidate: 60, tags: ['menu-products'] })
