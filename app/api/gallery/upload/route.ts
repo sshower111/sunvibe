@@ -1,10 +1,10 @@
+import { isAdminRequest } from '@/lib/occasion-admin'
 import { randomUUID } from 'node:crypto'
 import { uploadPhoto, usesSupabaseStorage } from '@/lib/photo-storage'
 import { NextRequest, NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
-import { constantTimeCompare, sanitizeFilename, rateLimiter, getClientIp } from '@/lib/security'
+import { sanitizeFilename, rateLimiter, getClientIp } from '@/lib/security'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File
     const password = formData.get('password') as string
 
-    if (!ADMIN_PASSWORD || typeof password !== 'string' || !constantTimeCompare(password, ADMIN_PASSWORD)) {
+    if (!(await isAdminRequest(password))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

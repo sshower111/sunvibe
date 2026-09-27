@@ -1,10 +1,10 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
-import { galleryImages as fallbackImages, galleryAlt, canOptimizeGalleryImage } from "@/lib/gallery-images"
+import { galleryAlt, canOptimizeGalleryImage } from "@/lib/gallery-images"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 function FeaturedPhoto({ src, detail = false }: { src: string; detail?: boolean }) {
@@ -14,20 +14,8 @@ function FeaturedPhoto({ src, detail = false }: { src: string; detail?: boolean 
   </span>
 }
 
-export function FeaturedGallery() {
-  const [galleryImages, setGalleryImages] = useState(fallbackImages)
-  useEffect(() => {
-    const controller = new AbortController()
-    fetch('/api/gallery', { cache: 'no-store', signal: controller.signal })
-      .then(response => { if (!response.ok) throw new Error('Gallery unavailable'); return response.json() })
-      .then(data => { if (Array.isArray(data.images)) setGalleryImages(data.images.filter((image: unknown): image is string => typeof image === 'string')) })
-      .catch(() => {})
-    return () => controller.abort()
-  }, [])
-
-
-
-
+// Photos are passed in from the server-rendered home page; no extra request per visit.
+export function FeaturedGallery({ images: galleryImages }: { images: string[] }) {
   return <section aria-labelledby="featured-heading" className="border-t bg-white section-space">
     <div className="site-container">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 id="featured-heading" className="heading-2">A taste of Sunville</h2><p className="mt-3 text-muted-foreground">Take a closer look at our bakery. Browse the menu for descriptions and prices.</p></div><Link href="/gallery" className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">View all photos</Link></div>

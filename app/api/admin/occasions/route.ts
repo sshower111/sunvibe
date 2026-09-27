@@ -1,9 +1,9 @@
 import { NextRequest,NextResponse } from 'next/server'
 import { campaignSchema, listCampaigns, saveCampaign, deleteCampaign, getCampaign } from '@/lib/campaigns'
-import { isOccasionAdmin } from '@/lib/occasion-admin'
+import { isAdminRequest } from '@/lib/occasion-admin'
 export async function POST(req:NextRequest) {
  let body;try{body=await req.json()}catch{return NextResponse.json({error:'Invalid request'},{status:400})}
- if(!isOccasionAdmin(body?.password))return NextResponse.json({error:'Unauthorized'},{status:401})
+ if(!(await isAdminRequest(body?.password)))return NextResponse.json({error:'Unauthorized'},{status:401})
  try{
  if(body.action==='list')return NextResponse.json({campaigns:await listCampaigns()},{headers:{'Cache-Control':'no-store'}})
  if(body.action==='get'){const campaign=await getCampaign(body.id);return NextResponse.json({campaign},{status:campaign?200:404,headers:{'Cache-Control':'no-store'}})}

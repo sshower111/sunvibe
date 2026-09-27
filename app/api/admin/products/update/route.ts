@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createHash, timingSafeEqual } from 'node:crypto'
+import { isAdminRequest } from '@/lib/occasion-admin'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { usesDatabase } from '@/lib/database'
@@ -19,10 +19,7 @@ export async function POST(req: NextRequest) {
   let body
   try { body = await req.json() }
   catch { return NextResponse.json({ error: 'Invalid request.' }, { status: 400 }) }
-  const secret = process.env.ADMIN_PASSWORD
-  if (!secret || typeof body?.password !== 'string' || !timingSafeEqual(
-    createHash('sha256').update(body.password).digest(), createHash('sha256').update(secret).digest(),
-  )) return NextResponse.json({ error: 'Unauthorized. Please sign in again.' }, { status: 401 })
+  if (!(await isAdminRequest(body?.password))) return NextResponse.json({ error: 'Unauthorized. Please sign in again.' }, { status: 401 })
   const parsed = inputSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   const { productId, name, description, price, requestId } = parsed.data

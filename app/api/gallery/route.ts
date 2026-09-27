@@ -1,25 +1,13 @@
+import { isAdminRequest } from '@/lib/occasion-admin'
 import { usesDatabase } from '@/lib/database'
-import { readGallery, editGallery } from '@/lib/database-content'
+import { editGallery } from '@/lib/database-content'
 import { NextRequest, NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
-import { blobLocation } from '@/lib/blob-location'
-import { unstable_cache, revalidateTag } from 'next/cache'
-import { constantTimeCompare } from '@/lib/security'
-import { galleryImages } from '@/lib/gallery-images'
+import { revalidateTag } from 'next/cache'
+import { getPublicGallery, readGalleryImages } from '@/lib/public-gallery'
+import { deletePhotoIfUnused } from '@/lib/photo-storage'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 const GALLERY_DATA_KEY = 'gallery-data.json'
-
-async function readGalleryImages(): Promise<string[]> {
-  if(usesDatabase('content')) return readGallery()
-  const url = await blobLocation(GALLERY_DATA_KEY)
-  if (!url) return galleryImages
-  const res = await fetch(url + '?v=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(8000) })
-  if (!res.ok) throw new Error('Gallery storage unavailable')
-  const data = await res.json()
-  if (!Array.isArray(data.images) || !data.images.every((image: unknown) => typeof image === 'string')) throw new Error('Invalid gallery data')
-  return data.images
-}
 
 async function writeGalleryImages(images: string[]): Promise<void> {
   await put(GALLERY_DATA_KEY, JSON.stringify({ images }), {
@@ -30,12 +18,9 @@ async function writeGalleryImages(images: string[]): Promise<void> {
   })
 }
 
-const publicGallery = unstable_cache(async () => {
- try { return { images: await readGalleryImages(), degraded: false } }
- catch { return { images: galleryImages, degraded: true } }
-}, ['public-gallery-v3', process.env.CONTENT_DATA_SOURCE || 'blob'], { revalidate: 900, tags: ['gallery-images'] })
+// Public pages render the gallery on the server; this endpoint is used by the admin panel.
 export async function GET() {
-  const result = await publicGallery()
+  const result = await getPublicGallery()
   return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
 }
 
@@ -44,30 +29,26 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { action, url, password } = body
 
-    if (!ADMIN_PASSWORD || typeof password !== 'string' || !constantTimeCompare(password, ADMIN_PASSWORD)) {
+    if (!(await isAdminRequest(password))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     if (!['add','remove'].includes(action) || typeof url !== 'string' || url.length > 2048 || !/^https:\/\//.test(url)) return NextResponse.json({error:'Invalid gallery change'}, {status:400})
-    if(usesDatabase('content')) { await editGallery(action,url); revalidateTag('gallery-images'); return NextResponse.json({success:true}) }
-    const images = await readGalleryImages()
-
-    let updated: string[]
-    if (action === 'add') {
-      updated = images.includes(url) ? images : [...images, url]
-    } else if (action === 'remove') {
-      updated = images.filter(img => img !== url)
-    } else {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    if (usesDatabase('content')) {
+      await editGallery(action, url)
+      revalidateTag('gallery-images')
+      // Free storage space: delete our own uploaded file unless a menu item or occasion still uses it.
+      const fileDeleted = action === 'remove' ? await deletePhotoIfUnused(url) : false
+      return NextResponse.json({ success: true, fileDeleted })
     }
-
+    const images = await readGalleryImages(true)
+    const updated = action === 'add' ? (images.includes(url) ? images : [...images, url]) : images.filter(img => img !== url)
     await writeGalleryImages(updated)
     revalidateTag('blob-locations')
     revalidateTag('gallery-images')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating gallery:', error)
-    const message = error instanceof Error ? error.message : String(error)
-    return NextResponse.json({ error: `Failed to update gallery: ${message}` }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update gallery. Please try again.' }, { status: 500 })
   }
 }

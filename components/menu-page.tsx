@@ -1,13 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import Image from "next/image"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from "lucide-react"
-import { getStoreStatus, rankMenuSearch, menuDescription, menuCategories, menuGroup, menuLeadTime, type MenuProduct } from "@/lib/menu"
+import { canOptimizeGalleryImage } from "@/lib/gallery-images"
+import { getStoreStatus, searchMenu, menuDescription, menuCategories, menuGroup, menuLeadTime, type MenuProduct } from "@/lib/menu"
 
 const phone = "tel:+17028899887"
 const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
@@ -22,7 +24,10 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
   const valid = product.image && !product.image.includes('/placeholder') && !['null', 'undefined'].includes(product.image)
   return (
     <span className={detail ? "block aspect-[4/3] overflow-hidden rounded-xl bg-secondary" : "block h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-44 sm:w-full sm:rounded-none"}>
-      {valid && !failed ? <img src={product.image} alt={detail ? product.name : ""} loading={detail ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} className="h-full w-full object-cover" /> :
+      {valid && !failed ? (canOptimizeGalleryImage(product.image)
+        // Resized by Next.js: thumbnails download a few KB instead of the full photo.
+        ? <span className="relative block h-full w-full"><Image src={product.image} alt={detail ? product.name : ""} fill sizes={detail ? "(min-width: 640px) 512px, 90vw" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 96px"} loading={detail ? "eager" : "lazy"} onError={() => setFailed(true)} className="object-cover" /></span>
+        : <img src={product.image} alt={detail ? product.name : ""} loading={detail ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} className="h-full w-full object-cover" />) :
         <span className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground"><ImageIcon aria-hidden="true" className="h-7 w-7" /><span className="text-center text-xs">Photo coming soon</span></span>}
     </span>
   )
@@ -39,6 +44,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
   const [hoursOpen, setHoursOpen] = useState(false)
   const [status, setStatus] = useState<ReturnType<typeof getStoreStatus> | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const requestRef = useRef<AbortController | null>(null)
 
   const loadProducts = useCallback(async () => {
@@ -74,8 +80,9 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
   }, [activeSuggestion])
 
   const categories = menuCategories
-  const ranked = rankMenuSearch(products, query)
-  const suggestions = query.trim() ? ranked : []
+  const search = searchMenu(products, query)
+  const ranked = search.results
+  const suggestions = query.trim() ? ranked.slice(0, 8) : []
   const showSuggestions = suggesting && suggestions.length > 0
   const filtered = ranked.filter(product => category === 'All Items' || menuGroup(product) === category)
   const selectSuggestion = (product: MenuProduct) => {
@@ -84,6 +91,15 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
     setSuggesting(false)
     setActiveSuggestion(-1)
     searchRef.current?.focus()
+  }
+  // Enter searches with what was typed; no suggestion needs to be picked.
+  const submitSearch = () => {
+    if (showSuggestions && activeSuggestion >= 0 && suggestions[activeSuggestion]) { selectSuggestion(suggestions[activeSuggestion]); return }
+    setSuggesting(false)
+    setActiveSuggestion(-1)
+    if (query.trim()) setCategory('All Items')
+    searchRef.current?.blur()
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
   const clearFilters = () => {
     setQuery('')
@@ -111,7 +127,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
               <p>Mon–Tue, Thu–Sun: 8 AM–8 PM</p><p>Wednesday: 8 AM–3 PM</p><p className="text-muted-foreground">All hours are Pacific Time.</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 sm:pt-2">
+          <div className="hidden flex-wrap gap-2 sm:flex sm:pt-2">
             <Button asChild className="min-h-12"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
             <Button asChild variant="outline" className="min-h-12"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
           </div>
@@ -119,20 +135,19 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
         <a href={directions} target="_blank" rel="noopener noreferrer" className="mb-5 inline-block text-sm text-muted-foreground underline underline-offset-4">4053 Spring Mountain Rd, Las Vegas, NV 89102<span className="sr-only"> (opens a new tab)</span></a>
 
         <section aria-label="Find menu items" className="sticky top-16 z-30 -mx-4 mb-6 border-b bg-background px-4 py-3 md:top-24 sm:mx-0 sm:px-0">
-          <div className="relative mb-3" onBlur={(event) => {
+          <form role="search" onSubmit={event => { event.preventDefault(); submitSearch() }} className="relative mb-3" onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) { setSuggesting(false); setActiveSuggestion(-1) }
           }}>
             <label htmlFor="menu-search" className="sr-only">Search menu by name, description, or category</label>
             <Search aria-hidden="true" className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
             <Input id="menu-search" ref={searchRef} role="combobox" aria-autocomplete="list" aria-expanded={showSuggestions} aria-controls="menu-suggestions" aria-activedescendant={showSuggestions && activeSuggestion >= 0 ? 'suggestion-' + activeSuggestion : undefined}
-              value={query} placeholder="Search cakes, buns, flavors…" autoComplete="off"
+              type="search" enterKeyHint="search" value={query} placeholder="Search cakes, buns, flavors…" autoComplete="off"
               onChange={event => { setQuery(event.target.value); setSuggesting(true); setActiveSuggestion(-1) }}
               onFocus={() => setSuggesting(true)}
               onKeyDown={event => {
                 if (event.key === 'Escape') { setSuggesting(false); setActiveSuggestion(-1) }
                 if (event.key === 'ArrowDown' && suggestions.length) { event.preventDefault(); setSuggesting(true); setActiveSuggestion(index => Math.min(index + 1, suggestions.length - 1)) }
                 if (event.key === 'ArrowUp' && showSuggestions) { event.preventDefault(); setActiveSuggestion(index => Math.max(index - 1, -1)) }
-                if (event.key === 'Enter' && showSuggestions && activeSuggestion >= 0 && suggestions[activeSuggestion]) { event.preventDefault(); selectSuggestion(suggestions[activeSuggestion]) }
               }}
               className="pl-11 pr-12" />
             {query && <button type="button" aria-label="Clear search" className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-primary" onClick={() => { setQuery(''); setSuggesting(false); setActiveSuggestion(-1); searchRef.current?.focus() }}><X aria-hidden="true" className="h-5 w-5" /></button>}
@@ -141,8 +156,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
                 <span className="font-medium">{product.name}</span><span className="ml-2 text-muted-foreground">{product.category}</span>
               </li>)}
             </ul>
-          </div>
-          <div className="mb-3"><Button asChild className="w-full sm:w-auto"><a href={phone} aria-label="Call Sunville Bakery to order: 702-889-9887"><Phone aria-hidden="true" />Call to order</a></Button></div>
+          </form>
           <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap">
             {categories.map(item => <button key={item} type="button" aria-pressed={category === item} onClick={() => { setCategory(item); if (item === 'Custom Cakes') setQuery(''); setSuggesting(false); setActiveSuggestion(-1) }} className={'action-button shrink-0 border focus-visible:outline-2 focus-visible:outline-primary ' + (category === item ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-secondary')}>{item}</button>)}
           </div>
@@ -156,7 +170,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
           <p className="mt-3 text-sm text-muted-foreground">Availability and your final design are confirmed by the bakery.</p>
         </section> : loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
           <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="heading-2">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call 702-889-9887 for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All Items' ? ' in ' + category : ''}{query.trim() ? ' matching “' + query.trim() + '”' : ''}</p>{(query || category !== 'All Items') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
+            <div ref={resultsRef} className="mb-4 flex scroll-mt-64 flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All Items' ? ' in ' + category : ''}{query.trim() ? (search.corrected ? ' — close matches for “' : ' matching “') + query.trim() + '”' : ''}</p>{(query || category !== 'All Items') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
             {filtered.length === 0 ? <div className="rounded-xl border bg-white px-4 py-12 text-center"><h2 className="heading-2">No items found</h2><p className="my-3 text-muted-foreground">Try another flavor or category, or explore the full menu.</p><Button onClick={clearFilters}>Clear filters</Button></div> :
               <div className="menu-card-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map(product => <Dialog key={product.id}>
@@ -180,7 +194,12 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
           </>}
       </div>
       </main>
-    <Footer />
+      {/* Mobile: one always-visible call/directions bar instead of repeated call buttons. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-white p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] sm:hidden">
+        <Button asChild className="min-h-12"><a href={phone} aria-label="Call Sunville Bakery to order: 702-889-9887"><Phone aria-hidden="true" />Call to order</a></Button>
+        <Button asChild variant="outline" className="min-h-12"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
+      </div>
+      <div className="pb-20 sm:pb-0"><Footer /></div>
     </div>
   )
 }

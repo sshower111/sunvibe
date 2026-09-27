@@ -26,8 +26,10 @@ export function SeasonalBanner({ banner }: { banner: SeasonalBannerConfig | null
     setDismissedId(banner.id)
     try { localStorage.setItem('seasonal-banner:' + banner.id, String(Date.now() + DISMISSAL_DURATION_MS)) } catch { /* Optional persistence. */ }
   }
-  return (
-    <div role="region" aria-label="Seasonal bakery announcement" className="border-b border-accent bg-secondary text-foreground">
+  // Runs before first paint so a banner dismissed in the last 24 hours never flashes on screen.
+  const hideIfDismissed = `try{var e=document.currentScript.previousElementSibling,t=Number(localStorage.getItem(${JSON.stringify('seasonal-banner:' + banner.id)}));if(e&&t>Date.now())e.style.display='none'}catch(_){}`
+  return (<>
+    <div role="region" aria-label="Seasonal bakery announcement" suppressHydrationWarning className="border-b border-accent bg-secondary text-foreground">
       <div className="site-container relative flex flex-col gap-1 py-3 pr-16 lg:flex-row lg:items-center lg:gap-6">
         <div className="min-w-0 flex-1">
           <p className="font-serif text-base font-semibold text-primary">{banner.headline}</p>
@@ -41,5 +43,6 @@ export function SeasonalBanner({ banner }: { banner: SeasonalBannerConfig | null
         <button type="button" onClick={dismiss} aria-label="Dismiss seasonal announcement" className="absolute right-2 top-2 flex h-12 w-12 items-center justify-center rounded text-primary transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-primary"><X className="h-5 w-5" aria-hidden="true" /></button>
       </div>
     </div>
-  )
+    <script dangerouslySetInnerHTML={{ __html: hideIfDismissed }} />
+  </>)
 }

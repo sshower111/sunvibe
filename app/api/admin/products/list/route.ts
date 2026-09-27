@@ -1,8 +1,8 @@
+import { isAdminRequest } from '@/lib/occasion-admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { usesDatabase } from '@/lib/database'
 import { databaseProductRequest } from '@/lib/database-product-api'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 export async function POST(req: NextRequest) {
   if (usesDatabase('menu')) return databaseProductRequest(req, 'list')
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     const { password } = await req.json()
 
     // Verify password
-    if (password !== ADMIN_PASSWORD) {
+    if (!(await isAdminRequest(password))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

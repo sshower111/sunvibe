@@ -1,5 +1,4 @@
-// Gallery Images Management
-// Add your ImgBB image URLs here for easy management
+// Fallback gallery (original Yelp/ImgBB photos). Admin uploads live in Supabase.
 
 export const galleryImages = [
   // Yelp Images
@@ -21,12 +20,8 @@ export const galleryImages = [
   "https://i.ibb.co/TDwChqZN/AB8u6-Hb4li-dhg-WGWo-DQUJ3-YMPYXBuw-i-RY1z-G95-Qe4-W8-YYEg-Z9rec-W6-Et5-Vih-AR3-Ah-ZCww-RAGug-BN1-Kz.jpg",
 ]
 
-// Instructions for adding new images:
-// 1. Go to https://imgbb.com
-// 2. Upload your image
-// 3. Copy the direct image URL (starts with https://i.ibb.co/)
-// 4. Paste it into the array above
-// 5. Save this file - both Gallery and Featured Gallery will automatically update!
+// New photos are added in Admin > Gallery (stored in Supabase). This list is only the
+// built-in fallback used if gallery storage is unreachable.
 
 // Descriptions verified visually; keep each caption paired with its image URL.
 const galleryDescriptions = [
@@ -49,6 +44,9 @@ const galleryAltByUrl = new Map(galleryImages.map((url, index) => [url, galleryD
 export function galleryAlt(src: string) { return galleryAltByUrl.get(src) || "A baked creation from Sunville Bakery in Las Vegas" }
 
 // Unrecognized admin-upload hosts retain normal image delivery, never a broad proxy allowlist.
+// NEXT_PUBLIC_PHOTO_BASE is set in next.config.mjs from SUPABASE_URL + bucket, matching images.remotePatterns.
+const photoBase = process.env.NEXT_PUBLIC_PHOTO_BASE || ''
 export function canOptimizeGalleryImage(src: string) {
+  if (photoBase && src.startsWith(photoBase)) return true
   try { const url = new URL(src); return url.protocol === 'https:' && (url.hostname === 'i.ibb.co' || (url.hostname === 's3-media0.fl.yelpcdn.com' && url.pathname.startsWith('/bphoto/'))) } catch { return false }
 }
