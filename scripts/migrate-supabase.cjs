@@ -30,7 +30,7 @@ async function main(){const command=process.argv[2];
   const counts=scope==='menu'?await sql`SELECT count(*)::int AS n FROM bakery_menu`:await sql`SELECT (SELECT count(*) FROM bakery_campaigns)+(SELECT count(*) FROM bakery_orders)+(SELECT count(*) FROM bakery_gallery) AS n`;
   if(Number(counts[0].n)!==0)throw Error('Destination contains records; refusing overwrite. Verify an interrupted import manually.');
   const q=[];if(scope==='menu')for(const r of data)q.push(tx=>tx`INSERT INTO bakery_menu(id,name,description,price_cents,image,category,active,position) VALUES(${r.id},${r.name},${r.description},${r.price_cents},${r.image},${r.category},${r.active},${r.position})`);
-  else{for(const [i,c]of data.campaigns.entries())q.push(tx=>tx`INSERT INTO bakery_campaigns(id,payload,position) VALUES(${c.id},${JSON.stringify(c)}::jsonb,${i})`);for(const o of data.orders)q.push(tx=>tx`INSERT INTO bakery_orders(id,payload,status,created_at) VALUES(${o.id},${o.payload},${o.status},${o.created_at})`);for(const [i,url]of data.gallery.entries())q.push(tx=>tx`INSERT INTO bakery_gallery(url,position) VALUES(${url},${i})`)}
+  else{for(const [i,c]of data.campaigns.entries())q.push(tx=>tx`INSERT INTO bakery_campaigns(id,payload,position) VALUES(${c.id},${tx.json(c)},${i})`);for(const o of data.orders)q.push(tx=>tx`INSERT INTO bakery_orders(id,payload,status,created_at) VALUES(${o.id},${o.payload},${o.status},${o.created_at})`);for(const [i,url]of data.gallery.entries())q.push(tx=>tx`INSERT INTO bakery_gallery(url,position) VALUES(${url},${i})`)}
   if(q.length)await sql.begin(tx=>Promise.all(q.map(query=>query(tx))));
  }
  if(scope==='menu'){const rows=await sql`SELECT * FROM bakery_menu ORDER BY position,id`;assert.deepStrictEqual(Array.from(rows),data)}
