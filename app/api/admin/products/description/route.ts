@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { usesDatabase } from '@/lib/database'
+import { databaseProductRequest } from '@/lib/database-product-api'
 import { constantTimeCompare } from '@/lib/security'
 
 export async function POST(req: NextRequest) {
+  if (usesDatabase('menu')) return databaseProductRequest(req, 'description')
+  const { stripe } = await import('@/lib/stripe')
   let body
   try {
     body = await req.json()

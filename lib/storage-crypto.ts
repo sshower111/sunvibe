@@ -1,0 +1,5 @@
+import 'server-only'
+import { createHash, randomBytes, createCipheriv, createDecipheriv } from 'node:crypto'
+function secret() { const value = process.env.CAMPAIGN_STORAGE_SECRET || process.env.ADMIN_PASSWORD; if (!value) throw new Error('Storage encryption not configured'); return createHash('sha256').update(value).digest() }
+export function encode(value: unknown) { const iv = randomBytes(12); const cipher = createCipheriv('aes-256-gcm', secret(), iv); const data = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]); return JSON.stringify({ v: 1, iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64'), data: data.toString('base64') }) }
+export function decode(text: string) { const value = JSON.parse(text); const cipher = createDecipheriv('aes-256-gcm', secret(), Buffer.from(value.iv,'base64')); cipher.setAuthTag(Buffer.from(value.tag,'base64')); return JSON.parse(Buffer.concat([cipher.update(Buffer.from(value.data,'base64')), cipher.final()]).toString()) }

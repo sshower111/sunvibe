@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
+import { AdminProductCreate } from '@/components/admin-product-create'
 import { AdminProductEditor } from "@/components/admin-product-editor"
 import { Card, CardContent } from "@/components/ui/card"
 import { Eye, EyeOff } from "lucide-react"
@@ -20,6 +21,7 @@ interface Product {
 }
 
 export default function AdminMenuPage() {
+  const [databaseMenu, setDatabaseMenu] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [password, setPassword] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -41,7 +43,7 @@ export default function AdminMenuPage() {
         body: JSON.stringify({ password: ADMIN_PASSWORD })
       })
       const data = await response.json()
-      setProducts(data.products || [])
+      setProducts(data.products || []); setDatabaseMenu(data.source === 'supabase')
     } catch (error) {
       console.error('Error fetching products:', error)
     }
@@ -121,15 +123,7 @@ export default function AdminMenuPage() {
           <div className="mb-8">
             <h1 className="heading-1 mb-2">Menu Management</h1>
             <p className="text-muted-foreground">Edit item names, descriptions, and prices, or show/hide products</p>
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Tip:</strong> To add new products or change images, go to your{" "}
-                <a href="https://dashboard.stripe.com/products" target="_blank" className="underline font-semibold">
-                  Stripe Dashboard
-                </a>
-                . Changes will appear here automatically.
-              </p>
-            </div>
+            <div className="mt-4">{databaseMenu ? <AdminProductCreate password={password} onSaved={fetchProducts} /> : <p>Add products in your <a href="https://dashboard.stripe.com/products" className="underline">Stripe dashboard</a>.</p>}</div>
           </div>
 
           {/* Products Table */}

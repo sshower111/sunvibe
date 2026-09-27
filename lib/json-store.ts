@@ -1,15 +1,13 @@
+import { encode, decode } from './storage-crypto'
 import 'server-only'
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises'
 import path from 'node:path'
-import { createHash, randomBytes, createCipheriv, createDecipheriv, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { put } from '@vercel/blob'
 import { revalidateTag } from 'next/cache'
 import { blobLocation } from './blob-location'
 const local = !process.env.VERCEL && (process.env.NODE_ENV === 'development' || !process.env.BLOB_READ_WRITE_TOKEN)
 const queues = new Map<string, Promise<unknown>>()
-function secret() { const value = process.env.CAMPAIGN_STORAGE_SECRET || process.env.ADMIN_PASSWORD; if (!value) throw new Error('Storage encryption not configured'); return createHash('sha256').update(value).digest() }
-function encode(value: unknown) { const iv = randomBytes(12); const cipher = createCipheriv('aes-256-gcm', secret(), iv); const data = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]); return JSON.stringify({ v: 1, iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64'), data: data.toString('base64') }) }
-function decode(text: string) { const value = JSON.parse(text); const cipher = createDecipheriv('aes-256-gcm', secret(), Buffer.from(value.iv,'base64')); cipher.setAuthTag(Buffer.from(value.tag,'base64')); return JSON.parse(Buffer.concat([cipher.update(Buffer.from(value.data,'base64')), cipher.final()]).toString()) }
 async function read<T>(key: string, fallback: T): Promise<{ value: T; etag?: string }> {
   if (local) { try { return { value: JSON.parse(await readFile(path.join(process.cwd(), '.local-data', key), 'utf8')) } } catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return { value: fallback }; throw e } }
   const url = await blobLocation('occasions/' + key)

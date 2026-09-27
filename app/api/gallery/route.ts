@@ -1,3 +1,5 @@
+import { usesDatabase } from '@/lib/database'
+import { readGallery, editGallery } from '@/lib/database-content'
 import { NextRequest, NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
 import { blobLocation } from '@/lib/blob-location'
@@ -9,6 +11,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 const GALLERY_DATA_KEY = 'gallery-data.json'
 
 async function readGalleryImages(): Promise<string[]> {
+  if(usesDatabase('content')) return readGallery()
   const url = await blobLocation(GALLERY_DATA_KEY)
   if (!url) return galleryImages
   const res = await fetch(url + '?v=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(8000) })
@@ -30,7 +33,7 @@ async function writeGalleryImages(images: string[]): Promise<void> {
 const publicGallery = unstable_cache(async () => {
  try { return { images: await readGalleryImages(), degraded: false } }
  catch { return { images: galleryImages, degraded: true } }
-}, ['public-gallery-v2'], { revalidate: 900, tags: ['gallery-images'] })
+}, ['public-gallery-v3', process.env.CONTENT_DATA_SOURCE || 'blob'], { revalidate: 900, tags: ['gallery-images'] })
 export async function GET() {
   const result = await publicGallery()
   return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
@@ -45,6 +48,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    if (!['add','remove'].includes(action) || typeof url !== 'string' || url.length > 2048 || !/^https:\/\//.test(url)) return NextResponse.json({error:'Invalid gallery change'}, {status:400})
+    if(usesDatabase('content')) { await editGallery(action,url); revalidateTag('gallery-images'); return NextResponse.json({success:true}) }
     const images = await readGalleryImages()
 
     let updated: string[]

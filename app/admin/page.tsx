@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { AdminOccasions } from '@/components/admin-occasions'
 import { AdminPreOrders } from '@/components/admin-pre-orders'
+import { AdminProductCreate } from '@/components/admin-product-create'
 import { AdminProductEditor } from "@/components/admin-product-editor"
 
 interface Product {
@@ -26,6 +27,7 @@ export default function AdminPage() {
   const [maintenanceMode, setMaintenanceMode] = useState(false)
 
   // Menu state
+  const [databaseMenu, setDatabaseMenu] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
 
   // Gallery state
@@ -65,7 +67,7 @@ export default function AdminPage() {
       body: JSON.stringify({ password })
     })
     const data = await response.json()
-    setProducts(data.products || [])
+    setProducts(data.products || []); setDatabaseMenu(data.source === 'supabase')
   }
 
   const fetchGalleryImages = async () => {
@@ -254,9 +256,7 @@ export default function AdminPage() {
         {activeTab === "menu" && (
           <div className="bg-white rounded border overflow-x-auto">
             <div className="p-4 border-b flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                Add products in <a href="https://dashboard.stripe.com/products" target="_blank" className="underline">Stripe</a>
-              </p>
+              <div className="text-sm text-gray-600">{databaseMenu ? <AdminProductCreate password={password} onSaved={fetchProducts} /> : <>Add products in <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a></>}</div>
               <p className="text-sm font-medium">
                 Total Items: {products.length}
               </p>

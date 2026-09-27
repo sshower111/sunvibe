@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { usesDatabase } from '@/lib/database'
+import { databaseProductRequest } from '@/lib/database-product-api'
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 export async function POST(req: NextRequest) {
+  if (usesDatabase('menu')) return databaseProductRequest(req, 'list')
+  const { stripe } = await import('@/lib/stripe')
   try {
     const { password } = await req.json()
 
