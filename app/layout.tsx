@@ -8,7 +8,7 @@ import type { Metadata } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { CartProvider } from "@/contexts/cart-context"
+import { SiteProvider } from "@/components/site-context"
 import { MaintenanceCheck } from "@/components/maintenance-check"
 import "./globals.css"
 
@@ -30,6 +30,10 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
+// Public pages are cached and rebuilt at most every 15 minutes (or right after an admin edit),
+// so a campaign's start/end date still takes effect on time.
+export const revalidate = 900
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -38,7 +42,7 @@ export default async function RootLayout({
   // Fail closed on storage outages so disabled campaigns cannot reappear.
   const campaign = await getActiveCampaign().catch(() => null)
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/sitelogo.png" />
         <link rel="apple-touch-icon" href="/sitelogo.png" />
@@ -48,13 +52,13 @@ export default async function RootLayout({
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <SiteSeasonalBanner banner={campaignBanner(campaign)} />
         <a href="#main-content" className="skip-link">Skip to main content</a>
-        <CartProvider>
+        <SiteProvider preorderOpen={!!campaign}>
           <MaintenanceCheck isMaintenanceMode={process.env.MAINTENANCE_MODE === "true"}>
             {children}
           </MaintenanceCheck>
           <Analytics />
           <SpeedInsights />
-        </CartProvider>
+        </SiteProvider>
       </body>
     </html>
   )

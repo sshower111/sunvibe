@@ -2,7 +2,7 @@ import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
-import { isOccasionAdmin } from './occasion-admin'
+import { isAdminRequest } from './occasion-admin'
 import { database } from './database'
 import { databaseMenu, menuRow } from './database-menu'
 const price = z.string().regex(/^\d{1,6}(?:\.\d{1,2})?$/)
@@ -12,7 +12,7 @@ const id = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/)
 function cents(value: string) { const [a,b=''] = value.split('.'); return Number(a)*100 + Number(b.padEnd(2,'0')) }
 export async function databaseProductRequest(req: NextRequest, action: string) {
  let body; try { body = await req.json() } catch { return NextResponse.json({error:'Invalid request'}, {status:400}) }
- if (!isOccasionAdmin(body?.password)) return NextResponse.json({error:'Unauthorized'}, {status:401})
+ if (!(await isAdminRequest(body?.password))) return NextResponse.json({error:'Unauthorized'}, {status:401})
  try {
   // Fail closed until an explicit, verified import; no silent fallback to Stripe.
   const products = await databaseMenu(true)

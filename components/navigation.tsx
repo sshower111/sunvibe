@@ -4,11 +4,15 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
+import { useSite } from "@/components/site-context"
 
-const links = [{ href: '/', label: 'Home' }, { href: '/#about', label: 'About' }, { href: '/menu', label: 'Menu' }, { href: '/custom-cakes', label: 'Custom Cakes' }, { href: '/gallery', label: 'Gallery' }, { href: '/contact', label: 'Contact' }]
+const baseLinks = [{ href: '/', label: 'Home' }, { href: '/#about', label: 'About' }, { href: '/menu', label: 'Menu' }, { href: '/custom-cakes', label: 'Custom Cakes' }, { href: '/gallery', label: 'Gallery' }, { href: '/contact', label: 'Contact' }]
 
 export function Navigation({ sticky = true }: { sticky?: boolean }) {
   const [open, setOpen] = useState(false)
+  // "Pre-order" only appears while a festival campaign is active, so it stays reachable after the banner is dismissed.
+  const { preorderOpen } = useSite()
+  const links = preorderOpen ? [...baseLinks.slice(0, 4), { href: '/pre-order', label: 'Pre-order' }, ...baseLinks.slice(4)] : baseLinks
   const pathname = usePathname()
   const toggle = useRef<HTMLButtonElement>(null)
   const header = useRef<HTMLElement>(null)
@@ -29,7 +33,8 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
       <div className="flex h-[var(--header-height)] items-center justify-between gap-4">
         <Link href="/" aria-label="Sunville Bakery home" onClick={() => setOpen(false)} className="flex h-12 w-[180px] shrink-0 items-center rounded focus-visible:outline-2 focus-visible:outline-primary"><img src="/logoBlack.png" width={600} height={204} alt="Sunville Bakery" className="h-9 w-full object-contain object-left md:h-12" /></Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-3 md:flex lg:gap-6">
-          {links.map(link => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? 'page' : undefined} className={'inline-flex min-h-12 items-center rounded text-sm font-medium underline-offset-8 hover:underline focus-visible:outline-2 focus-visible:outline-primary ' + (pathname === link.href ? 'text-primary underline' : 'text-foreground')}>{link.label}</Link>)}
+          {/* The logo already links home; drop "Home" on desktop when Pre-order needs the room. */}
+          {links.filter(link => !(preorderOpen && link.href === '/')).map(link => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? 'page' : undefined} className={'inline-flex min-h-12 items-center rounded text-sm font-medium underline-offset-8 hover:underline focus-visible:outline-2 focus-visible:outline-primary ' + (pathname === link.href ? 'text-primary underline' : 'text-foreground')}>{link.label}</Link>)}
         </nav>
         <button ref={toggle} type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? 'Close navigation' : 'Open navigation'} onClick={() => setOpen(!open)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary md:hidden">{open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}</button>
       </div>

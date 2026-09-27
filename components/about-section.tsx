@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 
@@ -23,7 +24,7 @@ export function AboutSection() {
           </div>
         </div>
         <figure className="overflow-hidden rounded-xl border bg-white">
-          {!photoFailed ? <img src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg" width={486} height={1000} alt="Johnny, Sunville Bakery’s founder, presenting a celebration cake" loading="lazy" decoding="async" onError={() => setPhotoFailed(true)} className="block h-auto w-full" /> : <div className="flex aspect-[4/3] items-center justify-center bg-secondary p-6 font-serif text-2xl text-primary">Meet our founder</div>}
+          {!photoFailed ? <Image src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg" width={486} height={1000} sizes="(min-width: 768px) 40vw, 100vw" alt="Johnny, Sunville Bakery’s founder, presenting a celebration cake" loading="lazy" onError={() => setPhotoFailed(true)} className="block h-auto w-full" /> : <div className="flex aspect-[4/3] items-center justify-center bg-secondary p-6 font-serif text-2xl text-primary">Meet our founder</div>}
           <figcaption className="p-5"><p className="font-serif text-xl font-semibold text-primary">Johnny</p><p className="mt-1 text-sm text-muted-foreground">Founder & head baker</p></figcaption>
         </figure>
       </div>

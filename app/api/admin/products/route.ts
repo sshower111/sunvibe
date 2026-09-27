@@ -1,8 +1,8 @@
+import { isAdminRequest } from '@/lib/occasion-admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { usesDatabase } from '@/lib/database'
 import { databaseProductRequest } from '@/lib/database-product-api'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 // CREATE new product
 export async function POST(req: NextRequest) {
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const { name, description, price, category, image, password } = await req.json()
 
     // Verify password
-    if (!ADMIN_PASSWORD || typeof password !== 'string' || password !== ADMIN_PASSWORD) {
+    if (!(await isAdminRequest(password))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -76,7 +76,7 @@ export async function PUT(req: NextRequest) {
     const { productId, priceId, name, description, price, category, image, password } = await req.json()
 
     // Verify password
-    if (!ADMIN_PASSWORD || typeof password !== 'string' || password !== ADMIN_PASSWORD) {
+    if (!(await isAdminRequest(password))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -152,7 +152,7 @@ export async function DELETE(req: NextRequest) {
     const { productId, password } = await req.json()
 
     // Verify password
-    if (!ADMIN_PASSWORD || typeof password !== 'string' || password !== ADMIN_PASSWORD) {
+    if (!(await isAdminRequest(password))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

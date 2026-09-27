@@ -239,3 +239,6 @@ html { scrollbar-gutter: stable; scroll-padding-top: calc(var(--header-height) +
 
 .skip-link { position: fixed; top: 8px; left: 8px; z-index: 200; transform: translateY(-150%); padding: 12px 20px; background: #fff; color: #302018; border: 2px solid currentColor; border-radius: 8px; }
 .skip-link:focus { transform: translateY(0); }
+
+/* Search inputs use their own clear (×) button; hide the browser's duplicate. */
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }

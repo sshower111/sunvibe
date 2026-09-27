@@ -1,13 +1,9 @@
 import 'server-only'
-import { database } from './database'
+import { verifiedDatabase } from './database'
 import { encode, decode } from './storage-crypto'
 import type { Campaign } from './campaign-model'
 import type { PreOrder } from './pre-order'
-export async function contentDatabase() {
- const sql=database(); const ready=await sql`SELECT scope FROM bakery_migrations WHERE scope='content'`
- if(!ready.length) throw new Error('Content migration has not been verified')
- return sql
-}
+export const contentDatabase = () => verifiedDatabase('content')
 export async function readCampaigns(): Promise<Campaign[]> { const sql=await contentDatabase(); return (await sql`SELECT payload FROM bakery_campaigns ORDER BY position,id`).map(r=>r.payload as Campaign) }
 export async function writeCampaign(c:Campaign) { const sql=await contentDatabase(); await sql`INSERT INTO bakery_campaigns(id,payload,position) VALUES (${c.id},${sql.json(c)},(SELECT COALESCE(MAX(position),0)+1 FROM bakery_campaigns)) ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload` }
 export async function removeCampaign(id:string) { const sql=await contentDatabase(); await sql`DELETE FROM bakery_campaigns WHERE id=${id}` }

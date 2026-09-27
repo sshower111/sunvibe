@@ -1,7 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { ExternalLink, LogOut, Search } from "lucide-react"
+import { GalleryPhotoUpload } from "@/components/gallery-photo-upload"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { AdminOccasions } from '@/components/admin-occasions'
 import { AdminPreOrders } from '@/components/admin-pre-orders'
 import { AdminProductCreate } from '@/components/admin-product-create'
@@ -13,412 +16,276 @@ interface Product {
   description: string
   price: string
   priceId: string
+  category?: string
   active: boolean
 }
 
-interface GalleryImage {
-  url: string
+type Tab = "menu" | "gallery" | "occasions" | "pre-orders" | "settings"
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'menu', label: 'Menu' }, { id: 'gallery', label: 'Gallery' }, { id: 'occasions', label: 'Occasions' },
+  { id: 'pre-orders', label: 'Pre-orders' }, { id: 'settings', label: 'Settings' },
+]
+type Notice = { type: "success" | "error"; text: string } | null
+
+function NoticeBar({ notice }: { notice: Notice }) {
+  if (!notice) return null
+  return <p role={notice.type === 'error' ? 'alert' : 'status'} className={'rounded-lg border p-3 text-sm ' + (notice.type === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-green-200 bg-green-50 text-green-800')}>{notice.text}</p>
 }
 
+// Admin auth uses an httpOnly session cookie set by /api/admin/verify.
+// Child components still accept a `password` prop; it is empty and the server uses the cookie.
 export default function AdminPage() {
+  const [session, setSession] = useState<'checking' | 'signed-out' | 'signed-in'>('checking')
   const [password, setPassword] = useState("")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [activeTab, setActiveTab] = useState<"menu" | "gallery" | "settings" | "occasions" | "pre-orders">("menu")
-  const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [loginError, setLoginError] = useState("")
+  const [loggingIn, setLoggingIn] = useState(false)
+  const [activeTab, setActiveTab] = useState<Tab>("menu")
 
   // Menu state
   const [databaseMenu, setDatabaseMenu] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
+  const [menuLoading, setMenuLoading] = useState(false)
+  const [menuNotice, setMenuNotice] = useState<Notice>(null)
+  const [menuQuery, setMenuQuery] = useState("")
+  const [menuFilter, setMenuFilter] = useState<'all' | 'visible' | 'hidden'>('all')
+  const [togglingId, setTogglingId] = useState<string | null>(null)
 
   // Gallery state
   const [images, setImages] = useState<string[]>([])
+  const [galleryLoading, setGalleryLoading] = useState(false)
   const [newImageUrl, setNewImageUrl] = useState("")
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [uploadLoading, setUploadLoading] = useState(false)
   const [urlLoading, setUrlLoading] = useState(false)
-  const [galleryMessage, setGalleryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [galleryNotice, setGalleryNotice] = useState<Notice>(null)
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
 
-  // Check authentication on mount
+  const [maintenanceMode, setMaintenanceMode] = useState<boolean | null>(null)
+
   useEffect(() => {
-    const savedAuth = localStorage.getItem("sunville-admin-auth")
-    const savedPassword = localStorage.getItem("sunville-admin-password")
-    if (savedAuth === "true" && savedPassword) {
-      setPassword(savedPassword)
-      setIsAuthenticated(true)
-    }
+    // Clean up the old insecure storage of the admin password.
+    try { localStorage.removeItem("sunville-admin-password"); localStorage.removeItem("sunville-admin-auth") } catch { /* storage blocked */ }
+    fetch('/api/admin/verify', { cache: 'no-store' }).then(r => r.json()).then(d => setSession(d.authenticated ? 'signed-in' : 'signed-out')).catch(() => setSession('signed-out'))
+  }, [])
+
+  const signedOut = useCallback(() => { setSession('signed-out'); setLoginError('Your session ended. Please sign in again.') }, [])
+
+  const fetchProducts = useCallback(async () => {
+    setMenuLoading(true)
+    try {
+      const response = await fetch('/api/admin/products/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      if (response.status === 401) return signedOut()
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Could not load the menu.')
+      setProducts(data.products || []); setDatabaseMenu(data.source === 'supabase'); setMenuNotice(null)
+    } catch (error) { setMenuNotice({ type: 'error', text: error instanceof Error ? error.message : 'Could not load the menu.' }) }
+    finally { setMenuLoading(false) }
+  }, [signedOut])
+
+  const fetchGalleryImages = useCallback(async () => {
+    setGalleryLoading(true)
+    try {
+      const response = await fetch('/api/gallery', { cache: 'no-store' })
+      const data = await response.json()
+      setImages(data.images || [])
+      if (data.degraded) setGalleryNotice({ type: 'error', text: 'Gallery storage is unavailable, so the built-in photos are shown. Changes may not save until it recovers.' })
+    } catch { setGalleryNotice({ type: 'error', text: 'Could not load the gallery. Check your connection and try again.' }) }
+    finally { setGalleryLoading(false) }
   }, [])
 
   useEffect(() => {
-    if (isAuthenticated) {
-      if (activeTab === "menu") {
-        fetchProducts()
-      } else if (activeTab === "gallery") {
-        fetchGalleryImages()
-      } else if (activeTab === "settings") {
-        fetchMaintenanceStatus()
-      }
-    }
-  }, [isAuthenticated, activeTab])
+    if (session !== 'signed-in') return
+    if (activeTab === "menu" && !products.length) void fetchProducts()
+    else if (activeTab === "gallery" && !images.length) void fetchGalleryImages()
+    else if (activeTab === "settings" && maintenanceMode === null) fetch('/api/admin/maintenance').then(r => r.json()).then(d => setMaintenanceMode(!!d.maintenanceMode)).catch(() => {})
+  }, [session, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchProducts = async () => {
-    const response = await fetch('/api/admin/products/list', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    })
-    const data = await response.json()
-    setProducts(data.products || []); setDatabaseMenu(data.source === 'supabase')
-  }
-
-  const fetchGalleryImages = async () => {
-    const response = await fetch('/api/gallery')
-    const data = await response.json()
-    setImages(data.images || [])
-  }
-
-  const fetchMaintenanceStatus = async () => {
-    const response = await fetch('/api/admin/maintenance')
-    const data = await response.json()
-    setMaintenanceMode(data.maintenanceMode || false)
-  }
-
-  const handleLogin = async () => {
-    // Verify password with backend
-    const response = await fetch('/api/admin/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    })
-
-    if (response.ok) {
-      setIsAuthenticated(true)
-      localStorage.setItem("sunville-admin-auth", "true")
-      localStorage.setItem("sunville-admin-password", password)
-    } else {
-      alert("Wrong password!")
-    }
-  }
-
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    localStorage.removeItem("sunville-admin-auth")
-    localStorage.removeItem("sunville-admin-password")
-    setPassword("")
-  }
-
-  const toggleMaintenanceMode = async () => {
-    const response = await fetch('/api/admin/maintenance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        password,
-        maintenanceMode: !maintenanceMode
-      })
-    })
-
-    if (response.ok) {
-      setMaintenanceMode(!maintenanceMode)
-    }
-  }
-
-  // Menu functions
-  const toggleProduct = async (productId: string, active: boolean) => {
-    await fetch('/api/admin/products/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId, active: !active, password })
-    })
-    fetchProducts()
-  }
-
-  // Gallery functions
-  const showGalleryMessage = (type: "success" | "error", text: string) => {
-    setGalleryMessage({ type, text })
-    setTimeout(() => setGalleryMessage(null), 4000)
-  }
-
-  const uploadImage = async () => {
-    if (!selectedFile) return null
-
-    const formData = new FormData()
-    formData.append('file', selectedFile)
-    formData.append('password', password)
-
-    const response = await fetch('/api/gallery/upload', {
-      method: 'POST',
-      body: formData
-    })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error || 'Upload failed')
-    }
-    return data.url
-  }
-
-  const addImageFromFile = async () => {
-    if (!selectedFile) return
-    setUploadLoading(true)
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLoggingIn(true); setLoginError('')
     try {
-      const url = await uploadImage()
-      if (url) {
-        const res = await fetch('/api/gallery', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add', url, password })
-        })
-        if (!res.ok) {
-          const data = await res.json()
-          throw new Error(data.error || 'Failed to save image')
-        }
-        setSelectedFile(null)
-        fetchGalleryImages()
-        showGalleryMessage('success', 'Image uploaded successfully!')
-      }
-    } catch (err) {
-      showGalleryMessage('error', err instanceof Error ? err.message : 'Upload failed')
-    } finally {
-      setUploadLoading(false)
-    }
+      const response = await fetch('/api/admin/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error || 'Incorrect password.')
+      setPassword(''); setSession('signed-in')
+    } catch (error) { setLoginError(error instanceof Error ? error.message : 'Sign in failed. Please try again.') }
+    finally { setLoggingIn(false) }
   }
 
-  const addImageFromUrl = async () => {
+  const handleLogout = async () => {
+    await fetch('/api/admin/verify', { method: 'DELETE' }).catch(() => {})
+    setSession('signed-out'); setProducts([]); setImages([]); setLoginError('')
+  }
+
+  const toggleProduct = async (product: Product) => {
+    setTogglingId(product.id)
+    try {
+      const response = await fetch('/api/admin/products/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: product.id, active: !product.active }) })
+      if (response.status === 401) return signedOut()
+      if (!response.ok) throw new Error()
+      setProducts(current => current.map(item => item.id === product.id ? { ...item, active: !product.active } : item))
+      setMenuNotice({ type: 'success', text: `${product.name} is now ${product.active ? 'hidden from' : 'shown on'} the menu.` })
+    } catch { setMenuNotice({ type: 'error', text: `Could not update ${product.name}. Please try again.` }) }
+    finally { setTogglingId(null) }
+  }
+
+  const addImageFromUrl = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     if (!newImageUrl.trim()) return
     setUrlLoading(true)
     try {
-      const res = await fetch('/api/gallery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add', url: newImageUrl.trim(), password })
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to add image')
-      }
+      const res = await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', url: newImageUrl.trim() }) })
+      if (res.status === 401) return signedOut()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to add image')
       setNewImageUrl("")
-      fetchGalleryImages()
-      showGalleryMessage('success', 'Image URL added successfully!')
+      await fetchGalleryImages()
+      setGalleryNotice({ type: 'success', text: 'Photo link added to the gallery.' })
     } catch (err) {
-      showGalleryMessage('error', err instanceof Error ? err.message : 'Failed to add URL')
-    } finally {
-      setUrlLoading(false)
-    }
+      setGalleryNotice({ type: 'error', text: err instanceof Error ? err.message : 'Failed to add the link.' })
+    } finally { setUrlLoading(false) }
   }
 
   const removeImage = async (url: string) => {
-    if (!confirm("Delete this image?")) return
-
-    await fetch('/api/gallery', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'remove', url, password })
-    })
-    fetchGalleryImages()
+    setRemoving(url); setConfirmRemove(null)
+    try {
+      const res = await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', url }) })
+      if (res.status === 401) return signedOut()
+      if (!res.ok) throw new Error()
+      setImages(current => current.filter(image => image !== url))
+      setGalleryNotice({ type: 'success', text: 'Photo removed from the gallery.' })
+    } catch { setGalleryNotice({ type: 'error', text: 'Could not remove the photo. Please try again.' }) }
+    finally { setRemoving(null) }
   }
 
-  if (!isAuthenticated) {
+  if (session === 'checking') return <main className="flex min-h-dvh items-center justify-center bg-gray-50 p-4"><p role="status" className="text-muted-foreground">Loading admin…</p></main>
+
+  if (session === 'signed-out') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded border max-w-sm w-full">
-          <h1 className="heading-1 mb-4">Admin Login</h1>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-            className="form-control w-full mb-4"
-          />
-          <Button onClick={handleLogin} className="w-full">
-            Login
-          </Button>
-        </div>
-      </div>
+      <main className="flex min-h-dvh items-center justify-center bg-gray-50 p-4">
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4 rounded-xl border bg-white p-6 shadow-sm sm:p-8">
+          <h1 className="heading-2">Sunville admin</h1>
+          <div className="space-y-2">
+            <label htmlFor="admin-password" className="block text-sm font-medium">Password</label>
+            <Input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required disabled={loggingIn} autoFocus />
+          </div>
+          {loginError && <p role="alert" className="text-sm text-red-700">{loginError}</p>}
+          <Button type="submit" className="w-full" disabled={loggingIn}>{loggingIn ? 'Signing in…' : 'Sign in'}</Button>
+          <p className="text-xs text-muted-foreground">You stay signed in on this device for 12 hours.</p>
+        </form>
+      </main>
     )
   }
 
+  const query = menuQuery.trim().toLocaleLowerCase()
+  const shownProducts = products.filter(product =>
+    (menuFilter === 'all' || (menuFilter === 'visible') === product.active) &&
+    (!query || (product.name + ' ' + (product.category || '')).toLocaleLowerCase().includes(query)))
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="heading-1 ">Admin Panel</h1>
-          <Button onClick={handleLogout} variant="outline">
-            Logout
-          </Button>
+    <div className="min-h-dvh bg-gray-50">
+      <header className="sticky top-0 z-40 border-b bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-8">
+          <h1 className="font-serif text-lg font-semibold text-primary sm:text-2xl">Sunville admin</h1>
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="icon" aria-label="View website (opens a new tab)"><a href="/" target="_blank" rel="noopener noreferrer"><ExternalLink aria-hidden="true" /></a></Button>
+            <Button onClick={handleLogout} variant="ghost" size="icon" aria-label="Sign out"><LogOut aria-hidden="true" /></Button>
+          </div>
         </div>
-
-        <nav aria-label="Admin sections" className="mb-6 flex flex-wrap gap-3">
-          {(['menu', 'gallery', 'occasions', 'pre-orders', 'settings'] as const).map(tab => <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab[0].toUpperCase() + tab.slice(1)}</Button>)}
+        {/* Tabs scroll sideways on phones instead of wrapping onto several lines. */}
+        <nav aria-label="Admin sections" className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-2 sm:px-8 [scrollbar-width:none]">
+          {TABS.map(tab => <Button key={tab.id} className="shrink-0" variant={activeTab === tab.id ? 'default' : 'outline'} aria-pressed={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>{tab.label}</Button>)}
         </nav>
-        {activeTab === 'occasions' && <AdminOccasions password={password} />}
-        {activeTab === 'pre-orders' && <AdminPreOrders password={password} />}
+      </header>
 
-        {/* Menu Tab */}
+      <main className="mx-auto max-w-6xl space-y-4 px-4 py-5 sm:px-8 sm:py-8">
+        {activeTab === 'occasions' && <AdminOccasions password="" />}
+        {activeTab === 'pre-orders' && <AdminPreOrders password="" />}
+
         {activeTab === "menu" && (
-          <div className="bg-white rounded border overflow-x-auto">
-            <div className="p-4 border-b flex items-center justify-between">
-              <div className="text-sm text-gray-600">{databaseMenu ? <AdminProductCreate password={password} onSaved={fetchProducts} /> : <>Add products in <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a></>}</div>
-              <p className="text-sm font-medium">
-                Total Items: {products.length}
-              </p>
+          <section aria-labelledby="menu-admin-heading" className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="menu-admin-heading" className="heading-2">Menu <span className="text-base font-normal text-muted-foreground">({products.length} items)</span></h2>
+              {databaseMenu ? <AdminProductCreate password="" onSaved={fetchProducts} /> : <p className="text-sm text-muted-foreground">Add items in <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a></p>}
             </div>
-            <table className="w-full">
-              <thead className="border-b">
-                <tr className="text-left">
-                  <th className="p-4">Product</th>
-                  <th className="p-4">Price</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map(product => <tr key={product.id} className="border-b">
-                  <td className="p-4"><p className="font-medium">{product.name}</p><p className="mt-1 max-w-lg whitespace-pre-wrap break-words text-sm text-muted-foreground">{product.description || 'No description'}</p></td>
-                  <td className="p-4">${product.price}</td>
-                  <td className="p-4"><span className={`px-2 py-1 rounded text-sm ${product.active ? 'bg-green-100' : 'bg-gray-100'}`}>{product.active ? 'Visible' : 'Hidden'}</span></td>
-                  <td className="p-4"><div className="flex gap-2">
-                    <AdminProductEditor product={product} password={password} onSaved={updated => {
-                      setProducts(current => current.map(item => item.id === updated.id ? { ...item, ...updated } : item))
-                    }} />
-                    <Button size="sm" variant="outline" onClick={() => toggleProduct(product.id, product.active)}>{product.active ? 'Hide' : 'Show'}</Button>
-                  </div></td>
-                </tr>)}
-              </tbody>
-            </table>
-          </div>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <div className="relative">
+                <label htmlFor="admin-menu-search" className="sr-only">Find a menu item</label>
+                <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
+                <Input id="admin-menu-search" type="search" enterKeyHint="search" placeholder="Find an item…" value={menuQuery} onChange={e => setMenuQuery(e.target.value)} className="pl-11" />
+              </div>
+              <div role="group" aria-label="Show items" className="flex gap-2">
+                {(['all', 'visible', 'hidden'] as const).map(value => <Button key={value} variant={menuFilter === value ? 'default' : 'outline'} aria-pressed={menuFilter === value} className="flex-1 sm:flex-none" onClick={() => setMenuFilter(value)}>{value[0].toUpperCase() + value.slice(1)}</Button>)}
+              </div>
+            </div>
+            <NoticeBar notice={menuNotice} />
+            {menuLoading && !products.length ? <p role="status" className="text-muted-foreground">Loading menu…</p> :
+              shownProducts.length === 0 ? <p className="rounded-xl border bg-white p-6 text-center text-muted-foreground">{products.length ? 'No items match.' : 'No menu items yet.'}</p> :
+              <ul className="grid gap-3 md:grid-cols-2">
+                {shownProducts.map(product => <li key={product.id} className="flex flex-col gap-3 rounded-xl border bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words font-semibold">{product.name}</p>
+                      {product.category && <p className="text-xs text-muted-foreground">{product.category}</p>}
+                    </div>
+                    <p className="shrink-0 font-semibold tabular-nums text-primary">${product.price}</p>
+                  </div>
+                  <p className="line-clamp-2 break-words text-sm text-muted-foreground">{product.description || 'No description'}</p>
+                  <div className="mt-auto flex flex-wrap items-center gap-2">
+                    <span className={'rounded px-2 py-1 text-xs font-medium ' + (product.active ? 'bg-green-100 text-green-900' : 'bg-gray-100 text-gray-700')}>{product.active ? 'Visible' : 'Hidden'}</span>
+                    <div className="ml-auto flex gap-2">
+                      <AdminProductEditor product={product} password="" onSaved={updated => {
+                        setProducts(current => current.map(item => item.id === updated.id ? { ...item, ...updated } : item))
+                      }} />
+                      <Button size="sm" variant="outline" disabled={togglingId === product.id} onClick={() => toggleProduct(product)}>{togglingId === product.id ? 'Saving…' : product.active ? 'Hide' : 'Show'}</Button>
+                    </div>
+                  </div>
+                </li>)}
+              </ul>}
+          </section>
         )}
 
-        {/* Gallery Tab */}
         {activeTab === "gallery" && (
-          <div>
-            {/* Add Image */}
-            <div className="bg-white rounded border p-4 mb-6">
-              <h2 className="heading-2 mb-4">Add Image</h2>
-
-              {/* Status message */}
-              {galleryMessage && (
-                <div className={`mb-4 p-3 rounded text-sm ${galleryMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                  {galleryMessage.text}
-                </div>
-              )}
-
-              {/* Upload from computer */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Upload from your computer</p>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded hover:border-gray-500 transition-colors text-sm text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    {selectedFile ? selectedFile.name : "Browse image files..."}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      className="hidden"
-                    />
-                  </label>
-                  {selectedFile && (
-                    <span className="text-xs text-gray-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
-                  )}
-                  <button
-                    onClick={addImageFromFile}
-                    disabled={!selectedFile || uploadLoading}
-                    className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-                  >
-                    {uploadLoading ? "Uploading..." : "Upload"}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">Accepted: JPG, PNG, WebP, GIF — max 5 MB</p>
-              </div>
-
-              <div className="text-center text-sm text-gray-500 my-4 flex items-center gap-2">
-                <div className="flex-1 border-t border-gray-200" />
-                OR
-                <div className="flex-1 border-t border-gray-200" />
-              </div>
-
-              {/* Add from URL */}
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Add from URL</p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="https://example.com/image.jpg"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addImageFromUrl()}
-                    className="form-control flex-1"
-                  />
-                  <button
-                    onClick={addImageFromUrl}
-                    disabled={urlLoading || !newImageUrl.trim()}
-                    className="px-4 py-2 bg-black text-white rounded disabled:opacity-50"
-                  >
-                    {urlLoading ? "Adding..." : "Add URL"}
-                  </button>
-                </div>
-              </div>
+          <section aria-labelledby="gallery-admin-heading" className="space-y-4">
+            <h2 id="gallery-admin-heading" className="heading-2">Gallery <span className="text-base font-normal text-muted-foreground">({images.length} photos)</span></h2>
+            <div className="space-y-4 rounded-xl border bg-white p-4">
+              <GalleryPhotoUpload password="" onSaved={() => { void fetchGalleryImages() }} />
+              <details>
+                <summary className="min-h-12 cursor-pointer py-3 text-sm focus-visible:outline focus-visible:outline-2">Or add a photo link</summary>
+                <form onSubmit={addImageFromUrl} className="flex flex-col gap-2 sm:flex-row">
+                  <Input type="url" inputMode="url" aria-label="Photo URL" placeholder="https://example.com/image.jpg" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} className="flex-1" />
+                  <Button type="submit" disabled={urlLoading || !newImageUrl.trim()}>{urlLoading ? "Adding…" : "Add link"}</Button>
+                </form>
+              </details>
             </div>
-
-            {/* Image Grid */}
-            <div className="grid grid-cols-4 gap-4">
-              {images.map((image, index) => (
-                <div key={index} className="bg-white rounded border overflow-hidden">
-                  <img src={image} alt="" className="w-full h-48 object-cover" />
-                  <div className="p-2">
-                    <button
-                      onClick={() => removeImage(image)}
-                      className="w-full px-3 py-1 border rounded text-sm hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+            <NoticeBar notice={galleryNotice} />
+            {galleryLoading && !images.length ? <p role="status" className="text-muted-foreground">Loading photos…</p> :
+              <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {images.map((image) => (
+                  <li key={image} className="overflow-hidden rounded-xl border bg-white">
+                    <img src={image} alt="" loading="lazy" decoding="async" className="aspect-square w-full object-cover" />
+                    <div className="p-2">
+                      {confirmRemove === image ? <div className="grid grid-cols-2 gap-2">
+                        <Button size="sm" variant="destructive" onClick={() => removeImage(image)}>Remove</Button>
+                        <Button size="sm" variant="outline" onClick={() => setConfirmRemove(null)}>Keep</Button>
+                      </div> : <Button size="sm" variant="outline" className="w-full" disabled={removing === image} onClick={() => setConfirmRemove(image)}>{removing === image ? 'Removing…' : 'Remove photo'}</Button>}
+                    </div>
+                  </li>
+                ))}
+              </ul>}
+          </section>
         )}
 
-        {/* Settings Tab */}
         {activeTab === "settings" && (
-          <div className="bg-white rounded border p-6">
-            <h2 className="heading-2 mb-6">Settings</h2>
-
-            <div className="space-y-6">
-              {/* Maintenance Mode */}
-              <div className="border-b pb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="heading-3 mb-2">Maintenance Mode</h3>
-                    <p className="text-sm text-gray-600">
-                      When enabled, customers will see a maintenance message and cannot place orders.
-                    </p>
-                  </div>
-                  <button
-                    onClick={toggleMaintenanceMode}
-                    className={`px-6 py-3 rounded font-medium ${
-                      maintenanceMode
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "bg-green-500 text-white hover:bg-green-600"
-                    }`}
-                  >
-                    {maintenanceMode ? "Disable" : "Enable"}
-                  </button>
-                </div>
-                <div className="mt-4">
-                  <span className={`px-3 py-1 rounded text-sm font-medium ${
-                    maintenanceMode
-                      ? "bg-red-100 text-red-800"
-                      : "bg-green-100 text-green-800"
-                  }`}>
-                    Status: {maintenanceMode ? "Maintenance Mode ON" : "Site Online"}
-                  </span>
-                </div>
-              </div>
+          <section aria-labelledby="settings-heading" className="space-y-4 rounded-xl border bg-white p-4 sm:p-6">
+            <h2 id="settings-heading" className="heading-2">Settings</h2>
+            <div>
+              <h3 className="heading-3 mb-2">Maintenance mode</h3>
+              <p className="mb-3"><span className={'rounded px-3 py-1 text-sm font-medium ' + (maintenanceMode ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800')}>{maintenanceMode === null ? 'Checking…' : maintenanceMode ? 'Maintenance mode is ON' : 'Site is online'}</span></p>
+              <p className="text-sm text-muted-foreground">When on, customers see a maintenance message. To change it, set <code>MAINTENANCE_MODE</code> to <code>true</code> or <code>false</code> in Vercel → Project → Settings → Environment Variables, then redeploy.</p>
             </div>
-          </div>
+          </section>
         )}
-      </div>
+      </main>
     </div>
   )
 }

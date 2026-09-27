@@ -1,7 +1,7 @@
+import { isAdminRequest } from '@/lib/occasion-admin'
 import { NextRequest, NextResponse } from 'next/server'
 import { usesDatabase } from '@/lib/database'
 import { databaseProductRequest } from '@/lib/database-product-api'
-import { constantTimeCompare } from '@/lib/security'
 
 export async function POST(req: NextRequest) {
   if (usesDatabase('menu')) return databaseProductRequest(req, 'description')
@@ -13,8 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
   const { productId, description, password } = body || {}
-  const adminPassword = process.env.ADMIN_PASSWORD
-  if (!adminPassword || typeof password !== 'string' || !constantTimeCompare(password, adminPassword)) {
+  if (!(await isAdminRequest(password))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   if (typeof productId !== 'string' || !/^prod_[a-zA-Z0-9]+$/.test(productId)) {
