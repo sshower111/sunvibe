@@ -31,7 +31,7 @@ function FavoriteCard({ item }: { item: typeof favorites[number] }) {
 export function AboutSection() {
   const [photoFailed, setPhotoFailed] = useState(false)
   return (
-    <section id="about" aria-labelledby="about-heading" className="scroll-mt-20 bg-background section-space md:scroll-mt-28">
+    <section id="about" aria-labelledby="about-heading" className="-scroll-mt-4 bg-background section-space">
       <div className="site-container grid items-start gap-8 md:grid-cols-[1.5fr_1fr] md:gap-12">
         <div>
           <p className="mb-2 text-sm font-semibold text-primary">Our story</p>
