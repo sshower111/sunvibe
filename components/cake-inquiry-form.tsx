@@ -9,6 +9,7 @@ import { ContactCaptcha, type CaptchaHandle } from '@/components/contact-captcha
 import { cakeInquirySchema, eventTypes, budgets, flavors, fillings, MAX_PHOTO_BYTES, MAX_PHOTOS } from '@/lib/cake-inquiry'
 
 import { cakeCatalog, cakeLabel, deliveryOptions } from '@/lib/cake-catalog'
+import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
 
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [['eventDate', 'eventType', 'fulfillment', 'deliveryAddress'], ['servings', 'size', 'flavor', 'filling', 'budget'], ['name', 'email', 'phone', 'notes'], ['acknowledged']]
@@ -25,6 +26,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [photos, setPhotos] = useState<File[]>([])
   const [uploadError, setUploadError] = useState('')
+  const [preparing, setPreparing] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
@@ -117,12 +119,18 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
           {field('email', 'Email', <Input {...control('email')} type="email" autoComplete="email" maxLength={100} required placeholder="you@example.com" />)}
           {field('phone', 'Phone number', <Input {...control('phone')} type="tel" autoComplete="tel" maxLength={30} required placeholder="(702) 555-0123" />)}
         </div>
-        <div><label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">Inspiration photos (optional)</label><p id="cake-photo-help" className="mb-3 text-sm text-muted-foreground">Up to 3 JPG, PNG, or WebP photos · 1 MB each.</p><Input id="cake-photos" type="file" multiple accept="image/jpeg,image/png,image/webp" aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'} aria-invalid={!!uploadError} onChange={event => {
+        <div><label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">Inspiration photos (optional)</label><p id="cake-photo-help" className="mb-3 text-sm text-muted-foreground">Up to 3 photos from your phone or computer. Large and iPhone (HEIC) photos are resized for you.</p><Input id="cake-photos" type="file" multiple disabled={preparing} accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif" aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'} aria-invalid={!!uploadError} onChange={async event => {
           const selected = Array.from(event.target.files || []); event.target.value = ''
           if (photos.length + selected.length > MAX_PHOTOS) { setUploadError('Please choose up to 3 photos total.'); return }
-          if (selected.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size === 0 || file.size > MAX_PHOTO_BYTES)) { setUploadError('Choose JPG, PNG, or WebP photos up to 1 MB each.'); return }
-          setUploadError(''); setPhotos(current => [...current, ...selected]); requestId.current = ''
-        }} />{uploadError && <p id="cake-photo-error" role="alert" className="mt-2 text-sm text-red-700">{uploadError}</p>}
+          // Phone photos are usually 2–5 MB or HEIC; convert on the device to a JPEG under 1 MB (the email limit).
+          setPreparing(true); setUploadError('')
+          try {
+            const prepared: File[] = []
+            for (const file of selected) prepared.push(await prepareGalleryPhoto(file, { maxSide: 1600, maxBytes: MAX_PHOTO_BYTES }))
+            setPhotos(current => [...current, ...prepared]); requestId.current = ''
+          } catch (error) { setUploadError(error instanceof Error ? error.message : 'This photo could not be added. Try another photo.') }
+          finally { setPreparing(false) }
+        }} />{preparing && <p role="status" className="mt-2 text-sm text-muted-foreground">Preparing photo…</p>}{uploadError && <p id="cake-photo-error" role="alert" className="mt-2 text-sm text-red-700">{uploadError}</p>}
         <ul className="mt-3 space-y-2">{photos.map((file, index) => <li key={file.name + index} className="flex min-w-0 items-center gap-3 rounded-lg bg-secondary p-3"><PhotoPreview file={file} /><span className="min-w-0 flex-1 break-all text-sm">{file.name}</span><Button type="button" variant="outline" aria-label={`Remove photo ${index + 1}`} onClick={() => { setPhotos(current => current.filter((_, i) => i !== index)); setUploadError(''); requestId.current = '' }}>Remove</Button></li>)}</ul></div>
         {field('notes', 'Design ideas & dietary requests (optional)', <Textarea {...control('notes')} rows={5} maxLength={3000} placeholder="Colors, theme, message on the cake, allergies, or anything else we should know…" />)}
         <details className="text-sm"><summary className="min-h-12 cursor-pointer py-3 font-medium">Allergies or dietary requests?</summary><p className="text-muted-foreground">Add them to your notes. Please confirm any allergen accommodations directly with the bakery.</p></details>
