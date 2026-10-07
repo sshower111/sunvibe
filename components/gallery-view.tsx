@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer"
 import { galleryAlt, canOptimizeGalleryImage } from "@/lib/gallery-images"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { ArrowLeft, ArrowRight, ImageIcon, ZoomIn } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight, ImageIcon, ZoomIn } from "lucide-react"
 
 function GalleryPhoto({ src, index, expanded = false }: { src: string; index: number; expanded?: boolean }) {
   const [failed, setFailed] = useState(false)
@@ -22,6 +22,7 @@ function GalleryPhoto({ src, index, expanded = false }: { src: string; index: nu
 export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
   const [selected, setSelected] = useState<number | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const touchX = useRef<number | null>(null)
   const count = galleryImages.length
   const move = (direction: number) => setSelected(index => index === null ? null : (index + direction + count) % count)
   return <div className="min-h-screen bg-background">
@@ -44,14 +45,21 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
         if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1) }
         if (event.key === 'ArrowRight') { event.preventDefault(); move(1) }
       }}>
-        <DialogTitle className="heading-3 pr-12">Sunville Bakery gallery</DialogTitle>
-        <DialogDescription>Use the arrows to explore photos. Press Escape to close.</DialogDescription>
-        {selected !== null && <GalleryPhoto key={galleryImages[selected] + selected} src={galleryImages[selected]} index={selected} expanded />}
-        <div className="flex items-center justify-between gap-3">
-          <Button variant="outline" className="min-h-12" aria-label="Previous photo" disabled={count < 2} onClick={() => move(-1)}><ArrowLeft aria-hidden="true" /><span className="hidden sm:inline">Previous</span></Button>
-          <p role="status" className="text-sm text-muted-foreground">Photo {(selected ?? 0) + 1} of {count}</p>
-          <Button variant="outline" className="min-h-12" aria-label="Next photo" disabled={count < 2} onClick={() => move(1)}><span className="hidden sm:inline">Next</span><ArrowRight aria-hidden="true" /></Button>
+        <DialogTitle className="sr-only">Sunville Bakery gallery</DialogTitle>
+        <DialogDescription className="sr-only">Use the arrow buttons or arrow keys to browse photos. Swipe on touch screens.</DialogDescription>
+        {/* Arrows sit on the photo's left and right edges; swipe also works on phones. */}
+        <div className="relative" onTouchStart={event => { touchX.current = event.touches[0].clientX }} onTouchEnd={event => {
+          if (touchX.current === null) return
+          const distance = event.changedTouches[0].clientX - touchX.current; touchX.current = null
+          if (Math.abs(distance) > 40) move(distance > 0 ? -1 : 1)
+        }}>
+          {selected !== null && <GalleryPhoto key={galleryImages[selected] + selected} src={galleryImages[selected]} index={selected} expanded />}
+          {count > 1 && <>
+            <button type="button" aria-label="Previous photo" onClick={() => move(-1)} className="absolute left-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-primary shadow-md hover:bg-white focus-visible:outline-2 focus-visible:outline-primary"><ChevronLeft aria-hidden="true" className="h-6 w-6" /></button>
+            <button type="button" aria-label="Next photo" onClick={() => move(1)} className="absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-primary shadow-md hover:bg-white focus-visible:outline-2 focus-visible:outline-primary"><ChevronRight aria-hidden="true" className="h-6 w-6" /></button>
+          </>}
         </div>
+        <p role="status" className="text-center text-sm text-muted-foreground">{(selected ?? 0) + 1} / {count}</p>
       </DialogContent>
     </Dialog>
     </main>
