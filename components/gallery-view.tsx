@@ -30,10 +30,9 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
     <main id="main-content" tabIndex={-1}>
     <div className="site-container page-space">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div><p className="mb-1 text-sm font-medium text-primary">A look inside Sunville Bakery</p><h1 className="heading-1">Our Las Vegas bakery gallery</h1><p className="mt-3 text-muted-foreground">Explore our breads, pastries, and baked goods. Select a photo for a closer look.</p></div>
+        <div><p className="mb-1 text-sm font-medium text-primary">A look inside Sunville Bakery</p><h1 className="heading-1">Our Las Vegas bakery gallery</h1></div>
         <Button asChild variant="outline" className="min-h-12"><a href="/menu">Explore the menu <ArrowRight aria-hidden="true" /></a></Button>
       </header>
-      <p className="mb-4 text-sm text-muted-foreground">{count} photos</p>
       {count ? <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
         {galleryImages.map((src, index) => <button type="button" key={src + index} aria-label={'Enlarge: ' + galleryAlt(src)} onClick={event => { triggerRef.current = event.currentTarget; setSelected(index) }} className="group relative rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
           <GalleryPhoto src={src} index={index} /><span aria-hidden="true" className="absolute bottom-2 right-2 rounded-full bg-white/95 p-2 text-primary shadow-sm"><ZoomIn className="h-4 w-4" /></span>

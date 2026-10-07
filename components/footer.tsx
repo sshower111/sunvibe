@@ -18,7 +18,7 @@ export function Footer() {
             <summary className="min-h-12 cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-white">Location, hours & email</summary>
             <div className="space-y-3 pb-4 text-sm leading-relaxed text-white/90">
               <address className="not-italic">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address>
-              <p>Mon–Tue, Thu–Sun: 8 AM–8 PM<br />Wednesday: 8 AM–3 PM<br /><span className="text-xs">Las Vegas local time (Pacific)</span></p>
+              <p>Mon–Tue, Thu–Sun: 8 AM–8 PM<br />Wednesday: 8 AM–3 PM (PT)</p>
               <a href="mailto:sunvillebakerylv@gmail.com" className={linkStyle + " max-w-full break-all"}>sunvillebakerylv@gmail.com</a>
             </div>
           </details>
@@ -44,12 +44,11 @@ export function Footer() {
           </section>
 
           <section aria-labelledby="footer-hours">
-            <h2 id="footer-hours" className="heading-label mb-3">Bakery hours</h2>
+            <h2 id="footer-hours" className="heading-label mb-3">Bakery hours (PT)</h2>
             <dl className="space-y-3 text-sm leading-relaxed">
               <div><dt className="text-white/90">Mon–Tue, Thu–Sun</dt><dd className="font-medium">8 AM–8 PM</dd></div>
               <div><dt className="text-white/90">Wednesday</dt><dd className="font-medium">8 AM–3 PM</dd></div>
             </dl>
-            <p className="mt-3 text-xs leading-relaxed text-white/80">All hours are Las Vegas local time (Pacific).</p>
           </section>
 
           <nav aria-label="Footer navigation">

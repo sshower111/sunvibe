@@ -131,7 +131,7 @@ export default function ContactPage() {
             </h1>
 
             <p className="hidden sm:block text-base text-muted-foreground max-w-2xl leading-relaxed">
-              Send a message for general questions. For orders, please call.
+              For orders, please call.
             </p>
             <a href="tel:+17028899887" className="hidden sm:inline-flex mt-2 min-h-12 items-center font-medium text-primary underline underline-offset-4 lg:hidden">Call 702-889-9887</a>
           </div>
@@ -139,7 +139,7 @@ export default function ContactPage() {
           <div className="grid items-start gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <aside aria-label="Visit and contact Sunville Bakery" className="hidden sm:block order-2 min-w-0 lg:order-1">
             <div id="contact-store-details" className="space-y-5 rounded-xl bg-white py-4 sm:border sm:p-6">
-            <div><h2 className="heading-2">Visit or call us</h2><p className="mt-2 text-sm text-muted-foreground">For time-sensitive questions, please call during store hours.</p></div>
+            <div><h2 className="heading-2">Visit or call us</h2></div>
             <div><h3 className="heading-label">Phone</h3><a className="inline-flex min-h-12 items-center text-primary underline underline-offset-4" href="tel:+17028899887">702-889-9887</a></div>
             <div><h3 className="heading-label">Location</h3><address className="mt-2 not-italic text-muted-foreground">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address><a href="https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-primary underline underline-offset-4">Get directions<span className="sr-only"> (opens a new tab)</span></a></div>
             <div><h3 className="heading-label mb-2">Hours · Pacific Time</h3><p className="text-sm leading-7 text-muted-foreground">Mon–Tue, Thu–Sun: 8 AM–8 PM<br />Wednesday: 8 AM–3 PM</p></div>
@@ -167,7 +167,7 @@ export default function ContactPage() {
                 )}
 
                 </div>
-                <p className="hidden sm:block mb-4 text-sm text-muted-foreground">* Required fields. For questions, not order confirmation.</p>
+                <p className="hidden sm:block mb-4 text-sm text-muted-foreground">* Required</p>
                 <form method="post" onSubmit={handleSubmit} aria-busy={submitting} className="space-y-4 sm:space-y-5">
                   <div hidden aria-hidden="true"><label>Leave this blank<input ref={website} name="website" type="text" tabIndex={-1} autoComplete="off" /></label></div>
                   <fieldset disabled={submitting} className="space-y-4 sm:space-y-5">

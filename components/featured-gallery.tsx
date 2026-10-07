@@ -29,7 +29,7 @@ export function FeaturedGallery({ images: galleryImages }: { images: string[] })
   const photos = shown ?? galleryImages.slice(0, 6)
   return <section aria-labelledby="featured-heading" className="border-t bg-white section-space">
     <div className="site-container">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 id="featured-heading" className="heading-2">A taste of Sunville</h2><p className="mt-3 text-muted-foreground">Take a closer look at our bakery. Browse the menu for descriptions and prices.</p></div><Link href="/gallery" className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">View all photos</Link></div>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 id="featured-heading" className="heading-2">A taste of Sunville</h2></div><Link href="/gallery" className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">View all photos</Link></div>
       {/* Hidden (space reserved) until shuffled, so the first six never flash before swapping. */}
       <div className={'grid grid-cols-2 gap-3 transition-opacity duration-300 md:grid-cols-3 md:gap-5 ' + (shown ? 'opacity-100' : 'opacity-0')}>
         {photos.map((src, index) => <Dialog key={src}>

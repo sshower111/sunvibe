@@ -36,8 +36,8 @@ export function menuGroup(product: MenuProduct): typeof menuCategories[number] {
   return 'Specialty Items'
 }
 export function menuLeadTime(product: MenuProduct) {
-  if (menuGroup(product) === 'Custom Cakes') return { text: 'Requires 3-5 Days Notice', tone: 'notice' }
-  if (/^(buns|breads)$/i.test(product.category)) return { text: 'Same-Day Pickup / Fresh Daily', tone: 'daily' }
+  if (menuGroup(product) === 'Custom Cakes') return { text: '3–5 days’ notice', tone: 'notice' }
+  if (/^(buns|breads)$/i.test(product.category)) return { text: 'Fresh daily', tone: 'daily' }
   return { text: 'Call to confirm availability', tone: 'availability' }
 }
 

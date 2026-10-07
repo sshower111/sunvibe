@@ -117,7 +117,6 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
           <div>
             <p className="mb-1 text-sm font-medium text-primary">Sunville Bakery · Las Vegas</p>
             <h1 className="heading-1">Fresh buns & pastries in Las Vegas</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Fresh daily buns. Call to confirm availability and pickup.</p>
             <button type="button" aria-expanded={hoursOpen} aria-controls="menu-hours" onClick={() => setHoursOpen(!hoursOpen)} className="mt-2 flex min-h-12 items-center gap-2 rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden="true" className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-green-700' : 'bg-gray-500')} />
               {status?.text || 'View store hours'} <span className="text-muted-foreground">(Las Vegas)</span>
@@ -163,7 +162,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
         </section>
 
         {category === 'Custom Cakes' ? <section aria-labelledby="custom-menu-title" className="rounded-xl border border-amber-300 bg-amber-50 p-6 sm:p-8">
-          <span className="inline-flex rounded-md bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950">Requires 3-5 Days Notice</span>
+          <span className="inline-flex rounded-md bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950">3–5 days’ notice</span>
           <h2 id="custom-menu-title" className="heading-2 mt-4">A cake made for your celebration</h2>
           <p className="mt-3 max-w-2xl text-muted-foreground">Choose a size, explore flavors, and request a quote.</p>
           <Button asChild className="mt-5 w-full sm:w-auto"><a href="/custom-cakes">Explore Custom Cakes & Inquire</a></Button>
@@ -187,7 +186,6 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
                     <DialogDescription className="whitespace-pre-wrap break-words text-base leading-relaxed">{product.description || 'Call us for more details about this item.'}</DialogDescription>
                     <p className="text-2xl font-semibold text-primary">${product.price}</p>
                     <Button asChild className="min-h-12"><a href={phone}><Phone aria-hidden="true" />Call to order</a></Button>
-                    <p className="text-xs text-muted-foreground">Call to confirm availability and arrange pickup.</p>
                   </DialogContent>
                 </Dialog>)}
               </div>}

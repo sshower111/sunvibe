@@ -88,7 +88,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       {steps.map((name, index) => <li key={name} aria-current={step === index ? 'step' : undefined} className={`border-t-4 pt-3 ${index <= step ? 'border-primary' : 'border-border'}`}><span className="block text-xs font-semibold text-primary">{index + 1}{index < step ? ' ✓' : ''}</span><span className={`mt-1 text-xs sm:text-sm ${step === index ? 'block font-semibold' : 'hidden sm:block text-muted-foreground'}`}>{name}</span></li>)}
     </ol>
     <h3 ref={heading} tabIndex={-1} className="heading-3 mb-2 scroll-mt-32 focus:outline-none">{steps[step]}</h3>
-    <p className="mb-6 text-sm text-muted-foreground">Step {step + 1} of 4 · All fields required unless marked optional.</p>
+    <p className="mb-6 text-sm text-muted-foreground">Step {step + 1} of 4</p>
     <fieldset disabled={busy} className="min-w-0 space-y-5">
       <legend className="sr-only">{steps[step]}</legend>
       {step === 0 && <>
@@ -145,6 +145,5 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       <div ref={feedback} tabIndex={-1} className="focus:outline-none">{error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}</div>
       <div className="flex flex-wrap justify-between gap-3 border-t pt-5">{step > 0 && <Button type="button" variant="outline" onClick={() => navigate(step - 1)}>Back</Button>}<Button type="submit" disabled={busy} className="ml-auto flex-1 sm:flex-none">{busy ? 'Sending inquiry…' : step === 3 ? 'Send cake inquiry' : 'Continue'}</Button></div>
     </fieldset>
-    <p className="mt-4 text-xs text-muted-foreground">Your details and photos go to the bakery for this inquiry. Questions? <a href="tel:+17028899887" className="text-primary underline">call 702-889-9887</a>.</p>
   </form>
 }
