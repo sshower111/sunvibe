@@ -19,7 +19,7 @@ export function earliestCakeDate(now = new Date()) {
 export const cakeInquirySchema = z.object({
   name: z.string().trim().min(1, 'Enter your name.').max(100),
   email: z.string().trim().email('Enter a valid email address.').max(100),
-  phone: z.string().trim().min(7, 'Enter a phone number.').max(30).regex(/^[+\d\s().-]+$/, 'Enter a valid phone number.').refine(v => v.replace(/\D/g, '').length >= 7, 'Enter a valid phone number.'),
+  phone: z.string().trim().min(7, 'Enter a phone number.').max(30).regex(/^[+\d\s().-]+$/, 'Enter a valid phone number.').refine(v => { const n = v.replace(/\D/g, '').length; return n >= 7 && n <= 10 }, 'Enter a phone number with up to 10 digits.'),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose an event date.').refine(v => { const d = new Date(v + 'T12:00:00Z'); return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= earliestCakeDate() }, 'Please allow at least 3 days (Las Vegas time).'),
   eventType: z.enum(eventTypes),
   servings: z.string().regex(/^\d{1,3}$/, 'Enter a guest count from 1 to 999.').refine(v => Number(v) >= 1, 'Enter at least 1 serving.'),
