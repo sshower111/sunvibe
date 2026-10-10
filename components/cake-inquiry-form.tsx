@@ -15,6 +15,13 @@ const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [['eventDate', 'eventType', 'fulfillment', 'deliveryAddress'], ['servings', 'size', 'flavor', 'filling', 'budget'], ['name', 'email', 'phone', 'notes'], ['acknowledged']]
 const initial = { name: '', email: '', phone: '', eventDate: '', eventType: 'Birthday', servings: '', size: 'Not sure', flavor: 'Please recommend', filling: 'Please recommend', budget: 'Not sure — please advise', fulfillment: 'Pickup', deliveryAddress: '', notes: '', acknowledged: '' }
 type Field = keyof typeof initial
+// Keeps at most 10 digits and formats them as (702) 555-0123 while typing.
+function formatPhone(value: string) {
+  const d = value.replace(/\D/g, '').replace(/^1(?=\d{10})/, '').slice(0, 10)
+  if (d.length < 4) return d
+  if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`
+}
 function PhotoPreview({ file }: { file: File }) {
   const [url, setUrl] = useState('')
   useEffect(() => { const value = URL.createObjectURL(file); setUrl(value); return () => URL.revokeObjectURL(value) }, [file])
@@ -85,7 +92,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
   if (sent) return <div ref={feedback} tabIndex={-1} role="status" className="rounded-xl border border-green-800/20 bg-green-50 p-6 sm:p-8"><h2 className="heading-2">Your cake inquiry is on its way</h2><p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p><p className="mt-3 font-semibold">Your order and date are not confirmed yet.</p><p className="mt-3">Need to follow up? Call <a href="tel:+17028899887" className="text-primary underline">702-889-9887</a>.</p></div>
   return <form method="post" onSubmit={submit} noValidate aria-busy={busy} className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8">
     <ol aria-label="Inquiry progress" className="mb-8 grid grid-cols-4 gap-2">
-      {steps.map((name, index) => <li key={name} aria-current={step === index ? 'step' : undefined} className={`border-t-4 pt-3 ${index <= step ? 'border-primary' : 'border-border'}`}><span className="block text-xs font-semibold text-primary">{index + 1}{index < step ? ' ✓' : ''}</span><span className={`mt-1 text-xs sm:text-sm ${step === index ? 'block font-semibold' : 'hidden sm:block text-muted-foreground'}`}>{name}</span></li>)}
+      {steps.map((name, index) => <li key={name} aria-current={step === index ? 'step' : undefined} className={`border-t-4 pt-3 ${index <= step ? 'border-primary' : 'border-border'}`}><span className="block text-xs font-semibold text-primary">{index + 1}</span><span className={`mt-1 text-xs sm:text-sm ${step === index ? 'block font-semibold' : 'hidden sm:block text-muted-foreground'}`}>{name}</span></li>)}
     </ol>
     <h3 ref={heading} tabIndex={-1} className="heading-3 mb-2 scroll-mt-32 focus:outline-none">{steps[step]}</h3>
     <p className="mb-6 text-sm text-muted-foreground">Step {step + 1} of 4</p>
@@ -117,9 +124,9 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         {field('name', 'Your name', <Input {...control('name')} autoComplete="name" maxLength={100} required placeholder="Full name" />)}
         <div className="grid gap-5 sm:grid-cols-2">
           {field('email', 'Email', <Input {...control('email')} type="email" autoComplete="email" maxLength={100} required placeholder="you@example.com" />)}
-          {field('phone', 'Phone number', <Input {...control('phone')} type="tel" autoComplete="tel" maxLength={30} required placeholder="(702) 555-0123" />)}
+          {field('phone', 'Phone number', <Input {...control('phone')} onChange={event => update('phone', formatPhone(event.target.value))} type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={14} required placeholder="(702) 555-0123" />)}
         </div>
-        <div><label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">Inspiration photos (optional)</label><p id="cake-photo-help" className="mb-3 text-sm text-muted-foreground">Up to 5 photos from your phone or computer.</p><Input id="cake-photos" type="file" multiple disabled={preparing} accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif" aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'} aria-invalid={!!uploadError} onChange={async event => {
+        <div><label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">Inspiration photos (optional)</label><p id="cake-photo-help" className="sr-only">Up to 5 photos.</p><Input id="cake-photos" type="file" multiple disabled={preparing} accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif" aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'} aria-invalid={!!uploadError} onChange={async event => {
           const selected = Array.from(event.target.files || []); event.target.value = ''
           if (photos.length + selected.length > MAX_PHOTOS) { setUploadError(`Please choose up to ${MAX_PHOTOS} photos total.`); return }
           // Phone photos are usually 2–5 MB or HEIC; convert on the device to a JPEG under MAX_PHOTO_BYTES so all photos fit in one request.
