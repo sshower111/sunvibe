@@ -6,8 +6,9 @@ export const eventTypes = ['Birthday', 'Wedding', 'Anniversary', 'Character / Th
 export const budgets = ['Not sure — please advise', 'Under $100', '$100–$200', '$200–$350', '$350–$500', '$500–$800', '$800+'] as const
 export const flavors = ['Please recommend', 'Vanilla', 'Chocolate', 'Coffee', 'Green Tea', 'Orange', 'Pandan'] as const
 export const fillings = ['Please recommend', 'Mixed Fresh Fruit', 'Strawberry', 'Mango', 'Taro', 'Custard', 'Coconut', 'Durian', 'Banana', 'Custom filling / describe in notes'] as const
-export const MAX_PHOTO_BYTES = 1024 * 1024
-export const MAX_PHOTOS = 3
+// 5 × 800 KB keeps the whole upload under Vercel's 4.5 MB request limit.
+export const MAX_PHOTO_BYTES = 800 * 1024
+export const MAX_PHOTOS = 5
 export function earliestCakeDate(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)
   const part = (key: string) => parts.find(p => p.type === key)!.value
