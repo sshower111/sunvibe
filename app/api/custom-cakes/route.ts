@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     while (true) {
       const { done, value } = await reader.read(); if (done) break
       bytes += value.byteLength
-      if (bytes > 3 * MAX_PHOTO_BYTES + 65536) { await reader.cancel(); return fail('Photos must total no more than 3 MB.', 413) }
+      if (bytes > MAX_PHOTOS * MAX_PHOTO_BYTES + 65536) { await reader.cancel(); return fail('Photos are too large. Please remove one and try again.', 413) }
       chunks.push(value)
     }
     let form: FormData
@@ -27,10 +27,10 @@ export async function POST(request: NextRequest) {
     const requestId = form.get('requestId')
     if (typeof requestId !== 'string' || !/^[0-9a-f-]{36}$/i.test(requestId)) return fail('Please refresh the page and try again.', 400)
     const photos = form.getAll('photos')
-    if (photos.length > MAX_PHOTOS) return fail('Please attach up to 3 photos.', 400)
+    if (photos.length > MAX_PHOTOS) return fail(`Please attach up to ${MAX_PHOTOS} photos.`, 400)
     const attachments: { filename: string; content: Buffer }[] = []
     for (const [i, photo] of photos.entries()) {
-      if (typeof photo === 'string' || photo.size === 0 || photo.size > MAX_PHOTO_BYTES) return fail('Each photo must be between 1 byte and 1 MB.', 400)
+      if (typeof photo === 'string' || photo.size === 0 || photo.size > MAX_PHOTO_BYTES) return fail('One of the photos is too large. Please remove it and try again.', 400)
       const data = Buffer.from(await photo.arrayBuffer())
       const ext = data.length > 12 && data.subarray(0, 3).equals(Buffer.from([255,216,255])) ? 'jpg' : data.length > 24 && data.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])) ? 'png' : data.length > 16 && data.toString('ascii',0,4) === 'RIFF' && data.toString('ascii',8,12) === 'WEBP' ? 'webp' : null
       if (!ext || photo.type !== ({ jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[ext])) return fail('Use JPG, PNG, or WebP photos. Other file types are not accepted.', 400)

@@ -119,10 +119,10 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
           {field('email', 'Email', <Input {...control('email')} type="email" autoComplete="email" maxLength={100} required placeholder="you@example.com" />)}
           {field('phone', 'Phone number', <Input {...control('phone')} type="tel" autoComplete="tel" maxLength={30} required placeholder="(702) 555-0123" />)}
         </div>
-        <div><label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">Inspiration photos (optional)</label><p id="cake-photo-help" className="mb-3 text-sm text-muted-foreground">Up to 3 photos from your phone or computer.</p><Input id="cake-photos" type="file" multiple disabled={preparing} accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif" aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'} aria-invalid={!!uploadError} onChange={async event => {
+        <div><label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">Inspiration photos (optional)</label><p id="cake-photo-help" className="mb-3 text-sm text-muted-foreground">Up to 5 photos from your phone or computer.</p><Input id="cake-photos" type="file" multiple disabled={preparing} accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif" aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'} aria-invalid={!!uploadError} onChange={async event => {
           const selected = Array.from(event.target.files || []); event.target.value = ''
-          if (photos.length + selected.length > MAX_PHOTOS) { setUploadError('Please choose up to 3 photos total.'); return }
-          // Phone photos are usually 2–5 MB or HEIC; convert on the device to a JPEG under 1 MB (the email limit).
+          if (photos.length + selected.length > MAX_PHOTOS) { setUploadError(`Please choose up to ${MAX_PHOTOS} photos total.`); return }
+          // Phone photos are usually 2–5 MB or HEIC; convert on the device to a JPEG under MAX_PHOTO_BYTES so all photos fit in one request.
           setPreparing(true); setUploadError('')
           try {
             const prepared: File[] = []
