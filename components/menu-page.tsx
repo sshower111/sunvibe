@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE } from '@/lib/site-info'
 import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
 import { Navigation } from "@/components/navigation"
@@ -11,8 +12,8 @@ import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from "lucide-react"
 import { canOptimizeGalleryImage } from "@/lib/gallery-images"
 import { getStoreStatus, searchMenu, menuDescription, menuCategories, menuGroup, menuLeadTime, type MenuProduct } from "@/lib/menu"
 
-const phone = "tel:+17028899887"
-const directions = "https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102"
+const phone = SITE.phoneHref
+const directions = SITE.directionsUrl
 
 function LeadTimeBadge({ product }: { product: MenuProduct }) {
   const lead = menuLeadTime(product)
@@ -123,7 +124,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
               <ChevronDown aria-hidden="true" className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')} />
             </button>
             <div id="menu-hours" hidden={!hoursOpen} className="mt-1 rounded-lg border bg-white p-4 text-sm leading-7">
-              <p>Mon–Tue, Thu–Sun: 8 AM–8 PM</p><p>Wednesday: 8 AM–3 PM</p><p className="text-muted-foreground">All hours are Pacific Time.</p>
+              <p>{SITE.hours.dailyDays}: {SITE.hours.daily}</p><p>Wednesday: {SITE.hours.wednesday}</p><p className="text-muted-foreground">All hours are Pacific Time.</p>
             </div>
           </div>
           <div className="hidden flex-wrap gap-2 sm:flex sm:pt-2">
@@ -131,7 +132,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
             <Button asChild variant="outline" className="min-h-12"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
           </div>
         </header>
-        <a href={directions} target="_blank" rel="noopener noreferrer" className="mb-5 inline-block text-sm text-muted-foreground underline underline-offset-4">4053 Spring Mountain Rd, Las Vegas, NV 89102<span className="sr-only"> (opens a new tab)</span></a>
+        <a href={directions} target="_blank" rel="noopener noreferrer" className="mb-5 inline-block text-sm text-muted-foreground underline underline-offset-4">{SITE.address}<span className="sr-only"> (opens a new tab)</span></a>
 
         <section aria-label="Find menu items" className="sticky top-16 z-30 -mx-4 mb-6 border-b bg-background px-4 py-3 md:top-24 sm:mx-0 sm:px-0">
           <form role="search" onSubmit={event => { event.preventDefault(); submitSearch() }} className="relative mb-3" onBlur={(event) => {
@@ -168,7 +169,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
           <Button asChild className="mt-5 w-full sm:w-auto"><a href="/custom-cakes">Explore Custom Cakes & Inquire</a></Button>
           <p className="mt-3 text-sm text-muted-foreground">Availability and your final design are confirmed by the bakery.</p>
         </section> : loading ? <div role="status" aria-label="Loading menu"><p className="mb-4 text-sm text-muted-foreground">Loading menu…</p><div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />)}</div></div> : error ?
-          <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="heading-2">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call 702-889-9887 for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
+          <div role="alert" className="rounded-xl border bg-white p-8 text-center"><h2 className="heading-2">We couldn’t load the menu</h2><p className="my-3 text-muted-foreground">Please try again, or call {SITE.phone} for help.</p><Button onClick={loadProducts}>Retry</Button></div> : <>
             <div ref={resultsRef} className="mb-4 flex scroll-mt-64 flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm text-muted-foreground">{filtered.length} {filtered.length === 1 ? 'item' : 'items'}{category !== 'All Items' ? ' in ' + category : ''}{query.trim() ? (search.corrected ? ' — close matches for “' : ' matching “') + query.trim() + '”' : ''}</p>{(query || category !== 'All Items') && <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>}</div>
             {filtered.length === 0 ? <div className="rounded-xl border bg-white px-4 py-12 text-center"><h2 className="heading-2">No items found</h2><p className="my-3 text-muted-foreground">Try another flavor or category, or explore the full menu.</p><Button onClick={clearFilters}>Clear filters</Button></div> :
               <div className="menu-card-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -194,7 +195,7 @@ export default function MenuPage({ initialProducts, initialError = false }: { in
       </main>
       {/* Mobile: one always-visible call/directions bar instead of repeated call buttons. */}
       <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-white p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] sm:hidden">
-        <Button asChild className="min-h-12"><a href={phone} aria-label="Call Sunville Bakery to order: 702-889-9887"><Phone aria-hidden="true" />Call to order</a></Button>
+        <Button asChild className="min-h-12"><a href={phone} aria-label={`Call Sunville Bakery to order: ${SITE.phone}`}><Phone aria-hidden="true" />Call to order</a></Button>
         <Button asChild variant="outline" className="min-h-12"><a href={directions} target="_blank" rel="noopener noreferrer"><MapPin aria-hidden="true" />Directions<span className="sr-only"> (opens a new tab)</span></a></Button>
       </div>
       <div className="pb-20 sm:pb-0"><Footer /></div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE } from '@/lib/site-info'
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 
@@ -29,10 +30,10 @@ export function MaintenanceCheck({ children, isMaintenanceMode = false }: { chil
           <div className="border-t pt-6">
             <p className="text-sm font-medium mb-2">Contact Us:</p>
             <p className="text-sm text-gray-600">
-              📍 4053 Spring Mountain Rd, Las Vegas, NV 89102
+              📍 {SITE.address}
             </p>
             <p className="text-sm text-gray-600">
-              📞 (702) 889-9887
+              📞 {SITE.phone}
             </p>
           </div>
         </div>

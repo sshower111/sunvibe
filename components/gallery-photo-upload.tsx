@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
 
 type Result = { name: string; error?: string }
-export function GalleryPhotoUpload({ password, onSaved }: { password: string; onSaved: () => void }) {
+export function GalleryPhotoUpload({ onSaved }: { onSaved: () => void }) {
   const picker = useRef<HTMLInputElement>(null)
   const busy = useRef(false)
   const [progress, setProgress] = useState('')
@@ -20,12 +20,11 @@ export function GalleryPhotoUpload({ password, onSaved }: { password: string; on
         try {
           setProgress('Preparing photo ' + (index + 1) + ' of ' + files.length + '…')
           const photo = await prepareGalleryPhoto(file)
-          const body = new FormData(); body.append('file', photo); body.append('password', password)
-          setProgress('Uploading photo ' + (index + 1) + ' of ' + files.length + '…')
+          const body = new FormData(); body.append('file', photo);           setProgress('Uploading photo ' + (index + 1) + ' of ' + files.length + '…')
           const response = await fetch('/api/gallery/upload', { method: 'POST', body })
           const data = await response.json().catch(() => ({}))
           if (!response.ok || !data.url) throw new Error(data.error || 'Upload failed. Please try again.')
-          const saved = await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', url: data.url, password }) })
+          const saved = await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', url: data.url }) })
           if (!saved.ok) throw new Error('Photo uploaded but could not be added to the gallery. Please try again.')
           completed.push({ name: file.name })
         } catch (error) { completed.push({ name: file.name, error: error instanceof Error ? error.message : 'Upload failed. Check your connection and try again.' }) }

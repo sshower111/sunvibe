@@ -3,13 +3,14 @@
 import { useId, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { adminPost } from '@/lib/admin-api'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 type EditableProduct = { id: string; name: string; description: string; price: string; priceId: string }
-export function AdminProductEditor({ product, password, onSaved, disabled = false }: {
-  product: EditableProduct; password: string; onSaved: (product: EditableProduct) => void; disabled?: boolean
+export function AdminProductEditor({ product, onSaved, disabled = false }: {
+  product: EditableProduct; onSaved: (product: EditableProduct) => void; disabled?: boolean
 }) {
   const id = useId()
   const [open, setOpen] = useState(false)
@@ -37,10 +38,7 @@ export function AdminProductEditor({ product, password, onSaved, disabled = fals
     const draft = JSON.stringify({ name: name.trim(), description: description.trim(), price })
     if (attempt.current?.draft !== draft) attempt.current = { draft, id: crypto.randomUUID() }
     try {
-      const response = await fetch('/api/admin/products/update', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, ...JSON.parse(draft), password, requestId: attempt.current.id }) })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Unable to save this item.')
+      const data = await adminPost('/api/admin/menu', { action: 'update', productId: product.id, ...JSON.parse(draft), requestId: attempt.current.id })
       onSaved(data.product); setOpen(false); setSaved(true)
     } catch (error) { setError(error instanceof Error ? error.message : 'Unable to save this item. Please try again.') }
     finally { inFlight.current = false; setSaving(false) }

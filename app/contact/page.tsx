@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE } from '@/lib/site-info'
 import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { useRef, useState } from "react"
 import { Navigation } from "@/components/navigation"
@@ -133,17 +134,17 @@ export default function ContactPage() {
             <p className="hidden sm:block text-base text-muted-foreground max-w-2xl leading-relaxed">
               For orders, please call.
             </p>
-            <a href="tel:+17028899887" className="hidden sm:inline-flex mt-2 min-h-12 items-center font-medium text-primary underline underline-offset-4 lg:hidden">Call 702-889-9887</a>
+            <a href={SITE.phoneHref} className="hidden sm:inline-flex mt-2 min-h-12 items-center font-medium text-primary underline underline-offset-4 lg:hidden">Call {SITE.phone}</a>
           </div>
 
           <div className="grid items-start gap-6 lg:grid-cols-[0.8fr_1.2fr]">
           <aside aria-label="Visit and contact Sunville Bakery" className="hidden sm:block order-2 min-w-0 lg:order-1">
             <div id="contact-store-details" className="space-y-5 rounded-xl bg-white py-4 sm:border sm:p-6">
             <div><h2 className="heading-2">Visit or call us</h2></div>
-            <div><h3 className="heading-label">Phone</h3><a className="inline-flex min-h-12 items-center text-primary underline underline-offset-4" href="tel:+17028899887">702-889-9887</a></div>
-            <div><h3 className="heading-label">Location</h3><address className="mt-2 not-italic text-muted-foreground">4053 Spring Mountain Rd<br />Las Vegas, NV 89102</address><a href="https://www.google.com/maps/search/?api=1&query=4053+Spring+Mountain+Rd+Las+Vegas+NV+89102" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-primary underline underline-offset-4">Get directions<span className="sr-only"> (opens a new tab)</span></a></div>
-            <div><h3 className="heading-label mb-2">Hours · Pacific Time</h3><p className="text-sm leading-7 text-muted-foreground">Mon–Tue, Thu–Sun: 8 AM–8 PM<br />Wednesday: 8 AM–3 PM</p></div>
-            <div><h3 className="heading-label">Email</h3><a href="mailto:sunvillebakerylv@gmail.com" className="inline-flex min-h-12 items-center break-all text-primary underline underline-offset-4">sunvillebakerylv@gmail.com</a></div>
+            <div><h3 className="heading-label">Phone</h3><a className="inline-flex min-h-12 items-center text-primary underline underline-offset-4" href={SITE.phoneHref}>{SITE.phone}</a></div>
+            <div><h3 className="heading-label">Location</h3><address className="mt-2 not-italic text-muted-foreground">{SITE.street}<br />{SITE.cityLine}</address><a href={SITE.directionsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center text-primary underline underline-offset-4">Get directions<span className="sr-only"> (opens a new tab)</span></a></div>
+            <div><h3 className="heading-label mb-2">Hours · Pacific Time</h3><p className="text-sm leading-7 text-muted-foreground">{SITE.hours.dailyDays}: {SITE.hours.daily}<br />Wednesday: {SITE.hours.wednesday}</p></div>
+            <div><h3 className="heading-label">Email</h3><a href={`mailto:${SITE.email}`} className="inline-flex min-h-12 items-center break-all text-primary underline underline-offset-4">{SITE.email}</a></div>
             </div>
           </aside>
           <div className="order-1 min-w-0 lg:order-2">
@@ -259,7 +260,7 @@ export default function ContactPage() {
                   >
                     {submitting ? "Sending..." : "Send Message"}
                   </Button>
-                  <p className="text-xs text-muted-foreground sm:hidden">For orders, <a href="tel:+17028899887" className="inline-block py-2 underline underline-offset-4">call the bakery</a>.</p>
+                  <p className="text-xs text-muted-foreground sm:hidden">For orders, <a href={SITE.phoneHref} className="inline-block py-2 underline underline-offset-4">call the bakery</a>.</p>
                   </fieldset>
                 </form>
               </CardContent>

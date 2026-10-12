@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE } from '@/lib/site-info'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/select'
@@ -20,7 +21,7 @@ export function CakeServingGuide() {
       </div>
       <div aria-live="polite" className="rounded-xl border p-5 sm:p-6"><h3 className="heading-3">{cake.label} pricing</h3>{category === 'Multi-tier' ? <><p className="mt-4 text-3xl font-semibold text-primary">{money(cake.prices[0])}</p><p className="mt-3 text-sm text-muted-foreground">Listed price for this tier combination.</p></> : <dl className="mt-4 divide-y">{priceGroups.map((group, index) => <div key={group} className="flex items-start justify-between gap-4 py-3 text-sm"><dt className="max-w-xs">{group}</dt><dd className="shrink-0 font-semibold tabular-nums text-primary">{money(cake.prices[index])}</dd></div>)}</dl>}</div>
     </div>
-    {category === 'Multi-tier' && <p className="mt-5 text-sm text-muted-foreground"><a href="tel:+17028899887" className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4">Need 4+ tiers or a different combination? Call 702-889-9887</a></p>}
+    {category === 'Multi-tier' && <p className="mt-5 text-sm text-muted-foreground"><a href={SITE.phoneHref} className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4">Need 4+ tiers or a different combination? Call {SITE.phone}</a></p>}
     {/* Only the selected style is compared, so phones show 3–8 rows instead of all 16 cakes. */}
     <details className="mt-6 rounded-xl border bg-background"><summary className="min-h-12 cursor-pointer px-5 py-4 font-semibold text-primary">Compare {category === 'Multi-tier' ? 'tiered cake' : category.toLowerCase() + ' cake'} sizes</summary>
       <ul className="divide-y border-t px-2 sm:px-3">{cakeCatalog.filter(item => item.category === category).map(item => <li key={item.value}><button type="button" aria-pressed={item.value === selected} aria-label={`View ${item.label} pricing`} onClick={() => { setSelected(item.value); document.getElementById('guide-cake-size')?.focus() }} className={'flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm transition-colors hover:bg-secondary ' + (item.value === selected ? 'bg-secondary' : '')}><span><span className="block font-semibold text-primary">{item.label}</span><span className="block text-muted-foreground">{item.servings} servings</span></span><span className="shrink-0 font-medium tabular-nums">{item.prices.length > 1 ? `${money(Math.min(...item.prices))}–${money(Math.max(...item.prices))}` : money(item.prices[0])}</span></button></li>)}</ul>

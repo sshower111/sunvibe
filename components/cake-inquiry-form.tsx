@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE } from '@/lib/site-info'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -89,7 +90,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to send your inquiry. Please try again.') }
     finally { sending.current = false; setBusy(false); requestAnimationFrame(() => feedback.current?.focus()) }
   }
-  if (sent) return <div ref={feedback} tabIndex={-1} role="status" className="rounded-xl border border-green-800/20 bg-green-50 p-6 sm:p-8"><h2 className="heading-2">Your cake inquiry is on its way</h2><p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p><p className="mt-3 font-semibold">Your order and date are not confirmed yet.</p><p className="mt-3">Need to follow up? Call <a href="tel:+17028899887" className="text-primary underline">702-889-9887</a>.</p></div>
+  if (sent) return <div ref={feedback} tabIndex={-1} role="status" className="rounded-xl border border-green-800/20 bg-green-50 p-6 sm:p-8"><h2 className="heading-2">Your cake inquiry is on its way</h2><p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p><p className="mt-3 font-semibold">Your order and date are not confirmed yet.</p><p className="mt-3">Need to follow up? Call <a href={SITE.phoneHref} className="text-primary underline">{SITE.phone}</a>.</p></div>
   return <form method="post" onSubmit={submit} noValidate aria-busy={busy} className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8">
     <ol aria-label="Inquiry progress" className="mb-8 grid grid-cols-4 gap-2">
       {steps.map((name, index) => <li key={name} aria-current={step === index ? 'step' : undefined} className={`border-t-4 pt-3 ${index <= step ? 'border-primary' : 'border-border'}`}><span className="block text-xs font-semibold text-primary">{index + 1}</span><span className={`mt-1 text-xs sm:text-sm ${step === index ? 'block font-semibold' : 'hidden sm:block text-muted-foreground'}`}>{name}</span></li>)}
@@ -106,7 +107,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         <p className="text-sm text-muted-foreground">Choose a date at least 3 days away.</p>
         {data.fulfillment !== 'Pickup' && field('deliveryAddress', 'Delivery address / hotel (optional)', <Input {...control('deliveryAddress')} autoComplete="street-address" maxLength={500} placeholder="Address, venue, or hotel name" />)}
         {field('fulfillment', 'How would you like to receive your cake?', <NativeSelect {...control('fulfillment')}>{deliveryOptions.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
-        <p className="text-sm text-muted-foreground">{data.fulfillment === 'Pickup' ? 'Pickup: 4053 Spring Mountain Rd, Las Vegas.' : 'Delivery availability and destination are confirmed with your quote.'}</p>
+        <p className="text-sm text-muted-foreground">{data.fulfillment === 'Pickup' ? `Pickup: ${SITE.street}, Las Vegas.` : 'Delivery availability and destination are confirmed with your quote.'}</p>
       </>}
       {step === 1 && <>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -115,7 +116,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
           {field('flavor', 'Flavor preference', <NativeSelect {...control('flavor')}>{flavors.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
           {field('filling', 'Filling preference', <NativeSelect {...control('filling')}>{fillings.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
         </div>
-        <p className="text-sm text-muted-foreground">For 4+ tier cakes, <a href="tel:+17028899887" className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4">call 702-889-9887</a>.</p>
+        <p className="text-sm text-muted-foreground">For 4+ tier cakes, <a href={SITE.phoneHref} className="inline-flex min-h-12 items-center font-semibold text-primary underline underline-offset-4">call {SITE.phone}</a>.</p>
         {data.filling === 'Custom filling / describe in notes' && <p className="text-sm text-muted-foreground">Describe your preferred filling in the notes.</p>}
         {field('budget', 'Your cake budget', <NativeSelect {...control('budget')}>{budgets.map(value => <option key={value}>{value}</option>)}</NativeSelect>)}
         <p className="text-sm text-muted-foreground">Your budget helps us plan; it isn’t a price quote.</p>
