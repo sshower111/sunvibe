@@ -6,7 +6,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 
 ## 2026-10-12
 
-- **Contact & cake forms**: phone stops at 10 digits and formats as (702) 123-4567 while typing; email field completes the domain inline (type "keith@g" → grey "mail.com"; Tab, → or tap to accept) via `components/email-input.tsx`. Shared helpers in `lib/form-helpers.ts`; server also rejects phones over 10 digits.
+- **Contact & cake forms**: phone stops at 10 digits and formats as (702) 123-4567 while typing; email field shows a styled suggestion list of common domains (keith@ → keith@gmail.com, yahoo.com…; tap or arrow keys + Enter) via `components/email-input.tsx`. This replaced a short-lived inline grey completion. Shared helpers in `lib/form-helpers.ts`; server also rejects phones over 10 digits.
 - **Docs**: rewrote `README.md` and `docs/ADMIN_GUIDE.md` for the current site; removed Stripe/Blob notes from other docs; added `CLAUDE.md`.
 - **Contact page**: now just a centered "Contact us" form. Removed "For orders, please call", the "Visit or call us" box (details are in the footer) and the unused "* Required" note. (`app/contact/page.tsx`)
 - **Cleanup phase 4**: Prettier formatting for all source (`pnpm format`); Occasions editor split into `components/admin-occasion-fields.tsx`; one seasonal banner component; maintenance mode handled in `middleware.ts` with a `/maintenance` page.

@@ -1,40 +1,32 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState, type ComponentProps } from 'react'
+import { useId, useRef, useState, type ComponentProps } from 'react'
 import { Input } from '@/components/ui/input'
-import { emailCompletion } from '@/lib/form-helpers'
+import { emailSuggestions } from '@/lib/form-helpers'
 
-// Email field with inline domain completion: typing "keith@g" shows a grey "mail.com" after the text.
-// Tab, the right arrow (at the end), or tapping the grey text accepts it.
-export function EmailInput({ value, onKeyDown, ...props }: ComponentProps<'input'> & { value: string }) {
+// Email field with a styled suggestion list (keith@ → keith@gmail.com, keith@yahoo.com, …).
+// Arrow keys + Enter, or tap, to pick. Matches the menu search suggestions.
+export function EmailInput({
+  value,
+  onKeyDown,
+  onFocus,
+  onBlur,
+  ...props
+}: ComponentProps<'input'> & { value: string }) {
   const ref = useRef<HTMLInputElement>(null)
-  const [mirror, setMirror] = useState<React.CSSProperties>({})
-  const [fits, setFits] = useState(true)
-  const suffix = emailCompletion(value)
+  const listId = useId()
+  const [open, setOpen] = useState(false)
+  const [active, setActive] = useState(-1)
+  const options = open ? emailSuggestions(value) : []
 
-  // Copy the input's padding and font so the grey text lines up exactly after what was typed.
-  useLayoutEffect(() => {
+  function choose(option: string) {
     const el = ref.current
     if (!el) return
-    const css = getComputedStyle(el)
-    setMirror({
-      paddingLeft: `calc(${css.paddingLeft} + ${css.borderLeftWidth})`,
-      font: css.font,
-      letterSpacing: css.letterSpacing,
-    })
-  }, [])
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (el) setFits(el.scrollWidth <= el.clientWidth)
-  }, [value])
-
-  function accept() {
-    const el = ref.current
-    if (!el || !suffix) return
     // Set the value the way typing would, so the form's own onChange runs.
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, value + suffix)
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, option)
     el.dispatchEvent(new Event('input', { bubbles: true }))
-    el.focus()
+    setOpen(false)
+    setActive(-1)
   }
 
   return (
@@ -44,34 +36,71 @@ export function EmailInput({ value, onKeyDown, ...props }: ComponentProps<'input
         ref={ref}
         type="email"
         value={value}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={options.length > 0}
+        aria-controls={listId}
+        aria-activedescendant={active >= 0 && options[active] ? `${listId}-${active}` : undefined}
+        onInput={() => {
+          setOpen(true)
+          setActive(-1)
+        }}
+        onFocus={event => {
+          setOpen(true)
+          onFocus?.(event)
+        }}
+        onBlur={event => {
+          setOpen(false)
+          setActive(-1)
+          onBlur?.(event)
+        }}
         onKeyDown={event => {
-          // Email inputs don't expose the caret position (selectionStart is null), so null counts as "at the end".
-          const caret = event.currentTarget.selectionStart
-          const atEnd = caret === null || caret === value.length
-          if (suffix && atEnd && ((event.key === 'Tab' && !event.shiftKey) || event.key === 'ArrowRight')) {
-            event.preventDefault()
-            accept()
+          if (options.length) {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault()
+              setActive(i => Math.min(i + 1, options.length - 1))
+            } else if (event.key === 'ArrowUp') {
+              event.preventDefault()
+              setActive(i => Math.max(i - 1, -1))
+            } else if (event.key === 'Enter' && active >= 0) {
+              event.preventDefault()
+              choose(options[active])
+            } else if (event.key === 'Escape') setOpen(false)
           }
           onKeyDown?.(event)
         }}
       />
-      {suffix && fits && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 flex items-center whitespace-pre"
-          style={mirror}
+      {options.length > 0 && (
+        <ul
+          id={listId}
+          role="listbox"
+          aria-label="Email suggestions"
+          className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border bg-white p-1 shadow-lg"
         >
-          <span className="invisible">{value}</span>
-          <span
-            className="pointer-events-auto cursor-pointer text-muted-foreground/60"
-            onMouseDown={event => {
-              event.preventDefault()
-              accept()
-            }}
-          >
-            {suffix}
-          </span>
-        </div>
+          {options.map((option, index) => {
+            const at = option.indexOf('@')
+            return (
+              <li
+                key={option}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={index === active}
+                onMouseDown={event => {
+                  event.preventDefault()
+                  choose(option)
+                }}
+                onMouseEnter={() => setActive(index)}
+                className={
+                  'flex min-h-12 cursor-pointer items-center rounded-lg px-3 text-sm ' +
+                  (index === active ? 'bg-secondary' : 'hover:bg-secondary')
+                }
+              >
+                <span className="text-muted-foreground">{option.slice(0, at + 1)}</span>
+                <span className="font-medium text-foreground">{option.slice(at + 1)}</span>
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )
