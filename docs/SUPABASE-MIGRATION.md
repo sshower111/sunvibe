@@ -1,5 +1,7 @@
 # Supabase migration — staged, not enabled in production
 
+> The one-off migration scripts (`scripts/migrate-supabase*.cjs`) were removed after the migration finished on 2026-09-27. Recover them from git history (commit a53f173) if ever needed.
+
 The menu currently comes from Stripe. Campaigns, reservations and gallery metadata currently come from Blob. New uploads can use Supabase Storage. Existing photo URLs are retained until their files have been copied and verified.
 
 ## Connection and switches

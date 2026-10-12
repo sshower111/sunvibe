@@ -8,11 +8,6 @@ export interface MenuProduct {
   category: string
 }
 
-export function matchesMenuSearch(product: MenuProduct, query: string) {
-  const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
-  const text = [product.name, product.description, product.category].join(' ').toLocaleLowerCase()
-  return terms.every(term => text.includes(term))
-}
 
 export function getStoreStatus(now: Date) {
   const parts = new Intl.DateTimeFormat('en-US', {
