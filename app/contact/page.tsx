@@ -1,6 +1,5 @@
 'use client'
 
-import { SITE } from '@/lib/site-info'
 import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { useRef, useState } from 'react'
 import { Navigation } from '@/components/navigation'
@@ -134,77 +133,12 @@ export default function ContactPage() {
 
       <main id="main-content" tabIndex={-1} className="flex-1 page-space">
         <div className="site-container">
-          <div className="mb-5 sm:mb-8">
-            <h1 className="heading-1 mb-3">Contact Sunville Bakery in Las Vegas</h1>
-
-            <p className="hidden sm:block text-base text-muted-foreground max-w-2xl leading-relaxed">
-              For orders, please call.
-            </p>
-            <a
-              href={SITE.phoneHref}
-              className="hidden sm:inline-flex mt-2 min-h-12 items-center font-medium text-primary underline underline-offset-4 lg:hidden"
-            >
-              Call {SITE.phone}
-            </a>
-          </div>
-
-          <div className="grid items-start gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-            <aside
-              aria-label="Visit and contact Sunville Bakery"
-              className="hidden sm:block order-2 min-w-0 lg:order-1"
-            >
-              <div id="contact-store-details" className="space-y-5 rounded-xl bg-white py-4 sm:border sm:p-6">
-                <div>
-                  <h2 className="heading-2">Visit or call us</h2>
-                </div>
-                <div>
-                  <h3 className="heading-label">Phone</h3>
-                  <a
-                    className="inline-flex min-h-12 items-center text-primary underline underline-offset-4"
-                    href={SITE.phoneHref}
-                  >
-                    {SITE.phone}
-                  </a>
-                </div>
-                <div>
-                  <h3 className="heading-label">Location</h3>
-                  <address className="mt-2 not-italic text-muted-foreground">
-                    {SITE.street}
-                    <br />
-                    {SITE.cityLine}
-                  </address>
-                  <a
-                    href={SITE.directionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-12 items-center text-primary underline underline-offset-4"
-                  >
-                    Get directions<span className="sr-only"> (opens a new tab)</span>
-                  </a>
-                </div>
-                <div>
-                  <h3 className="heading-label mb-2">Hours · Pacific Time</h3>
-                  <p className="text-sm leading-7 text-muted-foreground">
-                    {SITE.hours.dailyDays}: {SITE.hours.daily}
-                    <br />
-                    Wednesday: {SITE.hours.wednesday}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="heading-label">Email</h3>
-                  <a
-                    href={`mailto:${SITE.email}`}
-                    className="inline-flex min-h-12 items-center break-all text-primary underline underline-offset-4"
-                  >
-                    {SITE.email}
-                  </a>
-                </div>
-              </div>
-            </aside>
-            <div className="order-1 min-w-0 lg:order-2">
+          <div className="mx-auto max-w-2xl">
+            <h1 className="heading-1 mb-5 sm:mb-8">Contact us</h1>
+            <div className="min-w-0">
               <Card className="gap-0 border-0 bg-transparent py-0 shadow-none sm:rounded-xl sm:border sm:border-border sm:bg-white sm:py-6 sm:shadow-sm">
                 <CardContent className="p-0 sm:p-6">
-                  <h2 className="heading-2 sr-only sm:not-sr-only mb-4">Send us a Message</h2>
+                  <h2 className="sr-only">Send us a message</h2>
 
                   <div ref={feedbackRef} tabIndex={-1} className="focus:outline-none">
                     {submitted && (
@@ -326,13 +260,6 @@ export default function ContactPage() {
                       <Button type="submit" disabled={submitting} className="w-full">
                         {submitting ? 'Sending...' : 'Send Message'}
                       </Button>
-                      <p className="text-xs text-muted-foreground sm:hidden">
-                        For orders,{' '}
-                        <a href={SITE.phoneHref} className="inline-block py-2 underline underline-offset-4">
-                          call the bakery
-                        </a>
-                        .
-                      </p>
                     </fieldset>
                   </form>
                 </CardContent>
