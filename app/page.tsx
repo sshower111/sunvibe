@@ -1,21 +1,21 @@
-import { Navigation } from "@/components/navigation"
-import { HeroSection } from "@/components/hero-section"
-import { AboutSection } from "@/components/about-section"
-import { FeaturedGallery } from "@/components/featured-gallery"
-import { Footer } from "@/components/footer"
-import { getPublicGallery } from "@/lib/public-gallery"
+import { Navigation } from '@/components/navigation'
+import { HeroSection } from '@/components/hero-section'
+import { AboutSection } from '@/components/about-section'
+import { FeaturedGallery } from '@/components/featured-gallery'
+import { Footer } from '@/components/footer'
+import { getPublicGallery } from '@/lib/public-gallery'
 
 export default async function Home() {
   const { images } = await getPublicGallery()
   return (
     <div className="min-h-screen">
       <Navigation sticky />
-    <main id="main-content" tabIndex={-1}>
-      <HeroSection />
-      <AboutSection />
-      <FeaturedGallery images={images} />
+      <main id="main-content" tabIndex={-1}>
+        <HeroSection />
+        <AboutSection />
+        <FeaturedGallery images={images} />
       </main>
-    <Footer />
+      <Footer />
     </div>
   )
 }

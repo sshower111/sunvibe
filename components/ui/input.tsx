@@ -7,10 +7,7 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
     <input
       type={type}
       data-slot="input"
-      className={cn(
-        'form-control file:border-0 file:bg-transparent file:text-foreground',
-        className,
-      )}
+      className={cn('form-control file:border-0 file:bg-transparent file:text-foreground', className)}
       {...props}
     />
   )

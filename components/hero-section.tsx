@@ -1,11 +1,14 @@
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
+import Image from 'next/image'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button'
 
 export function HeroSection() {
   return (
-    <section aria-labelledby="home-heading" className="relative flex min-h-[500px] items-center overflow-hidden bg-primary pb-10 pt-24 md:min-h-[680px] md:pt-40">
+    <section
+      aria-labelledby="home-heading"
+      className="relative flex min-h-[500px] items-center overflow-hidden bg-primary pb-10 pt-24 md:min-h-[680px] md:pt-40"
+    >
       <div className="absolute inset-0" aria-hidden="true">
         <Image src="/background2.jpg" alt="" fill priority sizes="100vw" className="object-cover object-center" />
         <div className="absolute inset-0 bg-black/65" />
@@ -13,10 +16,17 @@ export function HeroSection() {
       <div className="relative site-container">
         <div className="max-w-2xl">
           <p className="mb-4 text-sm font-semibold tracking-wide text-white">Las Vegas · Family-owned since 2002</p>
-          <h1 id="home-heading" className="heading-1 heading-on-dark">Fresh buns & cakes <br /><span className="text-accent">in Las Vegas</span></h1>
+          <h1 id="home-heading" className="heading-1 heading-on-dark">
+            Fresh buns & cakes <br />
+            <span className="text-accent">in Las Vegas</span>
+          </h1>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link href="/custom-cakes" className={buttonVariants({ className: 'w-full sm:w-auto' })}>Inquire for Custom Cakes <ArrowRight aria-hidden="true" /></Link>
-            <Link href="/menu" className={buttonVariants({ variant: 'outline', className: 'w-full sm:w-auto' })}>Explore Daily Menu</Link>
+            <Link href="/custom-cakes" className={buttonVariants({ className: 'w-full sm:w-auto' })}>
+              Inquire for Custom Cakes <ArrowRight aria-hidden="true" />
+            </Link>
+            <Link href="/menu" className={buttonVariants({ variant: 'outline', className: 'w-full sm:w-auto' })}>
+              Explore Daily Menu
+            </Link>
           </div>
         </div>
       </div>

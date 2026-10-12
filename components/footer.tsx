@@ -1,9 +1,10 @@
 import { SITE } from '@/lib/site-info'
-import Link from "next/link"
-import { ArrowUpRight, MapPin, Phone } from "lucide-react"
+import Link from 'next/link'
+import { ArrowUpRight, MapPin, Phone } from 'lucide-react'
 
 const directions = SITE.directionsUrl
-const linkStyle = "inline-flex min-h-12 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+const linkStyle =
+  'inline-flex min-h-12 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
 
 export function Footer() {
   return (
@@ -12,60 +13,156 @@ export function Footer() {
         <div className="sm:hidden">
           <p className="font-serif text-xl font-semibold">Sunville Bakery</p>
           <div className="mt-2 flex flex-wrap gap-x-6">
-            <a href={SITE.phoneHref} className={linkStyle}>Call the bakery</a>
-            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle}>Directions<span className="sr-only"> (opens a new tab)</span></a>
+            <a href={SITE.phoneHref} className={linkStyle}>
+              Call the bakery
+            </a>
+            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle}>
+              Directions<span className="sr-only"> (opens a new tab)</span>
+            </a>
           </div>
           <details className="mt-3 border-t border-white/20">
-            <summary className="min-h-12 cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-white">Location, hours & email</summary>
+            <summary className="min-h-12 cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-white">
+              Location, hours & email
+            </summary>
             <div className="space-y-3 pb-4 text-sm leading-relaxed text-white/90">
-              <address className="not-italic">{SITE.street}<br />{SITE.cityLine}</address>
-              <p>{SITE.hours.dailyDays}: {SITE.hours.daily}<br />Wednesday: {SITE.hours.wednesday} (PT)</p>
-              <a href={`mailto:${SITE.email}`} className={linkStyle + " max-w-full break-all"}>{SITE.email}</a>
+              <address className="not-italic">
+                {SITE.street}
+                <br />
+                {SITE.cityLine}
+              </address>
+              <p>
+                {SITE.hours.dailyDays}: {SITE.hours.daily}
+                <br />
+                Wednesday: {SITE.hours.wednesday} (PT)
+              </p>
+              <a href={`mailto:${SITE.email}`} className={linkStyle + ' max-w-full break-all'}>
+                {SITE.email}
+              </a>
             </div>
           </details>
           <nav aria-label="Mobile footer navigation" className="flex flex-wrap gap-x-5 border-t border-white/20">
-            <Link href="/menu" className={linkStyle}>Menu</Link><Link href="/custom-cakes" className={linkStyle}>Custom Cakes</Link><Link href="/#about" className={linkStyle}>About</Link><Link href="/gallery" className={linkStyle}>Gallery</Link><Link href="/contact" className={linkStyle}>Contact</Link>
+            <Link href="/menu" className={linkStyle}>
+              Menu
+            </Link>
+            <Link href="/custom-cakes" className={linkStyle}>
+              Custom Cakes
+            </Link>
+            <Link href="/#about" className={linkStyle}>
+              About
+            </Link>
+            <Link href="/gallery" className={linkStyle}>
+              Gallery
+            </Link>
+            <Link href="/contact" className={linkStyle}>
+              Contact
+            </Link>
           </nav>
         </div>
         <div className="hidden sm:grid gap-8 border-b border-white/20 pb-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_1fr_0.7fr] lg:gap-10">
           <div className="min-w-0">
-            <Link href="/" aria-label="Sunville Bakery home" className="inline-block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
-              <img src="/logoWhite.png" width={600} height={204} alt="Sunville Bakery" loading="lazy" className="h-12 w-auto max-w-full object-contain" />
+            <Link
+              href="/"
+              aria-label="Sunville Bakery home"
+              className="inline-block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              <img
+                src="/logoWhite.png"
+                width={600}
+                height={204}
+                alt="Sunville Bakery"
+                loading="lazy"
+                className="h-12 w-auto max-w-full object-contain"
+              />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/85">Your neighborhood Asian bakery in Las Vegas. Family-owned since 2002.</p>
-            <a href={SITE.phoneHref} className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><Phone aria-hidden="true" className="h-4 w-4" />Call to order</a>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/85">
+              Your neighborhood Asian bakery in Las Vegas. Family-owned since 2002.
+            </p>
+            <a
+              href={SITE.phoneHref}
+              className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              <Phone aria-hidden="true" className="h-4 w-4" />
+              Call to order
+            </a>
           </div>
 
           <section aria-labelledby="footer-visit" className="min-w-0">
-            <h2 id="footer-visit" className="heading-label mb-3">Visit & contact</h2>
-            <address className="text-sm not-italic leading-relaxed text-white/90">{SITE.street}<br />{SITE.cityLine}</address>
-            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle + " gap-2"}><MapPin aria-hidden="true" className="h-4 w-4" />Get directions<ArrowUpRight aria-hidden="true" className="h-4 w-4" /><span className="sr-only"> (opens a new tab)</span></a>
-            <div><a href={SITE.phoneHref} className={linkStyle}>{SITE.phone}</a></div>
-            <a href={`mailto:${SITE.email}`} className={linkStyle + " max-w-full break-all"}>{SITE.email}</a>
+            <h2 id="footer-visit" className="heading-label mb-3">
+              Visit & contact
+            </h2>
+            <address className="text-sm not-italic leading-relaxed text-white/90">
+              {SITE.street}
+              <br />
+              {SITE.cityLine}
+            </address>
+            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkStyle + ' gap-2'}>
+              <MapPin aria-hidden="true" className="h-4 w-4" />
+              Get directions
+              <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+              <span className="sr-only"> (opens a new tab)</span>
+            </a>
+            <div>
+              <a href={SITE.phoneHref} className={linkStyle}>
+                {SITE.phone}
+              </a>
+            </div>
+            <a href={`mailto:${SITE.email}`} className={linkStyle + ' max-w-full break-all'}>
+              {SITE.email}
+            </a>
           </section>
 
           <section aria-labelledby="footer-hours">
-            <h2 id="footer-hours" className="heading-label mb-3">Bakery hours (PT)</h2>
+            <h2 id="footer-hours" className="heading-label mb-3">
+              Bakery hours (PT)
+            </h2>
             <dl className="space-y-3 text-sm leading-relaxed">
-              <div><dt className="text-white/90">{SITE.hours.dailyDays}</dt><dd className="font-medium">{SITE.hours.daily}</dd></div>
-              <div><dt className="text-white/90">Wednesday</dt><dd className="font-medium">{SITE.hours.wednesday}</dd></div>
+              <div>
+                <dt className="text-white/90">{SITE.hours.dailyDays}</dt>
+                <dd className="font-medium">{SITE.hours.daily}</dd>
+              </div>
+              <div>
+                <dt className="text-white/90">Wednesday</dt>
+                <dd className="font-medium">{SITE.hours.wednesday}</dd>
+              </div>
             </dl>
           </section>
 
           <nav aria-label="Footer navigation">
             <h2 className="heading-label mb-1">Explore</h2>
             <ul>
-              <li><Link href="/menu" className={linkStyle}>Menu</Link></li>
-              <li><Link href="/custom-cakes" className={linkStyle}>Custom Cakes</Link></li>
-              <li><Link href="/#about" className={linkStyle}>Our story</Link></li>
-              <li><Link href="/gallery" className={linkStyle}>Gallery</Link></li>
-              <li><Link href="/contact" className={linkStyle}>Contact</Link></li>
+              <li>
+                <Link href="/menu" className={linkStyle}>
+                  Menu
+                </Link>
+              </li>
+              <li>
+                <Link href="/custom-cakes" className={linkStyle}>
+                  Custom Cakes
+                </Link>
+              </li>
+              <li>
+                <Link href="/#about" className={linkStyle}>
+                  Our story
+                </Link>
+              </li>
+              <li>
+                <Link href="/gallery" className={linkStyle}>
+                  Gallery
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className={linkStyle}>
+                  Contact
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-5 text-xs leading-relaxed text-white/80">
           <p>&copy; {new Date().getFullYear()} Sunville Bakery. All rights reserved.</p>
-          <Link href="/privacy" className="inline-flex min-h-12 items-center underline underline-offset-4">Privacy</Link>
+          <Link href="/privacy" className="inline-flex min-h-12 items-center underline underline-offset-4">
+            Privacy
+          </Link>
         </div>
       </div>
     </footer>

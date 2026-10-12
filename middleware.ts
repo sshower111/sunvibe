@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 // Read-only pages (home, menu, gallery, privacy) use a fixed policy so they can be cached and served
 // from Vercel's CDN instead of being rebuilt by a server function on every visit.
 const STRICT_PREFIXES = ['/admin', '/contact', '/custom-cakes', '/pre-order']
-const isStrict = (pathname: string) => STRICT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'))
+const isStrict = (pathname: string) =>
+  STRICT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'))
 
 function policy(scriptSources: string, development: boolean) {
   return [
@@ -14,7 +15,7 @@ function policy(scriptSources: string, development: boolean) {
     "img-src 'self' https: data: blob:",
     "font-src 'self' data:",
     `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
-    "frame-src https://challenges.cloudflare.com",
+    'frame-src https://challenges.cloudflare.com',
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -25,7 +26,14 @@ function policy(scriptSources: string, development: boolean) {
 
 export function middleware(request: NextRequest) {
   const development = process.env.NODE_ENV !== 'production'
-  if (!isStrict(request.nextUrl.pathname)) {
+  const { pathname } = request.nextUrl
+  // Maintenance mode (Vercel env MAINTENANCE_MODE=true): every public page shows /maintenance; admin still works.
+  if (process.env.MAINTENANCE_MODE === 'true' && !pathname.startsWith('/admin') && pathname !== '/maintenance') {
+    const response = NextResponse.rewrite(new URL('/maintenance', request.url))
+    response.headers.set('Content-Security-Policy', policy("'unsafe-inline'", development))
+    return response
+  }
+  if (!isStrict(pathname)) {
     const response = NextResponse.next()
     response.headers.set('Content-Security-Policy', policy("'unsafe-inline'", development))
     return response
