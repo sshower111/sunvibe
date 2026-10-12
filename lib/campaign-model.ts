@@ -11,4 +11,3 @@ export const campaignSchema = z.object({
 .refine(c => new Set(c.items.map(i => i.id)).size === c.items.length, 'Item IDs must be unique')
 export type Campaign = z.infer<typeof campaignSchema>
 export function campaignStatus(c: Campaign, now = new Date()) { const today = storeDate(now); return !c.published ? 'draft' : today > c.endsAt ? 'ended' : today < c.startsAt ? 'scheduled' : 'active' }
-export const seedCampaign: Campaign = { id: 'mid-autumn-2026', occasion: 'Mid-Autumn Festival', name: 'Mid-Autumn 2026', banner: { headline: 'Fresh mooncakes for Mid-Autumn Festival — this Friday.', message: 'Pineapple, red bean & lotus — baked fresh. Call to reserve yours.', ctaLabel: 'Reserve mooncakes' }, page: { title: 'Mid-Autumn mooncakes in Las Vegas', intro: 'Pineapple, red bean & lotus — baked fresh. Reserve your festival favorites.' }, items: [], startsAt: '2026-09-24', endsAt: '2026-09-25', orderCutoff: '2026-09-24', published: true }

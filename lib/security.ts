@@ -97,29 +97,6 @@ export function sanitizeFilename(filename: string): string {
 }
 
 /**
- * Validate and sanitize pickup time
- */
-export function sanitizePickupTime(pickupTime: string | undefined): string {
-  if (!pickupTime || typeof pickupTime !== 'string') {
-    return 'ASAP'
-  }
-
-  const trimmed = pickupTime.trim()
-
-  if (trimmed === 'ASAP') {
-    return 'ASAP'
-  }
-
-  // Validate date format: YYYY-MM-DD at HH:MM AM/PM
-  const dateTimeRegex = /^\d{4}-\d{2}-\d{2} at \d{1,2}:\d{2} (AM|PM)$/
-  if (dateTimeRegex.test(trimmed)) {
-    return trimmed
-  }
-
-  return 'ASAP'
-}
-
-/**
  * Get client IP from request
  */
 export function getClientIp(request: Request): string {

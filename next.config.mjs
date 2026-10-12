@@ -6,7 +6,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // TODO: turn this off once the remaining type errors (admin gallery / Stripe legacy files) are fixed.
+    // TODO: turn this off once the remaining type errors  are fixed.
     ignoreBuildErrors: true,
   },
   // Lets client code recognise Supabase photo URLs that next/image may resize (see lib/gallery-images.ts).

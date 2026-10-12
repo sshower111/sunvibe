@@ -37,7 +37,7 @@ const routes = ['/', '/menu', '/custom-cakes', '/gallery', '/contact']
       console.log('PASS SSR, metadata, landmarks, schema:', route)
     }
     assert.equal(titles.size, 5)
-    for (const route of ['/admin', '/admin/menu', '/admin/gallery', '/checkout/success']) {
+    for (const route of ['/admin']) {
       await page.goto(base + route, { waitUntil: 'domcontentloaded' })
       assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/)
     }

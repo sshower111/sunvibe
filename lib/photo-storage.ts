@@ -1,7 +1,6 @@
 import 'server-only'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { database, usesDatabase } from './database'
-export function usesSupabaseStorage() { return process.env.PHOTO_STORAGE === 'supabase' }
+import { database } from './database'
 const bucket = () => process.env.SUPABASE_STORAGE_BUCKET || 'bakery-images'
 let client: SupabaseClient | undefined
 function storage() {
@@ -27,7 +26,7 @@ function ownedPath(url: string) {
  */
 export async function deletePhotoIfUnused(url: string) {
  const path=ownedPath(url)
- if(!path || !usesSupabaseStorage() || !usesDatabase('content') || !usesDatabase('menu')) return false
+ if(!path) return false
  try {
   const sql=database()
   const [inGallery,inMenu,inCampaign]=await Promise.all([

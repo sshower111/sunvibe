@@ -42,7 +42,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("menu")
 
   // Menu state
-  const [databaseMenu, setDatabaseMenu] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
   const [menuLoading, setMenuLoading] = useState(false)
   const [menuNotice, setMenuNotice] = useState<Notice>(null)
@@ -76,7 +75,7 @@ export default function AdminPage() {
       if (response.status === 401) return signedOut()
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Could not load the menu.')
-      setProducts(data.products || []); setDatabaseMenu(data.source === 'supabase'); setMenuNotice(null)
+      setProducts(data.products || []); setMenuNotice(null)
     } catch (error) { setMenuNotice({ type: 'error', text: error instanceof Error ? error.message : 'Could not load the menu.' }) }
     finally { setMenuLoading(false) }
   }, [signedOut])
@@ -205,7 +204,7 @@ export default function AdminPage() {
           <section aria-labelledby="menu-admin-heading" className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 id="menu-admin-heading" className="heading-2">Menu <span className="text-base font-normal text-muted-foreground">({products.length} items)</span></h2>
-              {databaseMenu ? <AdminProductCreate password="" onSaved={fetchProducts} /> : <p className="text-sm text-muted-foreground">Add items in <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="underline">Stripe</a></p>}
+              <AdminProductCreate password="" onSaved={fetchProducts} />
             </div>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
               <div className="relative">

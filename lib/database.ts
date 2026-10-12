@@ -1,8 +1,5 @@
 import 'server-only'
 import postgres from 'postgres'
-export function usesDatabase(scope: 'menu' | 'content') {
- return process.env[scope === 'menu' ? 'MENU_DATA_SOURCE' : 'CONTENT_DATA_SOURCE'] === 'supabase'
-}
 let connection: ReturnType<typeof postgres> | undefined
 export function database() {
  if (!process.env.DATABASE_URL) throw new Error('Database is not configured')
