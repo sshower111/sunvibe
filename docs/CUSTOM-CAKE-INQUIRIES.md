@@ -6,7 +6,7 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 - Hero and direct inquiry/serving-guide links; four size cards; quote-based price guidance.
 - Four steps: event, cake preferences, contact/photos, review and send. Previous entries survive back navigation and failed sends.
 - Event date uses Las Vegas calendar time and requires at least three days' notice. The visible guidance requests 3–5 days and explains that availability must be confirmed.
-- Optional reference images: at most three JPG/PNG/WebP files, 1 MB each; preview and removal controls.
+- Optional reference images: up to five photos; any phone photo (including iPhone HEIC) is converted to JPEG and resized to 800 KB in the browser before sending; preview and removal controls.
 - An explicit acknowledgement explains that inquiries do not confirm orders, pricing, or availability.
 - Navigation, mobile navigation, footer, sitemap, and page metadata include the new page.
 
