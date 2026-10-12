@@ -19,7 +19,8 @@ import {
 
 import { cakeCatalog, cakeLabel, deliveryOptions } from '@/lib/cake-catalog'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
-import { formatPhone, emailSuggestions } from '@/lib/form-helpers'
+import { formatPhone } from '@/lib/form-helpers'
+import { EmailInput } from '@/components/email-input'
 
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [
@@ -350,22 +351,13 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
               {field(
                 'email',
                 'Email',
-                <>
-                  <Input
-                    {...control('email')}
-                    type="email"
-                    autoComplete="email"
-                    list="cake-email-suggestions"
-                    maxLength={100}
-                    required
-                    placeholder="you@example.com"
-                  />
-                  <datalist id="cake-email-suggestions">
-                    {emailSuggestions(data.email).map(option => (
-                      <option key={option} value={option} />
-                    ))}
-                  </datalist>
-                </>,
+                <EmailInput
+                  {...control('email')}
+                  autoComplete="email"
+                  maxLength={100}
+                  required
+                  placeholder="you@example.com"
+                />,
               )}
               {field(
                 'phone',
