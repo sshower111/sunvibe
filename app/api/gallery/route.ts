@@ -14,7 +14,8 @@ export async function POST(req: NextRequest) {
   try {
     const { action, url, password } = await req.json()
     if (!(await isAdminRequest(password))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!['add', 'remove'].includes(action) || typeof url !== 'string' || url.length > 2048 || !/^https:\/\//.test(url)) return NextResponse.json({ error: 'Invalid gallery change' }, { status: 400 })
+    if (!['add', 'remove'].includes(action) || typeof url !== 'string' || url.length > 2048 || !/^https:\/\//.test(url))
+      return NextResponse.json({ error: 'Invalid gallery change' }, { status: 400 })
     await editGallery(action, url)
     revalidateTag('gallery-images')
     // Free storage space: delete our own uploaded file unless a menu item or occasion still uses it.

@@ -51,10 +51,7 @@ if (typeof window === 'undefined') {
 export function constantTimeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) {
     // Use a dummy comparison to maintain constant time
-    crypto.timingSafeEqual(
-      Buffer.from(a.padEnd(b.length)),
-      Buffer.from(b.padEnd(a.length))
-    )
+    crypto.timingSafeEqual(Buffer.from(a.padEnd(b.length)), Buffer.from(b.padEnd(a.length)))
     return false
   }
 

@@ -1,27 +1,26 @@
-import { SiteSeasonalBanner } from '@/components/site-seasonal-banner'
+import { SeasonalBanner } from '@/components/seasonal-banner'
 import { getActiveCampaign } from '@/lib/campaigns'
 import { campaignBanner } from '@/lib/seasonal'
-import { SITE_URL, pageMetadata, bakerySchema } from "@/lib/seo"
-import { StructuredData } from "@/components/structured-data"
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter, Playfair_Display } from "next/font/google"
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { SiteProvider } from "@/components/site-context"
-import { MaintenanceCheck } from "@/components/maintenance-check"
-import "./globals.css"
+import { SITE_URL, pageMetadata, bakerySchema } from '@/lib/seo'
+import { StructuredData } from '@/components/structured-data'
+import type React from 'react'
+import type { Metadata } from 'next'
+import { Inter, Playfair_Display } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { SiteProvider } from '@/components/site-context'
+import './globals.css'
 
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
 })
 
 const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -50,12 +49,12 @@ export default async function RootLayout({
         <StructuredData data={bakerySchema} />
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
-        <SiteSeasonalBanner banner={campaignBanner(campaign)} />
-        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <SeasonalBanner banner={campaignBanner(campaign)} />
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         <SiteProvider preorderOpen={!!campaign}>
-          <MaintenanceCheck isMaintenanceMode={process.env.MAINTENANCE_MODE === "true"}>
-            {children}
-          </MaintenanceCheck>
+          {children}
           <Analytics />
           <SpeedInsights />
         </SiteProvider>

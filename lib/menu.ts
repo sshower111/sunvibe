@@ -8,21 +8,31 @@ export interface MenuProduct {
   category: string
 }
 
-
 export function getStoreStatus(now: Date) {
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Los_Angeles', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    timeZone: 'America/Los_Angeles',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
   }).formatToParts(now)
   const value = (type: string) => parts.find(part => part.type === type)?.value || ''
   const day = value('weekday')
   const minutes = Number(value('hour')) * 60 + Number(value('minute'))
   const closing = day === 'Wed' ? 15 * 60 : 20 * 60
-  if (minutes >= 480 && minutes < closing) return { open: true, text: 'Open · Closes at ' + (day === 'Wed' ? '3 PM' : '8 PM') }
+  if (minutes >= 480 && minutes < closing)
+    return { open: true, text: 'Open · Closes at ' + (day === 'Wed' ? '3 PM' : '8 PM') }
   return { open: false, text: 'Closed · Opens ' + (minutes < 480 ? 'today' : 'tomorrow') + ' at 8 AM' }
 }
 
-export const menuCategories = ['All Items', 'Savory Buns', 'Sweet Buns & Rolls', 'Specialty Items', 'Custom Cakes'] as const
-export function menuGroup(product: MenuProduct): typeof menuCategories[number] {
+export const menuCategories = [
+  'All Items',
+  'Savory Buns',
+  'Sweet Buns & Rolls',
+  'Specialty Items',
+  'Custom Cakes',
+] as const
+export function menuGroup(product: MenuProduct): (typeof menuCategories)[number] {
   if (/custom cakes?/i.test(product.category)) return 'Custom Cakes'
   if (/^(buns|breads)$/i.test(product.category)) {
     return /ham|sausage|pork|hot dog|scallion|tuna|cheese/i.test(product.name) ? 'Savory Buns' : 'Sweet Buns & Rolls'
@@ -38,7 +48,11 @@ export function menuLeadTime(product: MenuProduct) {
 
 // Typo tolerance: a search term with no exact match anywhere on the menu is compared
 // against each word with a small edit distance ("moncake" -> "mooncake").
-const searchWords = (text: string) => text.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+const searchWords = (text: string) =>
+  text
+    .toLocaleLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
 function editDistance(a: string, b: string, max: number) {
   if (Math.abs(a.length - b.length) > max) return max + 1
   let previous2: number[] = []
@@ -49,7 +63,8 @@ function editDistance(a: string, b: string, max: number) {
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1
       let value = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost)
-      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) value = Math.min(value, previous2[j - 2] + 1)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+        value = Math.min(value, previous2[j - 2] + 1)
       current[j] = value
       rowMin = Math.min(rowMin, value)
     }
@@ -70,7 +85,8 @@ function fuzzyWordMatch(term: string, text: string) {
     return false
   })
 }
-const productText = (product: MenuProduct) => [product.name, product.description, product.category].join(' ').toLocaleLowerCase()
+const productText = (product: MenuProduct) =>
+  [product.name, product.description, product.category].join(' ').toLocaleLowerCase()
 
 export type MenuSearchResult = { results: MenuProduct[]; corrected: boolean }
 // Search relevance: full/partial name matches first, then description, then category.
@@ -84,18 +100,25 @@ export function searchMenu(products: MenuProduct[], query: string): MenuSearchRe
   const termScore = (product: MenuProduct, term: string) => {
     const name = product.name.toLocaleLowerCase()
     const text = texts.get(product)!
-    if (text.includes(term)) return name.includes(term) ? 100 : product.description.toLocaleLowerCase().includes(term) ? 10 : 1
+    if (text.includes(term))
+      return name.includes(term) ? 100 : product.description.toLocaleLowerCase().includes(term) ? 10 : 1
     if (needsFuzzy.has(term)) return fuzzyWordMatch(term, product.name) ? 50 : fuzzyWordMatch(term, text) ? 5 : -1
     return -1
   }
-  const scored = products.map(product => {
-    const name = product.name.toLocaleLowerCase()
-    const parts = terms.map(term => termScore(product, term))
-    if (parts.some(part => part < 0)) return null
-    const phrase = name === normalized ? 10000 : name.startsWith(normalized) ? 5000 : name.includes(normalized) ? 3000 : 0
-    return { product, score: phrase + parts.reduce((total, part) => total + part, 0) }
-  }).filter((row): row is { product: MenuProduct; score: number } => row !== null)
-  return { results: scored.sort((a, b) => b.score - a.score).map(row => row.product), corrected: needsFuzzy.size > 0 && scored.length > 0 }
+  const scored = products
+    .map(product => {
+      const name = product.name.toLocaleLowerCase()
+      const parts = terms.map(term => termScore(product, term))
+      if (parts.some(part => part < 0)) return null
+      const phrase =
+        name === normalized ? 10000 : name.startsWith(normalized) ? 5000 : name.includes(normalized) ? 3000 : 0
+      return { product, score: phrase + parts.reduce((total, part) => total + part, 0) }
+    })
+    .filter((row): row is { product: MenuProduct; score: number } => row !== null)
+  return {
+    results: scored.sort((a, b) => b.score - a.score).map(row => row.product),
+    corrected: needsFuzzy.size > 0 && scored.length > 0,
+  }
 }
 export function rankMenuSearch(products: MenuProduct[], query: string): MenuProduct[] {
   return searchMenu(products, query).results
