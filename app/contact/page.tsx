@@ -224,7 +224,6 @@ export default function ContactPage() {
                       </div>
                     )}
                   </div>
-                  <p className="hidden sm:block mb-4 text-sm text-muted-foreground">* Required</p>
                   <form method="post" onSubmit={handleSubmit} aria-busy={submitting} className="space-y-4 sm:space-y-5">
                     <div hidden aria-hidden="true">
                       <label>
