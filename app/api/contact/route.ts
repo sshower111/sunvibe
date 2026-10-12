@@ -51,7 +51,10 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
-    if (phone && (!/^[+\d\s().-]+$/.test(phone) || phone.replace(/\D/g, '').length < 7)) {
+    if (
+      phone &&
+      (!/^[+\d\s().-]+$/.test(phone) || phone.replace(/\D/g, '').length < 7 || phone.replace(/\D/g, '').length > 10)
+    ) {
       return NextResponse.json({ error: 'Please enter a valid phone number.' }, { status: 400 })
     }
 

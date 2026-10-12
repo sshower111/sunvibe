@@ -1,4 +1,5 @@
 'use client'
+import { formatPhone, emailSuggestions } from '@/lib/form-helpers'
 
 import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { useRef, useState } from 'react'
@@ -38,7 +39,7 @@ export default function ContactPage() {
   const validatePhone = (phone: string): boolean => {
     if (!phone) return true // Phone is optional
     const digitsOnly = phone.replace(/\D/g, '')
-    return digitsOnly.length >= 10 && digitsOnly.length <= 11
+    return digitsOnly.length === 10
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +56,7 @@ export default function ContactPage() {
     }
 
     if (!validatePhone(formData.phone)) {
-      errors.phone = 'Please enter a valid 10-11 digit phone number'
+      errors.phone = 'Please enter a 10-digit phone number'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -124,7 +125,7 @@ export default function ContactPage() {
     }
 
     setSubmitted(false)
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => ({ ...prev, [name]: name === 'phone' ? formatPhone(value) : value }))
   }
 
   return (
@@ -193,6 +194,7 @@ export default function ContactPage() {
                           id="email"
                           name="email"
                           autoComplete="email"
+                          list="email-suggestions"
                           maxLength={100}
                           aria-invalid={!!validationErrors.email}
                           aria-describedby={validationErrors.email ? 'email-error' : undefined}
@@ -202,6 +204,11 @@ export default function ContactPage() {
 
                           placeholder="your.email@example.com"
                         />
+                        <datalist id="email-suggestions">
+                          {emailSuggestions(formData.email).map(option => (
+                            <option key={option} value={option} />
+                          ))}
+                        </datalist>
                         {validationErrors.email && (
                           <p id="email-error" className="mt-2 text-sm text-red-600">
                             {validationErrors.email}
@@ -222,7 +229,8 @@ export default function ContactPage() {
                           aria-describedby={validationErrors.phone ? 'phone-error' : undefined}
                           value={formData.phone}
                           onChange={handleChange}
-                          maxLength={30}
+                          inputMode="numeric"
+                          maxLength={14}
 
                           placeholder="(702) 123-4567"
                         />
