@@ -1,5 +1,6 @@
 'use client'
-import { formatPhone, emailSuggestions } from '@/lib/form-helpers'
+import { formatPhone } from '@/lib/form-helpers'
+import { EmailInput } from '@/components/email-input'
 
 import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { useRef, useState } from 'react'
@@ -189,12 +190,10 @@ export default function ContactPage() {
                         <label htmlFor="email" className="mb-2 block text-sm font-semibold text-foreground">
                           Email
                         </label>
-                        <Input
-                          type="email"
+                        <EmailInput
                           id="email"
                           name="email"
                           autoComplete="email"
-                          list="email-suggestions"
                           maxLength={100}
                           aria-invalid={!!validationErrors.email}
                           aria-describedby={validationErrors.email ? 'email-error' : undefined}
@@ -204,11 +203,6 @@ export default function ContactPage() {
 
                           placeholder="your.email@example.com"
                         />
-                        <datalist id="email-suggestions">
-                          {emailSuggestions(formData.email).map(option => (
-                            <option key={option} value={option} />
-                          ))}
-                        </datalist>
                         {validationErrors.email && (
                           <p id="email-error" className="mt-2 text-sm text-red-600">
                             {validationErrors.email}

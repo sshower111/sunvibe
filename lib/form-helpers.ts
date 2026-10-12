@@ -22,14 +22,11 @@ const EMAIL_DOMAINS = [
   'msn.com',
 ]
 
-/** Address suggestions for an email field: "keith@g" → ["keith@gmail.com"]; nothing until there is a name. */
-export function emailSuggestions(value: string, limit = 5): string[] {
+/** Inline completion for an email field: "keith@g" → "mail.com". Empty until "@" is typed or when nothing fits. */
+export function emailCompletion(value: string): string {
   const at = value.indexOf('@')
-  const name = (at === -1 ? value : value.slice(0, at)).trim()
-  if (!name || /\s/.test(name) || value.indexOf('@', at + 1) !== -1) return []
-  const typed = at === -1 ? '' : value.slice(at + 1).toLowerCase()
-  if (EMAIL_DOMAINS.includes(typed)) return []
-  return EMAIL_DOMAINS.filter(domain => domain.startsWith(typed))
-    .slice(0, limit)
-    .map(domain => `${name}@${domain}`)
+  if (at < 1 || value.indexOf('@', at + 1) !== -1 || /\s/.test(value)) return ''
+  const typed = value.slice(at + 1).toLowerCase()
+  const domain = EMAIL_DOMAINS.find(d => d.startsWith(typed) && d !== typed)
+  return domain ? domain.slice(typed.length) : ''
 }
