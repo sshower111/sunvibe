@@ -26,11 +26,9 @@ Admin > Pre-orders shows the immutable customer/item details and permits status 
 
 ## Storage and configuration
 
-No database or dependency was added. Local development stores JSON in ignored .local-data/campaigns.json and .local-data/pre-orders.json. Local order data is plain JSON and should only contain test customers. Vercel uses the existing BLOB_READ_WRITE_TOKEN, storing encrypted JSON at occasions/campaigns.json and occasions/pre-orders.json. Both drafts and customer information are AES-256-GCM encrypted before entering the existing public Blob store.
 
 CAMPAIGN_STORAGE_SECRET is optional but recommended as a stable encryption secret before first production use. If absent, ADMIN_PASSWORD is the encryption secret. Preserve whichever secret was used: changing it makes existing records unreadable unless they are migrated with the old key. Never put it in a NEXT_PUBLIC variable. No credentials are stored in campaign JSON.
 
-Writes use ETag conditional updates with bounded retries and local process serialization to avoid overwriting concurrent requests; first writes use allowOverwrite: false. See [Vercel Blob SDK conditional writes](https://vercel.com/docs/vercel-blob/using-blob-sdk). Storage errors are surfaced; public banners fail closed. Allow for Blob cache propagation and refresh/retry after competing updates. This JSON store is intended for the bakery's modest reservation volume, not a POS.
 
 Email reuses RESEND_API_KEY and NOTIFICATION_EMAIL (fallback sunvillebakerylv@gmail.com), plus the existing sender. TURNSTILE_SECRET_KEY, NEXT_PUBLIC_TURNSTILE_SITE_KEY, and TURNSTILE_ALLOWED_HOSTNAMES remain required. Optional SMS_GATEWAY_EMAIL enables a plain-text email-to-SMS notification. Gateway delivery depends on the carrier. The code has a Twilio migration note; no SMS provider was added.
 
@@ -39,9 +37,7 @@ An accepted request is stored before email is sent. If notification fails, the c
 ## Verification
 
 - pnpm build: passed (existing repository configuration skips type checking and linting).
-- Separate tsc check: no new errors; pre-existing admin-gallery optional-string and Stripe API-version errors remain.
 - node scripts/test-occasions.cjs: LA midnight and year boundary, computed/manual dates, statuses, invalid input, server pricing/quantity limits, cutoff, CAPTCHA failure, successful mocked notifications, record deduplication, and inbox authorization/status validation.
-- node scripts/test-occasion-storage.cjs: encrypted cloud round-trip, no plaintext customer details, conditional updates, retry and concurrent writes against a mock Blob provider.
 - scripts/test-occasions-browser.cjs against an isolated production build: empty, draft/authorized preview, active, cutoff, phone-width create/edit/preview/publish/duplicate/delete and reservation form. Outgoing submissions are mocked; temporary local campaign/order files are restored.
 
 No live campaigns, real reservations, email/SMS messages, or cloud uploads were created during verification. Live Turnstile and provider delivery must be checked with a deliberate test after deployment. Production release authorized September 25, 2026.
@@ -55,3 +51,6 @@ The customer page now uses a full-bleed campaign hero or theme-token gradient, a
 Campaign model, pricing, schemas, API routes, CAPTCHA, request IDs, preview authentication, and storage behavior were unchanged by the UI redesign. Countdown checks cover summer/winter and both daylight-saving transitions. The 390px browser matrix covers active, no-items, no-campaign, cutoff, preview, editor and submission states; automated WCAG A/AA checks cover customer form, editor and inbox. pnpm build passed. Existing unrelated tsc errors remain documented above.
 
 The previous production release (317460a) excluded Occasions. The September 25 release introduces Occasions, the reservation inbox and /pre-order. Rollback to 317460a removes these routes without deleting stored records.
+
+
+> Storage note (2026-10): occasions and reservations are stored in Supabase (`bakery_campaigns`, `bakery_orders`; orders encrypted with `CAMPAIGN_STORAGE_SECRET`). The earlier Blob/JSON storage described in older versions of this file was removed.
