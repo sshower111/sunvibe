@@ -1,8 +1,7 @@
 import { isAdminRequest } from '@/lib/occasion-admin'
 import { randomUUID } from 'node:crypto'
-import { uploadPhoto, usesSupabaseStorage } from '@/lib/photo-storage'
+import { uploadPhoto } from '@/lib/photo-storage'
 import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
 import { sanitizeFilename, rateLimiter, getClientIp } from '@/lib/security'
 
 
@@ -43,17 +42,8 @@ export async function POST(req: NextRequest) {
     const sanitized = sanitizeFilename(file.name)
     const pathname = `gallery/${timestamp}-${sanitized}`
 
-    if (usesSupabaseStorage()) { const url=await uploadPhoto(pathname,file); return NextResponse.json({success:true,url,filename:pathname}) }
-    const blob = await put(pathname, file, {
-      access: 'public',
-      contentType: file.type,
-    })
-
-    return NextResponse.json({
-      success: true,
-      url: blob.url,
-      filename: pathname,
-    })
+    const url = await uploadPhoto(pathname, file)
+    return NextResponse.json({ success: true, url, filename: pathname })
   } catch (error) {
     // Never return storage credentials or provider internals to the browser.
     return NextResponse.json(
