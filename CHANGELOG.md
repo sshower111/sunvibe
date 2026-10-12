@@ -2,7 +2,36 @@
 
 All notable changes to the Sunville Bakery website will be documented in this file.
 
-## [Latest] - 2026-05-16 (update 2)
+Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
+
+## 2026-10-12
+
+- **Contact page**: now just a centered "Contact us" form. Removed "For orders, please call", the "Visit or call us" box (details are in the footer) and the unused "* Required" note. (`app/contact/page.tsx`)
+- **Cleanup phase 4**: Prettier formatting for all source (`pnpm format`); Occasions editor split into `components/admin-occasion-fields.tsx`; one seasonal banner component; maintenance mode handled in `middleware.ts` with a `/maintenance` page.
+- **Cleanup phase 3**: shared `lib/site-info.ts` (phone, address, hours, email), `lib/email.ts`, `lib/request-body.ts`, `lib/admin-api.ts`; admin menu API merged into `/api/admin/menu`; pre-order status updates no longer reload every order; TypeScript build checking turned back on.
+- **Cleanup phase 2**: removed Stripe checkout and all Vercel Blob code and packages; Supabase is the only data source; admin menu saves no longer load the whole menu first.
+- **Cleanup phase 1**: removed unused routes, images, scripts, old docs and the `csv-parse` package.
+
+## 2026-10-10
+
+- **Cake inquiry form**: phone number limited to 10 digits and auto-formatted; step checkmarks removed; up to 5 inspiration photos (each resized to 800 KB to stay under Vercel's 4.5 MB request limit).
+
+## 2026-10-07
+
+- **Menu**: full item descriptions on cards; removed the "Details" link; badges shortened.
+- **Copy trimmed site-wide** (home hero, Our story, gallery, menu, custom cakes, contact).
+- **Gallery**: previous/next arrows on the photo itself, swipe and arrow keys.
+- **Cake inquiry photos**: phone and iPhone (HEIC) photos converted and resized in the browser before sending.
+
+## 2026-09-29
+
+- **Home**: "A taste of Sunville" shows a random 6 photos each visit; Customer favorites cards under Our story; founder photo cropped; About link scroll position fixed.
+
+## 2026-09-27
+
+- Security, caching and mobile admin overhaul, Claude handoff. See `docs/HANDOFF-2026-09-27.md`.
+
+## 2026-05-16 (update 2)
 
 ### Fixed
 - **Admin Gallery – Vercel Blob Storage**: Switched gallery storage from the local filesystem (which is read-only on Vercel) to Vercel Blob
