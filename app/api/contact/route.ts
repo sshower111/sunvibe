@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto'
 import { hasMeaningfulMessage } from '@/lib/contact-validation'
 import { verifyTurnstile } from "@/lib/turnstile"
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
+import { readBody } from "@/lib/request-body"
+import { mailer, EMAIL_FROM, bakeryInbox } from "@/lib/email"
 import { escapeHtml, isValidEmail, rateLimiter, getClientIp } from "@/lib/security"
 
 
@@ -20,20 +21,10 @@ export async function POST(request: NextRequest) {
     if (!request.headers.get('content-type')?.includes('application/json')) {
       return NextResponse.json({ error: 'JSON required' }, { status: 415 })
     }
-    // Bound the actual stream, not just the caller-controlled Content-Length.
-    const reader = request.body?.getReader()
-    if (!reader) return NextResponse.json({ error: 'Body required' }, { status: 400 })
-    const chunks: Uint8Array[] = []
-    let bytes = 0
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      bytes += value.byteLength
-      if (bytes > 32768) { await reader.cancel(); return NextResponse.json({ error: 'Request too large' }, { status: 413 }) }
-      chunks.push(value)
-    }
+    const raw = await readBody(request, 32768)
+    if (!raw.ok) return NextResponse.json({ error: raw.reason === 'empty' ? 'Body required' : 'Request too large' }, { status: raw.reason === 'empty' ? 400 : 413 })
     let body
-    try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')) } catch {
+    try { body = JSON.parse(raw.body.toString('utf8')) } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
     const { name, email, phone, message, captchaToken, website } = body || {}
@@ -87,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (!await verifyTurnstile(captchaToken, 'contact')) {
       return NextResponse.json({ error: 'Please complete the verification and try again.' }, { status: 403 })
     }
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = mailer()
     // Sanitize inputs to prevent XSS
     const safeName = escapeHtml(name.trim())
     const safeEmail = escapeHtml(email.trim().toLowerCase())
@@ -99,8 +90,8 @@ export async function POST(request: NextRequest) {
     const duplicateKey = createHash('sha256').update(JSON.stringify([safeName, safeEmail, safePhone, safeMessage])).digest('hex')
     // Send email notification to bakery
     const result = await resend.emails.send({
-      from: "Sunville Bakery Website <onboarding@resend.dev>",
-      to: process.env.NOTIFICATION_EMAIL || "sunvillebakerylv@gmail.com",
+      from: EMAIL_FROM,
+      to: bakeryInbox(),
       subject: `New Contact Form Submission from ${safeName}`,
       html: `
         <h2>New Contact Form Submission</h2>

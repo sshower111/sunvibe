@@ -1,3 +1,4 @@
+import { SITE } from '@/lib/site-info'
 import type { Metadata } from 'next'
 export const SITE_URL = 'https://sunvillebakerylv.com'
 export const publicPages = {
@@ -7,7 +8,7 @@ export const publicPages = {
   '/menu': { title: 'Fresh Buns & Pastries Menu in Las Vegas', description: 'Explore Sunville Bakery’s savory buns, sweet buns, rolls, and specialty pastries in Las Vegas. Call to confirm availability and same-day pickup.' },
   '/custom-cakes': { title: 'Custom Celebration Cakes in Las Vegas', description: 'Explore chiffon cake sizes, flavors, and prices at Sunville Bakery in Las Vegas. Request a birthday, wedding, or anniversary cake with 3–5 days’ notice.' },
   '/gallery': { title: 'Las Vegas Bakery Photo Gallery', description: 'Explore photos of Sunville Bakery’s breads, pastries, and baked goods in Las Vegas, then browse our menu or inquire about a custom cake.' },
-  '/contact': { title: 'Contact & Visit Sunville Bakery in Las Vegas', description: 'Find Sunville Bakery at 4053 Spring Mountain Road, Las Vegas, NV 89102. Check opening hours, get directions, or call 702-889-9887.' },
+  '/contact': { title: 'Contact & Visit Sunville Bakery in Las Vegas', description: `Find Sunville Bakery at 4053 Spring Mountain Road, Las Vegas, NV 89102. Check opening hours, get directions, or call ${SITE.phone}.` },
 } as const
 export type PublicPath = keyof typeof publicPages
 export function pageMetadata(path: PublicPath): Metadata {
@@ -24,8 +25,8 @@ export const bakerySchema = {
   name: 'Sunville Bakery', url: SITE_URL, image: SITE_URL + '/background2.jpg', logo: SITE_URL + '/sitelogo.png',
   // Coordinates verified against the bakery's Waze listing (2026-09-23).
   geo: { '@type': 'GeoCoordinates', latitude: 36.1261111, longitude: -115.1938889 },
-  telephone: '+1-702-889-9887', priceRange: '$$', servesCuisine: ['Asian', 'Chinese'], hasMenu: SITE_URL + '/menu',
-  address: { '@type': 'PostalAddress', streetAddress: '4053 Spring Mountain Rd', addressLocality: 'Las Vegas', addressRegion: 'NV', postalCode: '89102', addressCountry: 'US' },
+  telephone: SITE.phoneE164, priceRange: '$$', servesCuisine: ['Asian', 'Chinese'], hasMenu: SITE_URL + '/menu',
+  address: { '@type': 'PostalAddress', streetAddress: SITE.street, addressLocality: 'Las Vegas', addressRegion: 'NV', postalCode: '89102', addressCountry: 'US' },
   openingHoursSpecification: [
     { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Thursday','Friday','Saturday','Sunday'], opens: '08:00', closes: '20:00' },
     { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Wednesday', opens: '08:00', closes: '15:00' },

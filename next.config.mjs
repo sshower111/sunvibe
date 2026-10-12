@@ -5,10 +5,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  typescript: {
-    // TODO: turn this off once the remaining type errors  are fixed.
-    ignoreBuildErrors: true,
-  },
   // Lets client code recognise Supabase photo URLs that next/image may resize (see lib/gallery-images.ts).
   env: {
     NEXT_PUBLIC_PHOTO_BASE: photoHost ? `https://${photoHost}/storage/v1/object/public/${photoBucket}/` : '',

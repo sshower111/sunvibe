@@ -10,14 +10,15 @@ const fields = z.object({ name: z.string().trim().min(1).max(250), description: 
  category: z.string().trim().min(1).max(150).default('Buns'), image: z.string().max(2048).transform(v => v || '/placeholder.svg').refine(v => v === '/placeholder.svg' || /^https:\/\//.test(v)).default('/placeholder.svg') })
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/)
 function cents(value: string) { const [a,b=''] = value.split('.'); return Number(a)*100 + Number(b.padEnd(2,'0')) }
-export async function databaseProductRequest(req: NextRequest, action: string) {
+export async function databaseProductRequest(req: NextRequest) {
  let body; try { body = await req.json() } catch { return NextResponse.json({error:'Invalid request'}, {status:400}) }
+ const action = String(body?.action || '')
  if (!(await isAdminRequest(body?.password))) return NextResponse.json({error:'Unauthorized'}, {status:401})
  try {
   if(action === 'list') return NextResponse.json({products: await databaseMenu(true)})
   const sql = await verifiedDatabase('menu')
   let rows
-  if(action === 'POST') {
+  if(action === 'create') {
    const value = fields.parse(body); const productId = 'item_' + z.string().uuid().parse(body.requestId).replaceAll('-','')
    rows = await sql`INSERT INTO bakery_menu (id,name,description,price_cents,image,category,position) VALUES (${productId},${value.name},${value.description},${cents(value.price)},${value.image},${value.category},(SELECT COALESCE(MAX(position),0)+1 FROM bakery_menu)) ON CONFLICT (id) DO NOTHING RETURNING *`
    if(!rows.length) { rows = await sql`SELECT * FROM bakery_menu WHERE id=${productId}`; const prior=rows[0]; if(!prior || prior.name!==value.name || prior.description!==value.description || prior.price_cents!==cents(value.price) || prior.image!==value.image || prior.category!==value.category) return NextResponse.json({error:'This request was already saved with different details. Reopen Add item.'},{status:409}) }

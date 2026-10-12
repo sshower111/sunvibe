@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { ExternalLink, LogOut, Search } from "lucide-react"
 import { GalleryPhotoUpload } from "@/components/gallery-photo-upload"
 import { Button } from "@/components/ui/button"
+import { adminPost, SignedOutError } from "@/lib/admin-api"
 import { Input } from "@/components/ui/input"
 import { AdminOccasions } from '@/components/admin-occasions'
 import { AdminPreOrders } from '@/components/admin-pre-orders'
@@ -33,7 +34,6 @@ function NoticeBar({ notice }: { notice: Notice }) {
 }
 
 // Admin auth uses an httpOnly session cookie set by /api/admin/verify.
-// Child components still accept a `password` prop; it is empty and the server uses the cookie.
 export default function AdminPage() {
   const [session, setSession] = useState<'checking' | 'signed-out' | 'signed-in'>('checking')
   const [password, setPassword] = useState("")
@@ -71,12 +71,9 @@ export default function AdminPage() {
   const fetchProducts = useCallback(async () => {
     setMenuLoading(true)
     try {
-      const response = await fetch('/api/admin/products/list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-      if (response.status === 401) return signedOut()
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Could not load the menu.')
+      const data = await adminPost('/api/admin/menu', { action: 'list' })
       setProducts(data.products || []); setMenuNotice(null)
-    } catch (error) { setMenuNotice({ type: 'error', text: error instanceof Error ? error.message : 'Could not load the menu.' }) }
+    } catch (error) { if (error instanceof SignedOutError) return signedOut(); setMenuNotice({ type: 'error', text: error instanceof Error ? error.message : 'Could not load the menu.' }) }
     finally { setMenuLoading(false) }
   }, [signedOut])
 
@@ -118,12 +115,10 @@ export default function AdminPage() {
   const toggleProduct = async (product: Product) => {
     setTogglingId(product.id)
     try {
-      const response = await fetch('/api/admin/products/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: product.id, active: !product.active }) })
-      if (response.status === 401) return signedOut()
-      if (!response.ok) throw new Error()
+      await adminPost('/api/admin/menu', { action: 'toggle', productId: product.id, active: !product.active })
       setProducts(current => current.map(item => item.id === product.id ? { ...item, active: !product.active } : item))
       setMenuNotice({ type: 'success', text: `${product.name} is now ${product.active ? 'hidden from' : 'shown on'} the menu.` })
-    } catch { setMenuNotice({ type: 'error', text: `Could not update ${product.name}. Please try again.` }) }
+    } catch (error) { if (error instanceof SignedOutError) return signedOut(); setMenuNotice({ type: 'error', text: `Could not update ${product.name}. Please try again.` }) }
     finally { setTogglingId(null) }
   }
 
@@ -197,14 +192,14 @@ export default function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-5 sm:px-8 sm:py-8">
-        {activeTab === 'occasions' && <AdminOccasions password="" />}
-        {activeTab === 'pre-orders' && <AdminPreOrders password="" />}
+        {activeTab === 'occasions' && <AdminOccasions />}
+        {activeTab === 'pre-orders' && <AdminPreOrders />}
 
         {activeTab === "menu" && (
           <section aria-labelledby="menu-admin-heading" className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 id="menu-admin-heading" className="heading-2">Menu <span className="text-base font-normal text-muted-foreground">({products.length} items)</span></h2>
-              <AdminProductCreate password="" onSaved={fetchProducts} />
+              <AdminProductCreate onSaved={fetchProducts} />
             </div>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
               <div className="relative">
@@ -232,7 +227,7 @@ export default function AdminPage() {
                   <div className="mt-auto flex flex-wrap items-center gap-2">
                     <span className={'rounded px-2 py-1 text-xs font-medium ' + (product.active ? 'bg-green-100 text-green-900' : 'bg-gray-100 text-gray-700')}>{product.active ? 'Visible' : 'Hidden'}</span>
                     <div className="ml-auto flex gap-2">
-                      <AdminProductEditor product={product} password="" onSaved={updated => {
+                      <AdminProductEditor product={product} onSaved={updated => {
                         setProducts(current => current.map(item => item.id === updated.id ? { ...item, ...updated } : item))
                       }} />
                       <Button size="sm" variant="outline" disabled={togglingId === product.id} onClick={() => toggleProduct(product)}>{togglingId === product.id ? 'Saving…' : product.active ? 'Hide' : 'Show'}</Button>
@@ -247,7 +242,7 @@ export default function AdminPage() {
           <section aria-labelledby="gallery-admin-heading" className="space-y-4">
             <h2 id="gallery-admin-heading" className="heading-2">Gallery <span className="text-base font-normal text-muted-foreground">({images.length} photos)</span></h2>
             <div className="space-y-4 rounded-xl border bg-white p-4">
-              <GalleryPhotoUpload password="" onSaved={() => { void fetchGalleryImages() }} />
+              <GalleryPhotoUpload onSaved={() => { void fetchGalleryImages() }} />
               <details>
                 <summary className="min-h-12 cursor-pointer py-3 text-sm focus-visible:outline focus-visible:outline-2">Or add a photo link</summary>
                 <form onSubmit={addImageFromUrl} className="flex flex-col gap-2 sm:flex-row">

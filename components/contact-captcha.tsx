@@ -1,5 +1,6 @@
 "use client"
 
+import { SITE } from '@/lib/site-info'
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 
 type TurnstileApi = {
@@ -75,9 +76,9 @@ export const ContactCaptcha = forwardRef<CaptchaHandle, { action?: 'contact' | '
         },
         'expired-callback': () => fail('Your request expired. Please send it again.'),
         'timeout-callback': () => fail('Unable to verify your request. Please try again.'),
-        'error-callback': () => { fail('Unable to verify your request. Please try again or call 702-889-9887.'); return true },
+        'error-callback': () => { fail(`Unable to verify your request. Please try again or call ${SITE.phone}.`); return true },
       })
-    }) : Promise.reject(new Error('Online messages are temporarily unavailable. Please call 702-889-9887.'))).catch(error => { ready = undefined; throw error })
+    }) : Promise.reject(new Error(`Online messages are temporarily unavailable. Please call ${SITE.phone}.`))).catch(error => { ready = undefined; throw error })
     // Prevent an unhandled rejection before a visitor presses Send.
     void initialize().catch(() => {})
     verify.current = async () => {
@@ -87,7 +88,7 @@ export const ContactCaptcha = forwardRef<CaptchaHandle, { action?: 'contact' | '
       api.reset(widget)
       return new Promise<string>((resolve, reject) => {
         pending = { resolve, reject }
-        timer = setTimeout(() => fail('Unable to verify your request. Please try again or call 702-889-9887.'), 30000)
+        timer = setTimeout(() => fail(`Unable to verify your request. Please try again or call ${SITE.phone}.`), 30000)
         try { api!.execute(widget!) } catch { fail('Unable to verify your request. Please try again.') }
       })
     }
