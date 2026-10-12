@@ -19,6 +19,7 @@ import {
 
 import { cakeCatalog, cakeLabel, deliveryOptions } from '@/lib/cake-catalog'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
+import { formatPhone, emailSuggestions } from '@/lib/form-helpers'
 
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [
@@ -44,16 +45,6 @@ const initial = {
   acknowledged: '',
 }
 type Field = keyof typeof initial
-// Keeps at most 10 digits and formats them as (702) 555-0123 while typing.
-function formatPhone(value: string) {
-  const d = value
-    .replace(/\D/g, '')
-    .replace(/^1(?=\d{10})/, '')
-    .slice(0, 10)
-  if (d.length < 4) return d
-  if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`
-}
 function PhotoPreview({ file }: { file: File }) {
   const [url, setUrl] = useState('')
   useEffect(() => {
@@ -359,14 +350,22 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
               {field(
                 'email',
                 'Email',
-                <Input
-                  {...control('email')}
-                  type="email"
-                  autoComplete="email"
-                  maxLength={100}
-                  required
-                  placeholder="you@example.com"
-                />,
+                <>
+                  <Input
+                    {...control('email')}
+                    type="email"
+                    autoComplete="email"
+                    list="cake-email-suggestions"
+                    maxLength={100}
+                    required
+                    placeholder="you@example.com"
+                  />
+                  <datalist id="cake-email-suggestions">
+                    {emailSuggestions(data.email).map(option => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                </>,
               )}
               {field(
                 'phone',
