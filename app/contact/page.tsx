@@ -227,7 +227,7 @@ export default function ContactPage() {
                       <ContactCaptcha ref={captcha} />
                       <a
                         href="/privacy"
-                        className="inline-flex min-h-12 items-center text-xs text-muted-foreground underline underline-offset-4"
+                        className="inline-flex min-h-12 min-w-11 items-center text-xs text-muted-foreground underline underline-offset-4"
                       >
                         Privacy
                       </a>

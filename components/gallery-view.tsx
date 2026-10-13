@@ -102,7 +102,7 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border bg-white p-8 text-center">
+            <div className="rounded-xl border bg-white card-pad text-center">
               <h2 className="heading-2">More photos coming soon</h2>
               <p className="mt-2 text-muted-foreground">Explore our menu to see what’s baking.</p>
             </div>

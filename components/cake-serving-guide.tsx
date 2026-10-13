@@ -36,7 +36,7 @@ export function CakeServingGuide() {
           ))}
         </div>
         <div className="mt-6 grid items-start gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-xl border bg-background p-5 sm:p-6">
+          <div className="rounded-xl border bg-background card-pad">
             <label htmlFor="guide-cake-size" className="mb-2 block text-sm font-semibold">
               Select a {category.toLowerCase()} cake size
             </label>
@@ -53,7 +53,7 @@ export function CakeServingGuide() {
               <h3 className="heading-3">{cake.label}</h3>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-lg border bg-card p-4">
-                  <p className="text-3xl font-semibold text-primary">{cake.servings}</p>
+                  <p className="text-2xl font-semibold text-primary sm:text-3xl">{cake.servings}</p>
                   <p className="mt-1 text-sm">Servings</p>
                 </div>
               </div>
@@ -62,11 +62,11 @@ export function CakeServingGuide() {
               {'Approx. servings (1.5" × 2" slices). Final price depends on design, filling and delivery.'}
             </p>
           </div>
-          <div aria-live="polite" className="rounded-xl border p-5 sm:p-6">
+          <div aria-live="polite" className="rounded-xl border card-pad">
             <h3 className="heading-3">{cake.label} pricing</h3>
             {category === 'Multi-tier' ? (
               <>
-                <p className="mt-4 text-3xl font-semibold text-primary">{money(cake.prices[0])}</p>
+                <p className="mt-4 text-2xl font-semibold text-primary sm:text-3xl">{money(cake.prices[0])}</p>
                 <p className="mt-3 text-sm text-muted-foreground">Listed price for this tier combination.</p>
               </>
             ) : (
