@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 
+## 2026-10-13
+
+- **Design system step 1 (tokens)**: the colors in `app/globals.css` are now named tokens (ink, brand brown, gold accent, surface, line, success/warning/danger) with the same original values, so nothing changes color. Added radius (6/10/16px), `shadow-pop`, motion, fluid spacing and type-scale tokens, plus `text-display`, `eyebrow`, `text-pretty-body`, `surface`, `badge` and `price` utilities. Cards are slightly rounder, sections space out fluidly with screen width, and touch targets are 44px. Removed the unused dark theme, chart/sidebar colors, six unused gradient/glass utilities, duplicate rules and the unused `styles/globals.css`. See `docs/UI-DESIGN-SYSTEM.md`.
+
 ## 2026-10-12
 
 - **Contact & cake forms**: phone stops at 10 digits and formats as (702) 123-4567 while typing; email field shows a styled suggestion list of common domains (keith@ → keith@gmail.com, yahoo.com…; tap or arrow keys + Enter) via `components/email-input.tsx`. This replaced a short-lived inline grey completion. Shared helpers in `lib/form-helpers.ts`; server also rejects phones over 10 digits.
@@ -36,6 +40,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 ## 2026-05-16 (update 2)
 
 ### Fixed
+
 - **Admin Gallery – Vercel Blob Storage**: Switched gallery storage from the local filesystem (which is read-only on Vercel) to Vercel Blob
   - Image files now upload to Vercel Blob instead of `public/gallery/` — works in production
   - Gallery URL list now stored as a `gallery-data.json` blob instead of `lib/gallery-images.ts` — persists across deployments
@@ -61,6 +66,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 ## [Previous] - 2026-03-11
 
 ### Added
+
 - **Menu Page – Image Hover Preview**: Hovering over any product card that has an image now shows a floating preview popup above the card
   - Displays a larger (280×192px) version of the product image
   - Shows the product name, description snippet, and price
@@ -74,6 +80,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 ## [Previous] - 2025-10-06
 
 ### Fixed
+
 - **Pickup Time Selector**: Past times are now hidden when today's date is selected
   - If it's 9:15 AM and you select today, only times from 9:30 AM onwards will show
   - Future dates still show all available times
@@ -87,6 +94,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
   - Local development still works with `.env.local`
 
 ### Changed
+
 - Removed product sync functionality (one-time sync already completed)
   - Removed sync button from admin panel
   - Removed sync API endpoint
@@ -94,6 +102,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
   - Products are now managed separately in test and live Stripe accounts
 
 ### Added
+
 - Products synced from test to live Stripe account (51 products total)
   - All categories: Roll Cakes, Traditional Pastries & Mooncakes, Sponge Cakes, Breads, Buns
   - Both test and live accounts now have identical products
@@ -101,6 +110,7 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 ## [Previous] - 2025-10-05
 
 ### Added
+
 - Product descriptions to menu page
 - Fixed caching issues
 - Pickup time in order emails
@@ -108,12 +118,14 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 - Cart clearing after successful checkout
 
 ### Fixed
+
 - Order email formatting
 - Checkout flow
 
 ## Initial Release
 
 ### Features
+
 - Homepage with bakery information
 - Menu page with product catalog and shopping cart
 - Gallery page with photo grid
