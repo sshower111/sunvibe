@@ -1,85 +1,79 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Dark mode is not used. Keep dark: classes tied to a .dark class so they never follow the phone's setting. */
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design tokens — Sunville Bakery.
+ * Warm bakery palette: brown primary, gold accent, off-white background.
+ * Change a value here and it updates everywhere. See docs/UI-DESIGN-SYSTEM.md.
+ */
 :root {
-  --content-width: 80rem;
-  --header-height: 4rem;
-  --control-radius: 0.5rem;
-  --section-space: 3rem;
-  --heading-1: clamp(2.25rem, 1.8rem + 2vw, 3.5rem);
-  --heading-2: clamp(1.75rem, 1.4rem + 1vw, 2.5rem);
-  --heading-3: 1.25rem;
-  /* Modern clean color scheme - Warm & Inviting Bakery */
-  --background: oklch(0.98 0.005 90);
-  --foreground: oklch(0.22 0.015 280);
+  /* Raw palette — the original warm bakery colors */
+  --ink: oklch(0.22 0.015 280);
+  --ink-muted: oklch(0.44 0.015 280);
+  --paper: oklch(0.98 0.005 90);
+  --surface: oklch(0.95 0.008 90);
+  --line: oklch(0.91 0.008 90);
+  --input-line: oklch(0.62 0.012 280);
+  --brand: oklch(0.38 0.1 35);
+  --accent-warm: oklch(0.8 0.12 90);
+  --accent-ink: oklch(0.15 0.015 280);
+  --accent-tint: oklch(0.8 0.12 90);
+  --success: #1e6b3a;
+  --success-tint: #eaf5ee;
+  --warning: #8a5300;
+  --warning-tint: #fdf3e1;
+  --danger: oklch(0.55 0.22 25);
+  --danger-tint: #fdeceb;
+
+  /* Roles used by the shadcn components */
+  --background: var(--paper);
+  --foreground: var(--ink);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.015 280);
+  --card-foreground: var(--ink);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.015 280);
-  --primary: oklch(0.38 0.1 35);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.96 0.008 90);
-  --secondary-foreground: oklch(0.22 0.015 280);
-  --muted: oklch(0.95 0.008 90);
-  --muted-foreground: oklch(0.44 0.015 280);
-  --accent: oklch(0.8 0.12 90);
-  --accent-foreground: oklch(0.15 0.015 280);
-  --destructive: oklch(0.55 0.22 25);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--accent-tint);
+  --accent-foreground: var(--accent-ink);
+  --destructive: var(--danger);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.91 0.008 90);
-  --input: oklch(0.62 0.012 280);
+  --border: var(--line);
+  --input: var(--input-line);
   --ring: var(--primary);
-  --chart-1: oklch(0.8 0.12 90);
-  --chart-2: oklch(0.65 0.12 35);
-  --chart-3: oklch(0.75 0.1 50);
-  --chart-4: oklch(0.55 0.1 40);
-  --chart-5: oklch(0.85 0.08 45);
-  --radius: 0.5rem;
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.22 0.015 280);
-  --sidebar-primary: oklch(0.38 0.1 35);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.96 0.008 90);
-  --sidebar-accent-foreground: oklch(0.22 0.015 280);
-  --sidebar-border: oklch(0.91 0.008 90);
-  --sidebar-ring: oklch(0.8 0.12 90);
-}
 
-.dark {
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.99 0.005 85);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.99 0.005 85);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.99 0.005 85);
-  --primary: oklch(0.65 0.15 85);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.25 0 0);
-  --secondary-foreground: oklch(0.99 0.005 85);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.65 0.15 85);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.99 0.005 85);
-  --border: oklch(0.3 0 0);
-  --input: oklch(0.3 0 0);
-  --ring: oklch(0.65 0.15 85);
-  --chart-1: oklch(0.65 0.15 85);
-  --chart-2: oklch(0.75 0.1 85);
-  --chart-3: oklch(0.55 0.12 85);
-  --chart-4: oklch(0.85 0.08 85);
-  --chart-5: oklch(0.45 0.14 85);
-  --sidebar: oklch(0.2 0 0);
-  --sidebar-foreground: oklch(0.99 0.005 85);
-  --sidebar-primary: oklch(0.65 0.15 85);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.25 0 0);
-  --sidebar-accent-foreground: oklch(0.99 0.005 85);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.65 0.15 85);
+  /* Shape, depth, motion (radius, shadow and easing scales live in @theme static below) */
+  --control-radius: var(--radius-md);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+
+  /* Layout */
+  --content-width: 80rem;
+  --header-height: 4rem;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --section-space: clamp(3rem, 2rem + 4vw, 6rem);
+  --tap: 44px;
+
+  /* Type scale */
+  --text-display: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
+  --heading-1: clamp(2.125rem, 1.7rem + 2vw, 3.25rem);
+  --heading-2: clamp(1.625rem, 1.35rem + 1vw, 2.25rem);
+  --heading-3: 1.25rem;
+  --tracking-display: -0.03em;
+  --tracking-heading: -0.02em;
+  --tracking-eyebrow: 0.08em;
+}
+@media (min-width: 768px) {
+  :root {
+    --header-height: 6rem;
+  }
 }
 
 @theme inline {
@@ -104,23 +98,28 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-ink: var(--ink);
+  --color-brand: var(--brand);
+  --color-ink-muted: var(--ink-muted);
+  --color-surface: var(--surface);
+  --color-accent-warm: var(--accent-warm);
+  --color-accent-ink: var(--accent-ink);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-danger: var(--danger);
+  --color-danger-tint: var(--danger-tint);
+}
+
+/* Shape scale: rounded-sm / rounded-md / rounded-lg, shadow-pop, ease-standard. */
+@theme static {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 16px;
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.07), 0 1px 2px rgb(0 0 0 / 0.04);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer base {
@@ -139,54 +138,57 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-heading);
     font-weight: 600;
   }
-}
-
-@layer utilities {
-  .gradient-warm {
-    background: linear-gradient(135deg, oklch(0.8 0.12 90) 0%, oklch(0.85 0.14 95) 100%);
+  h1 {
+    @apply heading-1;
   }
-
-  .gradient-primary {
-    background: linear-gradient(135deg, oklch(0.38 0.1 35) 0%, oklch(0.48 0.12 40) 100%);
+  h2 {
+    @apply heading-2;
   }
-
-  .gradient-accent {
-    background: linear-gradient(135deg, oklch(0.78 0.11 88) 0%, oklch(0.82 0.13 92) 100%);
+  h3 {
+    @apply heading-3;
   }
-
-  .card-modern {
-    @apply bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-border/40;
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='range']):not([type='file']),
+  textarea,
+  select {
+    @apply form-control;
   }
-
-  .glass-effect {
-    @apply bg-white/90 backdrop-blur-xl border border-white/30 shadow-lg;
+  textarea {
+    resize: vertical;
   }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, oklch(0.8 0.12 90) 0%, oklch(0.85 0.14 95) 100%);
+  :where(a, button, summary):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  /* Comfortable touch targets on phones and tablets. Kept in base so utilities such as hidden still win. */
+  @media (pointer: coarse), (max-width: 767px) {
+    button,
+    summary,
+    [role='button'],
+    a[href^='tel:'],
+    a[href^='mailto:'],
+    a[href*='google.com/maps'] {
+      min-height: var(--tap);
+      min-width: var(--tap);
+    }
+    a[href^='tel:'],
+    a[href^='mailto:'],
+    a[href*='google.com/maps'] {
+      display: inline-flex;
+      align-items: center;
+    }
   }
 }
 
 /* Mobile usability across customer-facing pages. */
-html {
-  scroll-padding-top: 5rem;
-}
-@media (min-width: 768px) {
-  html {
-    scroll-padding-top: 7rem;
-  }
-}
 @media (max-width: 639px) {
   input,
   textarea,
@@ -209,34 +211,7 @@ html {
   }
 }
 
-/* Keep touch defaults below visibility utilities such as hidden. */
-@layer base {
-  @media (pointer: coarse), (max-width: 767px) {
-    button,
-    summary,
-    [role='button'],
-    a[href^='tel:'],
-    a[href^='mailto:'],
-    a[href*='google.com/maps'] {
-      min-height: 48px;
-      min-width: 48px;
-    }
-    a[href^='tel:'],
-    a[href^='mailto:'],
-    a[href*='google.com/maps'] {
-      display: inline-flex;
-      align-items: center;
-    }
-  }
-}
-
 /* Shared layout and type tokens. Utilities allow deliberate layout overrides. */
-@media (min-width: 768px) {
-  :root {
-    --header-height: 6rem;
-    --section-space: 4rem;
-  }
-}
 html {
   scrollbar-gutter: stable;
   scroll-padding-top: calc(var(--header-height) + 1rem);
@@ -245,7 +220,7 @@ html {
   width: 100%;
   max-width: var(--content-width);
   margin-inline: auto;
-  padding-inline: clamp(1rem, 3vw, 2rem);
+  padding-inline: var(--gutter);
 }
 @utility section-space {
   padding-block: var(--section-space);
@@ -260,7 +235,7 @@ html {
   font-size: var(--heading-1);
   font-weight: 600;
   line-height: 1.15;
-  letter-spacing: -0.025em;
+  letter-spacing: var(--tracking-heading);
   text-wrap: balance;
 }
 @utility heading-2 {
@@ -269,7 +244,7 @@ html {
   font-size: var(--heading-2);
   font-weight: 600;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-heading);
   text-wrap: balance;
 }
 @utility heading-3 {
@@ -278,7 +253,7 @@ html {
   font-size: var(--heading-3);
   font-weight: 600;
   line-height: 1.35;
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-heading);
 }
 @utility heading-on-dark {
   --heading-color: white;
@@ -292,22 +267,22 @@ html {
   letter-spacing: 0;
 }
 @utility action-button {
-  min-height: 3rem;
+  min-height: var(--tap);
   border-radius: var(--control-radius);
   padding: 0.75rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.5;
   transition:
-    background-color 160ms ease,
-    color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 @utility form-control {
   width: 100%;
   min-width: 0;
-  min-height: 3rem;
+  min-height: var(--tap);
   border: 1px solid var(--input);
   border-radius: var(--control-radius);
   padding: 0.75rem 1rem;
@@ -317,8 +292,8 @@ html {
   line-height: 1.5;
   text-align: left;
   transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
   &::placeholder {
     text-align: left;
     color: var(--muted-foreground);
@@ -337,43 +312,20 @@ html {
     opacity: 0.6;
   }
 }
-@layer base {
-  h1 {
-    @apply heading-1;
-  }
-  h2 {
-    @apply heading-2;
-  }
-  h3 {
-    @apply heading-3;
-  }
-  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='range']):not([type='file']),
-  textarea,
-  select {
-    @apply form-control;
-  }
-  textarea {
-    resize: vertical;
-  }
-  :where(a, button, summary):focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 3px;
-  }
-}
 @utility menu-card {
   display: flex;
   height: 100%;
   gap: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   background: var(--card);
   padding: 0.75rem;
   text-align: left;
   box-shadow: 0 1px 3px #0000000a;
-  transition: box-shadow 160ms ease;
+  transition: box-shadow var(--duration-fast) var(--ease-standard);
   &:hover {
-    box-shadow: 0 4px 12px #00000012;
+    box-shadow: var(--shadow-pop);
   }
 }
 @media (min-width: 640px) {
@@ -409,7 +361,7 @@ html {
   background: #fff;
   color: #302018;
   border: 2px solid currentColor;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 .skip-link:focus {
   transform: translateY(0);
@@ -419,4 +371,49 @@ html {
 input[type='search']::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* New design-system utilities (Step 1). Used by later component passes. */
+@utility text-display {
+  color: var(--heading-color, var(--primary));
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: var(--text-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+@utility eyebrow {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+@utility text-pretty-body {
+  max-width: 65ch;
+  color: var(--ink-muted);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+@utility surface {
+  background: var(--surface);
+}
+@utility badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+}
+@utility price {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
