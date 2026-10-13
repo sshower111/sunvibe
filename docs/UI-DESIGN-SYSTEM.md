@@ -9,7 +9,7 @@ The refactor is done in steps, each reviewed before the next:
 1. **Tokens** (done, 2026-10-13): colors, radius, shadow, motion, spacing, type scale.
 2. **Interactive states** (done, 2026-10-13): hover/pressed, focus rings, disabled, loading.
 3. **Responsive** (done, 2026-10-13): fluid sizing, text wrapping, mobile padding, 44px touch targets.
-4. Components: hero, menu grid, cake inquiry form, header and mobile menu.
+4. **Components**, one at a time: hero (done, 2026-10-13), menu grid, cake inquiry form, header and mobile menu.
 
 ## Color
 
