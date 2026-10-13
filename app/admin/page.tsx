@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ExternalLink, LogOut, Search } from 'lucide-react'
 import { GalleryPhotoUpload } from '@/components/gallery-photo-upload'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { adminPost, SignedOutError } from '@/lib/admin-api'
 import { Input } from '@/components/ui/input'
@@ -265,7 +266,7 @@ export default function AdminPage() {
               {loginError}
             </p>
           )}
-          <Button type="submit" className="w-full" disabled={loggingIn}>
+          <Button type="submit" className="w-full" loading={loggingIn}>
             {loggingIn ? 'Signing in…' : 'Sign in'}
           </Button>
           <p className="text-xs text-muted-foreground">You stay signed in on this device for 12 hours.</p>
@@ -363,9 +364,18 @@ export default function AdminPage() {
             </div>
             <NoticeBar notice={menuNotice} />
             {menuLoading && !products.length ? (
-              <p role="status" className="text-muted-foreground">
-                Loading menu…
-              </p>
+              <div role="status">
+                <span className="sr-only">Loading menu…</span>
+                <ul className="grid gap-3 md:grid-cols-2">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <li key={i} className="space-y-3 rounded-xl border bg-white p-4">
+                      <Skeleton className="h-5 w-2/3" />
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-10 w-full" />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : shownProducts.length === 0 ? (
               <p className="rounded-xl border bg-white p-6 text-center text-muted-foreground">
                 {products.length ? 'No items match.' : 'No menu items yet.'}
@@ -444,7 +454,7 @@ export default function AdminPage() {
                     onChange={e => setNewImageUrl(e.target.value)}
                     className="flex-1"
                   />
-                  <Button type="submit" disabled={urlLoading || !newImageUrl.trim()}>
+                  <Button type="submit" loading={urlLoading} disabled={!newImageUrl.trim()}>
                     {urlLoading ? 'Adding…' : 'Add link'}
                   </Button>
                 </form>
@@ -452,9 +462,16 @@ export default function AdminPage() {
             </div>
             <NoticeBar notice={galleryNotice} />
             {galleryLoading && !images.length ? (
-              <p role="status" className="text-muted-foreground">
-                Loading photos…
-              </p>
+              <div role="status">
+                <span className="sr-only">Loading photos…</span>
+                <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <li key={i}>
+                      <Skeleton className="aspect-square w-full rounded-xl" />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : (
               <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {images.map(image => (

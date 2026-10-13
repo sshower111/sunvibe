@@ -164,9 +164,17 @@
   textarea {
     resize: vertical;
   }
-  :where(a, button, summary):focus-visible {
+  /* One focus ring for every link and control, shown only for keyboard users. */
+  :where(a, button, summary, [role='button'], [tabindex]):focus-visible {
     outline: 2px solid var(--ring);
-    outline-offset: 3px;
+    outline-offset: 2px;
+  }
+  :where(button, summary, [role='button'], label[for]):not(:disabled) {
+    cursor: pointer;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: var(--primary);
   }
   /* Comfortable touch targets on phones and tablets. Kept in base so utilities such as hidden still win. */
   @media (pointer: coarse), (max-width: 767px) {
@@ -277,7 +285,11 @@ html {
     background-color var(--duration-fast) var(--ease-standard),
     color var(--duration-fast) var(--ease-standard),
     border-color var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard);
+    box-shadow var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
 }
 @utility form-control {
   width: 100%;
@@ -299,6 +311,9 @@ html {
     color: var(--muted-foreground);
     opacity: 1;
   }
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--ink-muted);
+  }
   &:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -307,9 +322,13 @@ html {
   &[aria-invalid='true'] {
     border-color: var(--destructive);
   }
+  &[aria-invalid='true']:focus-visible {
+    outline-color: var(--destructive);
+  }
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.6;
+    background: var(--surface);
+    opacity: 0.7;
   }
 }
 @utility menu-card {
@@ -323,9 +342,24 @@ html {
   padding: 0.75rem;
   text-align: left;
   box-shadow: 0 1px 3px #0000000a;
-  transition: box-shadow var(--duration-fast) var(--ease-standard);
-  &:hover {
-    box-shadow: var(--shadow-pop);
+  transition:
+    box-shadow var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
+  /* Lift only on devices with a real hover (not on tap). */
+  @media (hover: hover) {
+    &:hover {
+      box-shadow: var(--shadow-pop);
+      transform: translateY(-2px);
+    }
+  }
+  &:active {
+    transform: scale(0.99);
+  }
+  /* Keyboard focus on the card's hidden button outlines the whole card. */
+  &:has(:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 @media (min-width: 640px) {
@@ -416,4 +450,19 @@ input[type='search']::-webkit-search-cancel-button {
   color: var(--ink);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+/* Loading placeholder (Step 2). Pulses gently; reduced-motion users see it still. */
+@utility skeleton {
+  border-radius: var(--radius-md);
+  background: var(--line);
+  animation: skeleton-pulse 1.6s var(--ease-standard) infinite;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }

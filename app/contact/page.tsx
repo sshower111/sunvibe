@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { FormAlert } from '@/components/ui/form-message'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -26,10 +27,8 @@ export default function ContactPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
-  const [validationErrors, setValidationErrors] = useState<{
-    email?: string
-    phone?: string
-  }>({})
+  type FieldErrors = { name?: string; email?: string; phone?: string; message?: string }
+  const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
@@ -49,33 +48,23 @@ export default function ContactPage() {
     setSubmitted(false)
     setError('')
 
-    // Validate email and phone before submitting
-    const errors: { email?: string; phone?: string } = {}
+    // Check every field first and show each problem under its field.
+    const errors: FieldErrors = {}
+    if (!formData.name.trim()) errors.name = 'Please enter your name.'
+    if (!formData.email.trim()) errors.email = 'Please enter your email.'
+    else if (!validateEmail(formData.email.trim())) errors.email = 'Please enter a valid email, like name@gmail.com.'
+    if (!validatePhone(formData.phone)) errors.phone = 'Please enter a 10-digit phone number.'
+    if (!formData.message.trim()) errors.message = 'Please enter a message.'
+    else if (!hasMeaningfulMessage(formData.message))
+      errors.message = 'Please describe your question in words, not just numbers or a link.'
 
-    if (!validateEmail(formData.email)) {
-      errors.email = 'Please enter a valid email address'
-    }
-
-    if (!validatePhone(formData.phone)) {
-      errors.phone = 'Please enter a 10-digit phone number'
-    }
-
-    if (Object.keys(errors).length > 0) {
+    const first = (['name', 'email', 'phone', 'message'] as const).find(field => errors[field])
+    if (first) {
       setValidationErrors(errors)
-      requestAnimationFrame(() => document.getElementById(errors.email ? 'email' : 'phone')?.focus())
+      requestAnimationFrame(() => document.getElementById(first)?.focus())
       return
     }
-
-    if (!formData.name.trim() || !formData.message.trim()) {
-      setError('Please enter your name and a message.')
-      requestAnimationFrame(() => feedbackRef.current?.focus())
-      return
-    }
-    if (!hasMeaningfulMessage(formData.message)) {
-      setError('Please describe your question in words, not just numbers or a link.')
-      requestAnimationFrame(() => feedbackRef.current?.focus())
-      return
-    }
+    setValidationErrors({})
     sendingRef.current = true
     setSubmitting(true)
 
@@ -114,6 +103,11 @@ export default function ContactPage() {
     }
   }
 
+  // Shown together right above the Send button; the fields themselves turn red.
+  const fieldMessages = (['name', 'email', 'phone', 'message'] as const)
+    .map(field => validationErrors[field])
+    .filter((m): m is string => !!m)
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
 
@@ -142,25 +136,13 @@ export default function ContactPage() {
                 <CardContent className="p-0 sm:p-6">
                   <h2 className="sr-only">Send us a message</h2>
 
-                  <div ref={feedbackRef} tabIndex={-1} className="focus:outline-none">
-                    {submitted && (
-                      <div
-                        role="status"
-                        className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300"
-                      >
-                        <p className="text-green-800 font-semibold text-base sm:text-lg">
-                          ✓ Message sent successfully! We'll get back to you soon.
-                        </p>
-                      </div>
-                    )}
-
-                    {error && (
-                      <div role="alert" className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
-                        <p className="text-red-800 font-semibold text-base sm:text-lg">{error}</p>
-                      </div>
-                    )}
-                  </div>
-                  <form method="post" onSubmit={handleSubmit} aria-busy={submitting} className="space-y-4 sm:space-y-5">
+                  <form
+                    method="post"
+                    noValidate
+                    onSubmit={handleSubmit}
+                    aria-busy={submitting}
+                    className="space-y-4 sm:space-y-5"
+                  >
                     <div hidden aria-hidden="true">
                       <label>
                         Leave this blank
@@ -181,7 +163,8 @@ export default function ContactPage() {
                           required
                           value={formData.name}
                           onChange={handleChange}
-
+                          aria-invalid={!!validationErrors.name}
+                          aria-describedby={validationErrors.name ? 'form-errors' : undefined}
                           placeholder="Your name"
                         />
                       </div>
@@ -196,18 +179,12 @@ export default function ContactPage() {
                           autoComplete="email"
                           maxLength={100}
                           aria-invalid={!!validationErrors.email}
-                          aria-describedby={validationErrors.email ? 'email-error' : undefined}
+                          aria-describedby={validationErrors.email ? 'form-errors' : undefined}
                           required
                           value={formData.email}
                           onChange={handleChange}
-
                           placeholder="your.email@example.com"
                         />
-                        {validationErrors.email && (
-                          <p id="email-error" className="mt-2 text-sm text-red-600">
-                            {validationErrors.email}
-                          </p>
-                        )}
                       </div>
 
                       <div id="optional-phone" className={validationErrors.phone ? 'block' : 'hidden sm:block'}>
@@ -220,19 +197,13 @@ export default function ContactPage() {
                           name="phone"
                           autoComplete="tel"
                           aria-invalid={!!validationErrors.phone}
-                          aria-describedby={validationErrors.phone ? 'phone-error' : undefined}
+                          aria-describedby={validationErrors.phone ? 'form-errors' : undefined}
                           value={formData.phone}
                           onChange={handleChange}
                           inputMode="numeric"
                           maxLength={14}
-
                           placeholder="(702) 123-4567"
                         />
-                        {validationErrors.phone && (
-                          <p id="phone-error" className="mt-2 text-sm text-red-600">
-                            {validationErrors.phone}
-                          </p>
-                        )}
                       </div>
 
                       <div>
@@ -246,8 +217,9 @@ export default function ContactPage() {
                           required
                           value={formData.message}
                           onChange={handleChange}
+                          aria-invalid={!!validationErrors.message}
+                          aria-describedby={validationErrors.message ? 'form-errors' : undefined}
                           rows={4}
-
                           placeholder="Tell us what you'd like to know..."
                         />
                       </div>
@@ -259,8 +231,28 @@ export default function ContactPage() {
                       >
                         Privacy
                       </a>
-                      <Button type="submit" disabled={submitting} className="w-full">
-                        {submitting ? 'Sending...' : 'Send Message'}
+                      <div ref={feedbackRef} tabIndex={-1} className="focus:outline-none empty:hidden">
+                        {submitted && <FormAlert type="success">Message sent. We'll get back to you soon.</FormAlert>}
+                        {fieldMessages.length > 0 && (
+                          <FormAlert type="error" id="form-errors">
+                            {fieldMessages.length === 1 ? (
+                              fieldMessages[0]
+                            ) : (
+                              <>
+                                Please check the highlighted fields:
+                                <ul className="mt-1 list-disc space-y-0.5 pl-5 font-normal">
+                                  {fieldMessages.map(m => (
+                                    <li key={m}>{m}</li>
+                                  ))}
+                                </ul>
+                              </>
+                            )}
+                          </FormAlert>
+                        )}
+                        {error && <FormAlert type="error">{error}</FormAlert>}
+                      </div>
+                      <Button type="submit" loading={submitting} className="w-full">
+                        {submitting ? 'Sending…' : 'Send Message'}
                       </Button>
                     </fieldset>
                   </form>

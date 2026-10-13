@@ -427,15 +427,12 @@ export default function MenuPage({
                 <div className="menu-card-grid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filtered.map(product => (
                     <Dialog key={product.id}>
-                      <article
-                        id={product.id}
-                        className="menu-card scroll-mt-80 relative focus-within:outline-2 focus-within:outline-primary"
-                      >
+                      <article id={product.id} className="menu-card scroll-mt-80 relative">
                         <DialogTrigger asChild>
                           <button
                             type="button"
                             aria-label={'View details for ' + product.name}
-                            className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-primary"
+                            className="absolute inset-0 z-10 rounded-lg focus-visible:outline-none"
                           >
                             <span className="sr-only">View details for {product.name}</span>
                           </button>

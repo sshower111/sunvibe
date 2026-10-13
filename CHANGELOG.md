@@ -6,6 +6,8 @@ Newest first. Every change that is pushed gets an entry here (see `CLAUDE.md`).
 
 ## 2026-10-13
 
+- **Contact form errors**: all messages (missing name/email/message, bad email or phone, could not send, sent) now appear in one soft box with an icon right above **Send Message**, and the fields with problems turn red. Replaced the browser's own pop-up bubbles (`noValidate`) and the large red box at the top. New `FormAlert` / `FieldError` in `components/ui/form-message.tsx`.
+- **Design system step 2 (interactive states)**: one consistent keyboard focus ring site-wide (menu cards no longer show a double outline); buttons darken and press in slightly when tapped; menu cards lift on mouse hover; form fields darken on hover and look clearly disabled; `<Button loading>` spinner on the contact, cake inquiry and admin forms; new `Skeleton` placeholder used for the menu page while it loads (`app/menu/loading.tsx`) and the admin menu/photo lists. See `docs/UI-DESIGN-SYSTEM.md`.
 - **Design system step 1 (tokens)**: the colors in `app/globals.css` are now named tokens (ink, brand brown, gold accent, surface, line, success/warning/danger) with the same original values, so nothing changes color. Added radius (6/10/16px), `shadow-pop`, motion, fluid spacing and type-scale tokens, plus `text-display`, `eyebrow`, `text-pretty-body`, `surface`, `badge` and `price` utilities. Cards are slightly rounder, sections space out fluidly with screen width, and touch targets are 44px. Removed the unused dark theme, chart/sidebar colors, six unused gradient/glass utilities, duplicate rules and the unused `styles/globals.css`. See `docs/UI-DESIGN-SYSTEM.md`.
 
 ## 2026-10-12
