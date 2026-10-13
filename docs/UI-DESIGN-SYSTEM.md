@@ -8,7 +8,7 @@ The refactor is done in steps, each reviewed before the next:
 
 1. **Tokens** (done, 2026-10-13): colors, radius, shadow, motion, spacing, type scale.
 2. **Interactive states** (done, 2026-10-13): hover/pressed, focus rings, disabled, loading.
-3. Responsive: fluid sizing, text wrapping, mobile padding, 44px touch targets.
+3. **Responsive** (done, 2026-10-13): fluid sizing, text wrapping, mobile padding, 44px touch targets.
 4. Components: hero, menu grid, cake inquiry form, header and mobile menu.
 
 ## Color
@@ -53,6 +53,15 @@ Cards and popovers stay pure white. Dark mode is not used.
 - **Loading**: `<Button loading>` shows a spinner, disables the button and sets `aria-busy` (used on contact, cake inquiry, admin sign-in, add photo link). `<Skeleton>` (`components/ui/skeleton.tsx`, `skeleton` utility) is a pulsing placeholder; always pair it with a screen-reader "Loading…" status. Used by `app/menu/loading.tsx` and the admin menu and photo lists.
 - **Form messages** (`components/ui/form-message.tsx`): `FormAlert` (error or success box with icon) goes right above the submit button; `FieldError` is a small red line under one field. Forms use `noValidate` so the browser's own bubbles don't appear, and invalid fields get `aria-invalid` (red border).
 - Checkboxes and radios use the brand color. Buttons, summaries and labels show a pointer cursor.
+
+## Responsive
+
+- Sizes scale with the screen using `clamp()` instead of jumping at breakpoints: headings, `section-space`, `--gutter`, and card padding (`card-pad` 16–32px, `card-pad-lg` 20–40px). Use these instead of `p-6 sm:p-8`.
+- Headings balance their lines; paragraphs and list items use `text-wrap: pretty`; links and addresses break long words.
+- Touch targets: at least 44px wide and 48px tall (`min-h-12 min-w-11`) for text links in the header, footer and forms. Phones and tablets also get a 44px minimum on buttons and tel/mail/map links.
+- Fixed bottom bars add `env(safe-area-inset-bottom)` padding.
+- On dark backgrounds set `[--ring:#fff]` so the focus ring stays visible.
+- Check new pages at 320, 390 and 768px: no sideways scrolling.
 
 ## Rules
 

@@ -89,7 +89,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                   href={link.href}
                   aria-current={pathname === link.href ? 'page' : undefined}
                   className={
-                    'inline-flex min-h-12 items-center rounded text-sm font-medium underline-offset-8 hover:underline focus-visible:outline-2 focus-visible:outline-primary ' +
+                    'inline-flex min-h-12 min-w-11 items-center justify-center rounded text-sm font-medium underline-offset-8 hover:underline focus-visible:outline-2 focus-visible:outline-primary ' +
                     (pathname === link.href ? 'text-primary underline' : 'text-foreground')
                   }
                 >

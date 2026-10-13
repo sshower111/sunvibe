@@ -140,7 +140,7 @@ export function PreOrderForm({
           <p className="text-sm text-muted-foreground">This is a reservation request. No payment is collected here.</p>
         </section>
         {closed ? (
-          <section className="rounded-2xl border bg-secondary p-6 sm:p-10">
+          <section className="rounded-2xl border bg-secondary card-pad-lg">
             <h2 className="heading-2">Pre-orders are closed</h2>
             <p className="my-4 max-w-xl">Please call the bakery to ask what is available for your celebration.</p>
             <Button asChild>
@@ -148,7 +148,7 @@ export function PreOrderForm({
             </Button>
           </section>
         ) : !campaign.items.length ? (
-          <section className="rounded-2xl border border-accent bg-secondary p-6 sm:p-10">
+          <section className="rounded-2xl border border-accent bg-secondary card-pad-lg">
             <p className="text-sm font-semibold text-primary">Made for your celebration</p>
             <h2 className="heading-2 mt-3">Let’s reserve something special.</h2>
             <p className="my-4 max-w-xl">
@@ -159,7 +159,7 @@ export function PreOrderForm({
             </Button>
           </section>
         ) : success ? (
-          <section role="status" className="rounded-2xl border bg-secondary p-6 sm:p-10">
+          <section role="status" className="rounded-2xl border bg-secondary card-pad-lg">
             <h2 className="heading-2">Thank you for your request</h2>
             <p className="mt-4">{success}</p>
           </section>
@@ -284,7 +284,7 @@ export function PreOrderForm({
                 id="festival-reservation"
                 tabIndex={-1}
                 aria-labelledby="reservation-heading"
-                className="scroll-mt-28 rounded-xl border bg-card p-5 focus-visible:outline-2 focus-visible:outline-primary sm:p-8"
+                className="scroll-mt-28 rounded-xl border bg-card card-pad focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <h2 id="reservation-heading" className="heading-2">
                   Your reservation request

@@ -147,6 +147,24 @@
     letter-spacing: var(--tracking-heading);
     font-weight: 600;
   }
+  /* Even line breaks: headings balance, paragraphs avoid a lonely last word. */
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
+  p,
+  li,
+  dd,
+  figcaption,
+  blockquote {
+    text-wrap: pretty;
+  }
+  /* Long emails and links wrap instead of pushing the page sideways. */
+  a,
+  address {
+    overflow-wrap: break-word;
+  }
   h1 {
     @apply heading-1;
   }
@@ -465,4 +483,11 @@ input[type='search']::-webkit-search-cancel-button {
   50% {
     opacity: 0.5;
   }
+}
+/* Fluid inner padding for cards and panels (Step 3): 16px on small phones up to 32px on desktop. */
+@utility card-pad {
+  padding: clamp(1rem, 0.6rem + 2vw, 2rem);
+}
+@utility card-pad-lg {
+  padding: clamp(1.25rem, 0.5rem + 3vw, 2.5rem);
 }

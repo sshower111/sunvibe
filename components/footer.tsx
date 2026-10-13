@@ -4,11 +4,11 @@ import { ArrowUpRight, MapPin, Phone } from 'lucide-react'
 
 const directions = SITE.directionsUrl
 const linkStyle =
-  'inline-flex min-h-12 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
+  'inline-flex min-h-12 min-w-11 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
 
 export function Footer() {
   return (
-    <footer aria-label="Sunville Bakery information" className="bg-primary text-white">
+    <footer aria-label="Sunville Bakery information" className="bg-primary text-white [--ring:#fff]">
       <div className="site-container section-space">
         <div className="sm:hidden">
           <p className="font-serif text-xl font-semibold">Sunville Bakery</p>
@@ -160,7 +160,7 @@ export function Footer() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-5 text-xs leading-relaxed text-white/80">
           <p>&copy; {new Date().getFullYear()} Sunville Bakery. All rights reserved.</p>
-          <Link href="/privacy" className="inline-flex min-h-12 items-center underline underline-offset-4">
+          <Link href="/privacy" className="inline-flex min-h-12 min-w-11 items-center underline underline-offset-4">
             Privacy
           </Link>
         </div>

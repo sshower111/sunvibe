@@ -366,7 +366,7 @@ export default function MenuPage({
           {category === 'Custom Cakes' ? (
             <section
               aria-labelledby="custom-menu-title"
-              className="rounded-xl border border-amber-300 bg-amber-50 p-6 sm:p-8"
+              className="rounded-xl border border-amber-300 bg-amber-50 card-pad"
             >
               <span className="inline-flex rounded-md bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950">
                 3–5 days’ notice
@@ -389,12 +389,12 @@ export default function MenuPage({
               <p className="mb-4 text-sm text-muted-foreground">Loading menu…</p>
               <div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 8 }, (_, index) => (
-                  <div key={index} className="h-40 rounded-xl bg-secondary motion-safe:animate-pulse sm:h-72" />
+                  <div key={index} className="skeleton h-40 rounded-lg sm:h-72" />
                 ))}
               </div>
             </div>
           ) : error ? (
-            <div role="alert" className="rounded-xl border bg-white p-8 text-center">
+            <div role="alert" className="rounded-xl border bg-white card-pad text-center">
               <h2 className="heading-2">We couldn’t load the menu</h2>
               <p className="my-3 text-muted-foreground">Please try again, or call {SITE.phone} for help.</p>
               <Button onClick={loadProducts}>Retry</Button>
@@ -416,7 +416,7 @@ export default function MenuPage({
                 )}
               </div>
               {filtered.length === 0 ? (
-                <div className="rounded-xl border bg-white px-4 py-12 text-center">
+                <div className="rounded-xl border bg-white px-4 py-[clamp(2rem,6vw,3rem)] text-center">
                   <h2 className="heading-2">No items found</h2>
                   <p className="my-3 text-muted-foreground">
                     Try another flavor or category, or explore the full menu.
@@ -474,7 +474,7 @@ export default function MenuPage({
         </div>
       </main>
       {/* Mobile: one always-visible call/directions bar instead of repeated call buttons. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-white p-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.06)] sm:hidden">
         <Button asChild className="min-h-12">
           <a href={phone} aria-label={`Call Sunville Bakery to order: ${SITE.phone}`}>
             <Phone aria-hidden="true" />

@@ -7,7 +7,7 @@ export function HeroSection() {
   return (
     <section
       aria-labelledby="home-heading"
-      className="relative flex min-h-[500px] items-center overflow-hidden bg-primary pb-10 pt-24 md:min-h-[680px] md:pt-40"
+      className="relative flex min-h-[clamp(30rem,75svh,42.5rem)] items-center overflow-hidden bg-primary pb-10 pt-[calc(var(--header-height)+2rem)] md:pt-40"
     >
       <div className="absolute inset-0" aria-hidden="true">
         <Image src="/background2.jpg" alt="" fill priority sizes="100vw" className="object-cover object-center" />

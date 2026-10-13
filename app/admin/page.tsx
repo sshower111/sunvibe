@@ -243,7 +243,7 @@ export default function AdminPage() {
       <main className="flex min-h-dvh items-center justify-center bg-gray-50 p-4">
         <form
           onSubmit={handleLogin}
-          className="w-full max-w-sm space-y-4 rounded-xl border bg-white p-6 shadow-sm sm:p-8"
+          className="w-full max-w-sm space-y-4 rounded-xl border bg-white card-pad shadow-sm"
         >
           <h1 className="heading-2">Sunville admin</h1>
           <div className="space-y-2">

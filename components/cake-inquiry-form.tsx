@@ -176,7 +176,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         ref={feedback}
         tabIndex={-1}
         role="status"
-        className="rounded-xl border border-green-800/20 bg-green-50 p-6 sm:p-8"
+        className="rounded-xl border border-green-800/20 bg-green-50 card-pad"
       >
         <h2 className="heading-2">Your cake inquiry is on its way</h2>
         <p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p>
@@ -196,7 +196,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       onSubmit={submit}
       noValidate
       aria-busy={busy}
-      className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-8"
+      className="rounded-xl border border-border bg-card card-pad shadow-sm"
     >
       <ol aria-label="Inquiry progress" className="mb-8 grid grid-cols-4 gap-2">
         {steps.map((name, index) => (
@@ -521,7 +521,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
             <ContactCaptcha ref={captcha} action="custom_cake" />
             <a
               href="/privacy"
-              className="inline-flex min-h-12 items-center text-xs text-muted-foreground underline underline-offset-4"
+              className="inline-flex min-h-12 min-w-11 items-center text-xs text-muted-foreground underline underline-offset-4"
             >
               Privacy
             </a>
