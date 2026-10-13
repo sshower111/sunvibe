@@ -540,7 +540,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
               Back
             </Button>
           )}
-          <Button type="submit" disabled={busy} className="ml-auto flex-1 sm:flex-none">
+          <Button type="submit" loading={busy} className="ml-auto flex-1 sm:flex-none">
             {busy ? 'Sending inquiry…' : step === 3 ? 'Send cake inquiry' : 'Continue'}
           </Button>
         </div>
