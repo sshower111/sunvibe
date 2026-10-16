@@ -66,7 +66,7 @@ export function Footer() {
               className="inline-block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
             >
               <img
-                src="/logoWhite.png"
+                src="/logo-light.png"
                 width={600}
                 height={204}
                 alt="Sunville Bakery"

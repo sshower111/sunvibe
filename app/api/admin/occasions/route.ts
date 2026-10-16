@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { campaignSchema, listCampaigns, saveCampaign, deleteCampaign, getCampaign } from '@/lib/campaigns'
-import { isAdminRequest } from '@/lib/occasion-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 export async function POST(req: NextRequest) {
   let body
   try {

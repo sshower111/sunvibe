@@ -30,7 +30,6 @@ export default function ContactPage() {
   type FieldErrors = { name?: string; email?: string; phone?: string; message?: string }
   const [validationErrors, setValidationErrors] = useState<FieldErrors>({})
 
-  // Validation functions
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
@@ -48,7 +47,7 @@ export default function ContactPage() {
     setSubmitted(false)
     setError('')
 
-    // Check every field first and show each problem under its field.
+    // Validate every field; problems are listed above the Send button and the fields are marked invalid.
     const errors: FieldErrors = {}
     if (!formData.name.trim()) errors.name = 'Please enter your name.'
     if (!formData.email.trim()) errors.email = 'Please enter your email.'

@@ -65,8 +65,8 @@ export const bakerySchema = {
   '@id': SITE_URL + '/#bakery',
   name: 'Sunville Bakery',
   url: SITE_URL,
-  image: SITE_URL + '/background2.jpg',
-  logo: SITE_URL + '/sitelogo.png',
+  image: SITE_URL + '/hero-bakery.jpg',
+  logo: SITE_URL + '/logo-mark.png',
   // Coordinates verified against the bakery's Waze listing (2026-09-23).
   geo: { '@type': 'GeoCoordinates', latitude: 36.1261111, longitude: -115.1938889 },
   telephone: SITE.phoneE164,

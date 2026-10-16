@@ -2,15 +2,18 @@ import 'server-only'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 
-// Admin auth: the password is typed once at login and exchanged for an httpOnly,
-// signed session cookie. The password is never stored in the browser.
+/**
+ * Admin authentication. The password is entered once at sign-in and exchanged for an
+ * httpOnly, HMAC-signed session cookie; the password itself is never stored in the browser.
+ */
 export const ADMIN_COOKIE = 'sunville_admin'
 const SESSION_SECONDS = 12 * 60 * 60
 
 function same(a: string, b: string) {
   return timingSafeEqual(createHash('sha256').update(a).digest(), createHash('sha256').update(b).digest())
 }
-export function isOccasionAdmin(password: unknown) {
+/** True when the value matches ADMIN_PASSWORD (compared in constant time). */
+export function isAdminPassword(password: unknown) {
   const expected = process.env.ADMIN_PASSWORD
   return !!expected && typeof password === 'string' && password.length > 0 && same(password, expected)
 }
@@ -32,7 +35,7 @@ export function createAdminSessionToken() {
   if (!token) throw new Error('Admin password not configured')
   return { token, maxAge: SESSION_SECONDS }
 }
-export function isValidAdminSession(token: string | undefined) {
+function isValidAdminSession(token: string | undefined) {
   if (!token) return false
   const expires = Number(token.split('.')[0])
   if (!Number.isFinite(expires) || expires < Date.now() / 1000) return false
@@ -44,7 +47,7 @@ export async function hasAdminSession() {
 }
 /** Accepts the session cookie (normal case) or the password (scripts/tests). */
 export async function isAdminRequest(password?: unknown) {
-  return isOccasionAdmin(password) || (await hasAdminSession())
+  return isAdminPassword(password) || (await hasAdminSession())
 }
 export const adminCookieOptions = (maxAge: number) => ({
   httpOnly: true,

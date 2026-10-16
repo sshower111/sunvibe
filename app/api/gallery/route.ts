@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
-import { isAdminRequest } from '@/lib/occasion-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 import { editGallery } from '@/lib/database-content'
 import { getPublicGallery } from '@/lib/public-gallery'
 import { deletePhotoIfUnused } from '@/lib/photo-storage'

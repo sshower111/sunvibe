@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { addDays } from '@/lib/occasion-dates'
 // The inclusive cutoff closes at midnight at the start of the following LA day.
-export function cutoffInstant(date: string) {
+function cutoffInstant(date: string) {
   const target = Date.parse(addDays(date, 1) + 'T00:00:00Z')
   let candidate = target
   const formatter = new Intl.DateTimeFormat('en-US', {

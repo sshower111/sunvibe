@@ -43,8 +43,8 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/sitelogo.png" />
-        <link rel="apple-touch-icon" href="/sitelogo.png" />
+        <link rel="icon" href="/logo-mark.png" />
+        <link rel="apple-touch-icon" href="/logo-mark.png" />
         <meta name="theme-color" content="#000000" />
         <StructuredData data={bakerySchema} />
       </head>

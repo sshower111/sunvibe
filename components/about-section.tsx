@@ -98,7 +98,7 @@ export function AboutSection() {
           </div>
         </div>
         <figure className="overflow-hidden rounded-xl border bg-white">
-          {/* Cropped to 2:3 (was the full, very tall photo), framed to keep his face and the cake. */}
+          {/* Cropped to 2:3, framed to keep the baker and the cake in view. */}
           {!photoFailed ? (
             <span className="relative block aspect-[2/3]">
               <Image

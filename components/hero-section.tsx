@@ -13,7 +13,7 @@ export function HeroSection() {
       className="relative isolate flex [--ring:#fff] min-h-[clamp(32rem,85svh,46rem)] items-end overflow-hidden bg-primary md:items-center"
     >
       <Image
-        src="/background2.jpg"
+        src="/hero-bakery.jpg"
         alt=""
         fill
         priority

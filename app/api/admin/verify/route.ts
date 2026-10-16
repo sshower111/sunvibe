@@ -5,8 +5,8 @@ import {
   adminCookieOptions,
   createAdminSessionToken,
   hasAdminSession,
-  isOccasionAdmin,
-} from '@/lib/occasion-admin'
+  isAdminPassword,
+} from '@/lib/admin-auth'
 
 // Is the current browser signed in? Used by the admin page on load.
 export async function GET() {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       console.error('ADMIN_PASSWORD not configured')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
-    if (!isOccasionAdmin(password))
+    if (!isAdminPassword(password))
       return NextResponse.json({ success: false, error: 'Incorrect password.' }, { status: 401 })
     const { token, maxAge } = createAdminSessionToken()
     const response = NextResponse.json({ success: true })

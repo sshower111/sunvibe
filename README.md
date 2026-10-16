@@ -6,12 +6,20 @@ Live site: https://sunvillebakerylv.com · Next.js 15 on Vercel · data in Supab
 
 ```
 pnpm install
-pnpm dev        # http://localhost:3000
-pnpm build      # must pass before pushing (includes type checks)
-pnpm format     # Prettier
+cp .env.example .env.local   # then fill in the values (never committed)
+pnpm dev                     # http://localhost:3000
 ```
 
-Needs `.env.local` (never committed): `DATABASE_URL`, `SUPABASE_DB_CA`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SUPABASE_STORAGE_BUCKET`, `ADMIN_PASSWORD`, `CAMPAIGN_STORAGE_SECRET`, `RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_ALLOWED_HOSTNAMES`, optional `MAINTENANCE_MODE`, `SMS_GATEWAY_EMAIL`.
+## Checks before pushing
+
+```
+pnpm build          # production build, includes type checking
+pnpm typecheck      # TypeScript only (run after a build or dev run so next-env.d.ts exists)
+pnpm test           # unit tests in tests/unit (providers mocked, in-memory PostgreSQL)
+pnpm format         # Prettier; pnpm format:check to verify only
+```
+
+All environment variables are listed with explanations in `.env.example`.
 
 ## Deploy
 
@@ -22,5 +30,7 @@ Vercel deploys `main` automatically: `git push origin claude/handoff-cleanup:mai
 - Pages: `app/` (home, menu, custom-cakes, gallery, contact, pre-order, admin)
 - Bakery phone/address/hours/email: `lib/site-info.ts`
 - Database access: `lib/database*.ts` (schema in `db/001-bakery.sql`)
+- Admin sign-in and sessions: `lib/admin-auth.ts`
+- Tests: `tests/unit/*.test.cjs`, with `tests/helpers/load-ts.cjs` to load TypeScript modules and mock providers
 - Emails: `lib/email.ts` (Resend)
 - Admin guide: `docs/ADMIN_GUIDE.md` · Change history: `CHANGELOG.md` · Working rules: `CLAUDE.md`

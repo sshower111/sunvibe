@@ -1,4 +1,4 @@
-import { isAdminRequest } from '@/lib/occasion-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 import { randomUUID } from 'node:crypto'
 import { uploadPhoto } from '@/lib/photo-storage'
 import { NextRequest, NextResponse } from 'next/server'

@@ -1,33 +1,47 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# Dependencies
 /node_modules
+/.pnp
+.pnp.*
 
-# next.js
+# Next.js build output
 /.next/
 /out/
-
-# production
 /build
+next-env.d.ts
 
-# debug
+# TypeScript
+*.tsbuildinfo
+
+# Test and coverage output
+/coverage
+/test-results/
+/playwright-report/
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# Environment files (secrets) — only .env.example may be committed
 .env*
+!.env.example
 
-# scripts with sensitive keys
-scripts/switch-*.sh
-scripts/switch-stripe-mode.bat
-
-# vercel
+# Vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-# Local development content (never deployed)
+# Local-only data, audits and tool settings
 /.local-data/
+/audit-*.json
+/docs/SECURITY-AUDIT-*.md
+.claude/settings.local.json
+
+# Editors and operating systems
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
