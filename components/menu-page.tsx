@@ -7,6 +7,7 @@ import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { MenuGridSkeleton } from '@/components/menu-grid-skeleton'
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from 'lucide-react'
 import { canOptimizeGalleryImage } from '@/lib/gallery-images'
@@ -30,9 +31,9 @@ function LeadTimeBadge({ product }: { product: MenuProduct }) {
       className={
         'mb-3 inline-flex w-fit items-center self-start rounded-md px-2.5 py-1.5 text-left text-xs font-medium sm:mb-0 ' +
         (lead.tone === 'notice'
-          ? 'bg-amber-100 text-amber-950'
+          ? 'bg-warning-tint text-warning'
           : lead.tone === 'daily'
-            ? 'bg-green-50 text-green-900'
+            ? 'bg-success-tint text-success'
             : 'bg-secondary text-foreground')
       }
     >
@@ -49,8 +50,8 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
     <span
       className={
         detail
-          ? 'block aspect-[4/3] overflow-hidden rounded-xl bg-secondary'
-          : 'block h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-44 sm:w-full sm:rounded-none'
+          ? 'block aspect-[4/3] overflow-hidden rounded-lg bg-secondary'
+          : 'block h-28 w-24 shrink-0 overflow-hidden rounded-md bg-secondary sm:aspect-[16/10] sm:h-auto sm:w-full sm:rounded-none'
       }
     >
       {valid && !failed ? (
@@ -66,7 +67,7 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
               }
               loading={detail ? 'eager' : 'lazy'}
               onError={() => setFailed(true)}
-              className="object-cover"
+              className="menu-card-photo object-cover"
             />
           </span>
         ) : (
@@ -76,7 +77,7 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
             loading={detail ? 'eager' : 'lazy'}
             decoding="async"
             onError={() => setFailed(true)}
-            className="h-full w-full object-cover"
+            className="menu-card-photo h-full w-full object-cover"
           />
         )
       ) : (
@@ -181,30 +182,29 @@ export default function MenuPage({
         <div className="site-container page-space">
           <header className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
-              <p className="mb-1 text-sm font-medium text-primary">Sunville Bakery · Las Vegas</p>
+              <p className="eyebrow mb-2">Sunville Bakery · Las Vegas</p>
               <h1 className="heading-1">Fresh buns & pastries in Las Vegas</h1>
               <button
                 type="button"
                 aria-expanded={hoursOpen}
                 aria-controls="menu-hours"
                 onClick={() => setHoursOpen(!hoursOpen)}
-                className="mt-2 flex min-h-12 items-center gap-2 rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary"
+                className="mt-2 flex min-h-12 items-center gap-2 rounded-sm text-sm font-medium"
               >
                 <span
                   aria-hidden="true"
-                  className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-green-700' : 'bg-gray-500')}
+                  className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-success' : 'bg-ink-muted')}
                 />
-                {status?.text || 'View store hours'} <span className="text-muted-foreground">(Las Vegas)</span>
+                <span className="text-left">
+                  {status?.text || 'View store hours'}{' '}
+                  <span className="whitespace-nowrap text-muted-foreground">(Las Vegas)</span>
+                </span>
                 <ChevronDown
                   aria-hidden="true"
                   className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')}
                 />
               </button>
-              <div
-                id="menu-hours"
-                hidden={!hoursOpen}
-                className="mt-1 rounded-lg border bg-white p-4 text-sm leading-7"
-              >
+              <div id="menu-hours" hidden={!hoursOpen} className="mt-1 rounded-lg border bg-card p-4 text-sm leading-7">
                 <p>
                   {SITE.hours.dailyDays}: {SITE.hours.daily}
                 </p>
@@ -301,7 +301,7 @@ export default function MenuPage({
                 <button
                   type="button"
                   aria-label="Clear search"
-                  className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-xl focus-visible:outline-2 focus-visible:outline-primary"
+                  className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     setQuery('')
                     setSuggesting(false)
@@ -317,7 +317,7 @@ export default function MenuPage({
                 hidden={!showSuggestions}
                 role="listbox"
                 aria-label="Suggested menu items"
-                className="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-xl border bg-white p-1 shadow-lg"
+                className="absolute left-0 right-0 top-full z-40 mt-1 max-h-64 overflow-y-auto rounded-lg border bg-popover p-1 shadow-pop"
               >
                 {suggestions.map((product, index) => (
                   <li
@@ -328,7 +328,7 @@ export default function MenuPage({
                     onMouseDown={event => event.preventDefault()}
                     onClick={() => selectSuggestion(product)}
                     className={
-                      'min-h-12 cursor-pointer rounded-lg px-3 py-3 text-sm hover:bg-secondary ' +
+                      'min-h-12 cursor-pointer rounded-sm px-3 py-3 text-sm hover:bg-secondary ' +
                       (index === activeSuggestion ? 'bg-secondary' : '')
                     }
                   >
@@ -351,10 +351,10 @@ export default function MenuPage({
                     setActiveSuggestion(-1)
                   }}
                   className={
-                    'action-button shrink-0 border focus-visible:outline-2 focus-visible:outline-primary ' +
+                    'action-button shrink-0 border ' +
                     (category === item
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-border bg-white text-foreground hover:bg-secondary')
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-card text-foreground hover:border-input hover:bg-secondary')
                   }
                 >
                   {item}
@@ -364,13 +364,8 @@ export default function MenuPage({
           </section>
 
           {category === 'Custom Cakes' ? (
-            <section
-              aria-labelledby="custom-menu-title"
-              className="rounded-xl border border-amber-300 bg-amber-50 card-pad"
-            >
-              <span className="inline-flex rounded-md bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950">
-                3–5 days’ notice
-              </span>
+            <section aria-labelledby="custom-menu-title" className="rounded-lg border bg-surface card-pad">
+              <span className="badge">3–5 days’ notice</span>
               <h2 id="custom-menu-title" className="heading-2 mt-4">
                 A cake made for your celebration
               </h2>
@@ -387,14 +382,10 @@ export default function MenuPage({
           ) : loading ? (
             <div role="status" aria-label="Loading menu">
               <p className="mb-4 text-sm text-muted-foreground">Loading menu…</p>
-              <div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 8 }, (_, index) => (
-                  <div key={index} className="skeleton h-40 rounded-lg sm:h-72" />
-                ))}
-              </div>
+              <MenuGridSkeleton />
             </div>
           ) : error ? (
-            <div role="alert" className="rounded-xl border bg-white card-pad text-center">
+            <div role="alert" className="rounded-lg border bg-card card-pad text-center">
               <h2 className="heading-2">We couldn’t load the menu</h2>
               <p className="my-3 text-muted-foreground">Please try again, or call {SITE.phone} for help.</p>
               <Button onClick={loadProducts}>Retry</Button>
@@ -416,7 +407,7 @@ export default function MenuPage({
                 )}
               </div>
               {filtered.length === 0 ? (
-                <div className="rounded-xl border bg-white px-4 py-[clamp(2rem,6vw,3rem)] text-center">
+                <div className="rounded-lg border bg-card px-4 py-[clamp(2rem,6vw,3rem)] text-center">
                   <h2 className="heading-2">No items found</h2>
                   <p className="my-3 text-muted-foreground">
                     Try another flavor or category, or explore the full menu.
@@ -439,17 +430,17 @@ export default function MenuPage({
                         </DialogTrigger>
                         <ProductImage product={product} />
                         <div className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4">
-                          <span className="mb-1 text-xs text-muted-foreground">{menuGroup(product)}</span>
+                          <span className="eyebrow mb-1">{menuGroup(product)}</span>
                           <h2 className="heading-3">{product.name}</h2>
                           <span className="mb-3 mt-2 break-words text-sm leading-relaxed text-muted-foreground sm:my-0">
                             {menuDescription(product.description, 160)}
                           </span>
                           <span className="mt-auto flex items-center justify-between gap-2 sm:pt-2">
-                            <span className="text-lg font-semibold text-primary">${product.price}</span>
+                            <span className="price text-lg">${product.price}</span>
                           </span>
                         </div>
                       </article>
-                      <DialogContent className="max-h-[85dvh] overflow-y-auto bg-white">
+                      <DialogContent className="max-h-[85dvh] overflow-y-auto bg-card">
                         <DialogTitle className="heading-3 pr-12">{product.name}</DialogTitle>
                         <ProductImage product={product} detail />
                         <p className="text-sm text-muted-foreground">{menuGroup(product)}</p>
@@ -457,7 +448,7 @@ export default function MenuPage({
                         <DialogDescription className="whitespace-pre-wrap break-words text-base leading-relaxed">
                           {product.description || 'Call us for more details about this item.'}
                         </DialogDescription>
-                        <p className="text-2xl font-semibold text-primary">${product.price}</p>
+                        <p className="price text-2xl">${product.price}</p>
                         <Button asChild className="min-h-12">
                           <a href={phone}>
                             <Phone aria-hidden="true" />
@@ -474,7 +465,7 @@ export default function MenuPage({
         </div>
       </main>
       {/* Mobile: one always-visible call/directions bar instead of repeated call buttons. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_12px_rgba(0,0,0,0.06)] sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-pop sm:hidden">
         <Button asChild className="min-h-12">
           <a href={phone} aria-label={`Call Sunville Bakery to order: ${SITE.phone}`}>
             <Phone aria-hidden="true" />

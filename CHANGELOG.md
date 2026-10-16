@@ -5,6 +5,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-10-16
 
+- **Design system step 4b (menu grid)**: photos on the menu cards are larger (16:10) and zoom in slightly on mouse hover; the category is a small uppercase label and the price is dark, tabular text so it stands apart from the brown name. Category buttons, search suggestions, the hours panel, the Custom Cakes panel, the empty/error boxes, the item pop-up and the phone Call/Directions bar now use the design tokens instead of raw white, amber, green and gray. The open/closed dot uses the success color, and "(Las Vegas)" no longer wraps into its own column on phones. Loading placeholders match the real card shape (new `components/menu-grid-skeleton.tsx`, used by the menu page and `app/menu/loading.tsx`). (`components/menu-page.tsx`, `app/globals.css`)
 - **Contact form email**: the notification now has Reply-To set to the customer's email, so pressing Reply in the bakery inbox answers the customer directly (the cake inquiry email already did this). (`app/api/contact/route.ts`)
 - **Build setting**: `pnpm-workspace.yaml` now allows `sharp` to run its install script (`sharp: true`) instead of the placeholder text pnpm wrote, so installs no longer stop to ask about it.
 - **Repository cleanup** (no visible change to the site):

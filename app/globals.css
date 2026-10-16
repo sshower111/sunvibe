@@ -374,6 +374,15 @@ html {
   &:active {
     transform: scale(0.99);
   }
+  /* The photo zooms in slightly inside its frame when the card is hovered. */
+  & .menu-card-photo {
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+  @media (hover: hover) {
+    &:hover .menu-card-photo {
+      transform: scale(1.04);
+    }
+  }
   /* Keyboard focus on the card's hidden button outlines the whole card. */
   &:has(:focus-visible) {
     outline: 2px solid var(--ring);
