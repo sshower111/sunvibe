@@ -9,7 +9,7 @@ The refactor is done in steps, each reviewed before the next:
 1. **Tokens** (done, 2026-10-13): colors, radius, shadow, motion, spacing, type scale.
 2. **Interactive states** (done, 2026-10-13): hover/pressed, focus rings, disabled, loading.
 3. **Responsive** (done, 2026-10-13): fluid sizing, text wrapping, mobile padding, 44px touch targets.
-4. **Components**, one at a time: hero (done, 2026-10-13), menu grid (done, 2026-10-16), cake inquiry form (done, 2026-10-16), header and mobile menu.
+4. **Components**, one at a time: hero (done, 2026-10-13), menu grid (done, 2026-10-16), cake inquiry form (done, 2026-10-16), header and mobile menu (done, 2026-10-16).
 
 ## Color
 
@@ -62,6 +62,11 @@ Cards and popovers stay pure white. Dark mode is not used.
 - Fixed bottom bars add `env(safe-area-inset-bottom)` padding.
 - On dark backgrounds set `[--ring:#fff]` so the focus ring stays visible.
 - Check new pages at 320, 390 and 768px: no sideways scrolling.
+
+## Header
+
+- `components/navigation.tsx`: white header, `shadow-pop` once the page has scrolled. Desktop: text links, current page brown with a 2px underline.
+- Phone menu: full-width list below the header (56px rows, chevrons, brown bar on the current page), then Call and Directions buttons and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening past 768px closes it.
 
 ## Rules
 
