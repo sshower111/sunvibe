@@ -5,6 +5,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-10-16
 
+- **Build setting**: `pnpm-workspace.yaml` now allows `sharp` to run its install script (`sharp: true`) instead of the placeholder text pnpm wrote, so installs no longer stop to ask about it.
 - **Repository cleanup** (no visible change to the site):
   - `package.json`: renamed from the `my-v0-project` template name to `sunville-bakery` with a description. The scripts are now `typecheck`, `test`, `format` and `format:check`; the broken `lint` script is removed. `@vercel/analytics` is pinned to `^2.0.1` instead of `latest`, `server-only` is declared, `prettier` is a dev dependency, and the unused `dotenv` is removed. The lockfile is updated to match.
   - Renamed `lib/occasion-admin.ts` to `lib/admin-auth.ts` (it handles all admin sign-in, not just occasions) and `isOccasionAdmin` to `isAdminPassword`.
