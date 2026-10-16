@@ -425,7 +425,7 @@ input[type='search']::-webkit-search-cancel-button {
   appearance: none;
 }
 
-/* New design-system utilities (Step 1). Used by later component passes. */
+/* Design-system utilities. */
 @utility text-display {
   color: var(--heading-color, var(--primary));
   font-family: var(--font-playfair), Georgia, serif;
@@ -469,7 +469,7 @@ input[type='search']::-webkit-search-cancel-button {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-/* Loading placeholder (Step 2). Pulses gently; reduced-motion users see it still. */
+/* Loading placeholder. Pulses gently; reduced-motion users see it still. */
 @utility skeleton {
   border-radius: var(--radius-md);
   background: var(--line);
@@ -484,7 +484,7 @@ input[type='search']::-webkit-search-cancel-button {
     opacity: 0.5;
   }
 }
-/* Fluid inner padding for cards and panels (Step 3): 16px on small phones up to 32px on desktop. */
+/* Fluid inner padding for cards and panels: 16px on small phones up to 32px on desktop. */
 @utility card-pad {
   padding: clamp(1rem, 0.6rem + 2vw, 2rem);
 }

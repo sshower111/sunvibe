@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAdminRequest } from '@/lib/occasion-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 import { galleryImages } from '@/lib/gallery-images'
 import { getPublicGallery } from '@/lib/public-gallery'
 import { getMenuProducts } from '@/lib/menu-products'

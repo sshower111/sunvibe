@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAdminRequest } from '@/lib/occasion-admin'
+import { isAdminRequest } from '@/lib/admin-auth'
 import { listOrders, updateOrderStatus } from '@/lib/pre-orders-store'
 import { orderStatuses } from '@/lib/pre-order'
 import { z } from 'zod'

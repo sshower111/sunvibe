@@ -1,8 +1,6 @@
-import crypto from 'crypto'
-
 /**
- * Rate limiter - Simple in-memory implementation
- * For production, use Redis or a service like Upstash
+ * Fixed-window rate limiter kept in memory.
+ * Limits apply per server instance; a shared store (e.g. Upstash Redis) would be needed for a global limit.
  */
 class RateLimiter {
   private requests: Map<string, { count: number; resetTime: number }> = new Map()
@@ -27,7 +25,7 @@ class RateLimiter {
     return true
   }
 
-  // Clean up old entries periodically
+  /** Removes expired windows. */
   cleanup() {
     const now = Date.now()
     for (const [key, value] of this.requests.entries()) {
@@ -40,30 +38,12 @@ class RateLimiter {
 
 export const rateLimiter = new RateLimiter()
 
-// Run cleanup every 5 minutes
 if (typeof window === 'undefined') {
   setInterval(() => rateLimiter.cleanup(), 5 * 60 * 1000)
 }
 
 /**
- * Constant-time string comparison to prevent timing attacks
- */
-export function constantTimeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Use a dummy comparison to maintain constant time
-    crypto.timingSafeEqual(Buffer.from(a.padEnd(b.length)), Buffer.from(b.padEnd(a.length)))
-    return false
-  }
-
-  try {
-    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))
-  } catch {
-    return false
-  }
-}
-
-/**
- * Sanitize HTML to prevent XSS attacks
+ * Escapes text for safe insertion into HTML (email bodies).
  */
 export function escapeHtml(unsafe: string): string {
   return unsafe
@@ -75,7 +55,7 @@ export function escapeHtml(unsafe: string): string {
 }
 
 /**
- * Validate email format
+ * Basic email shape check (something@domain.tld).
  */
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -83,7 +63,7 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * Sanitize filename to prevent path traversal
+ * Reduces a filename to safe characters to prevent path traversal.
  */
 export function sanitizeFilename(filename: string): string {
   return filename
@@ -94,7 +74,7 @@ export function sanitizeFilename(filename: string): string {
 }
 
 /**
- * Get client IP from request
+ * Client IP from the first x-forwarded-for entry (set by Vercel), or "unknown".
  */
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')

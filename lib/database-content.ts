@@ -3,7 +3,7 @@ import { verifiedDatabase } from './database'
 import { encode, decode } from './storage-crypto'
 import type { Campaign } from './campaign-model'
 import type { PreOrder } from './pre-order'
-export const contentDatabase = () => verifiedDatabase('content')
+const contentDatabase = () => verifiedDatabase('content')
 export async function readCampaigns(): Promise<Campaign[]> {
   const sql = await contentDatabase()
   return (await sql`SELECT payload FROM bakery_campaigns ORDER BY position,id`).map(r => r.payload as Campaign)

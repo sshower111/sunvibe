@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { dateSchema, storeDate } from './occasion-dates'
-export const imageSchema = z
+const imageSchema = z
   .string()
   .max(1000)
   .refine(

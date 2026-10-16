@@ -3,6 +3,16 @@
 All notable changes to the Sunville Bakery website will be documented in this file.
 
 
+## 2026-10-16
+
+- **Repository cleanup** (no visible change to the site):
+  - `package.json`: renamed from the `my-v0-project` template name to `sunville-bakery` with a description. The scripts are now `typecheck`, `test`, `format` and `format:check`; the broken `lint` script is removed. `@vercel/analytics` is pinned to `^2.0.1` instead of `latest`, `server-only` is declared, `prettier` is a dev dependency, and the unused `dotenv` is removed. The lockfile is updated to match.
+  - Renamed `lib/occasion-admin.ts` to `lib/admin-auth.ts` (it handles all admin sign-in, not just occasions) and `isOccasionAdmin` to `isAdminPassword`.
+  - Public images now have descriptive names: `hero-bakery.jpg`, `logo-dark.png`, `logo-light.png` and `logo-mark.png`. `placeholder.svg` is kept because menu rows store that path.
+  - Tests moved from `scripts/` to `tests/unit/*.test.cjs`, reformatted and fixed for the current code. They share a loader, `tests/helpers/load-ts.cjs`, and run with `pnpm test`. Removed four browser scripts that depended on the old admin login, local JSON data and a Windows-only Edge setup.
+  - Removed dead code: the unused `constantTimeCompare` and the test-only `rankMenuSearch`. Helpers used in only one file are no longer exported. Rewrote outdated comments as plain documentation.
+  - `.gitignore` now also covers OS and editor files, logs, test output and local audit files. Added `.env.example`, which lists every environment variable without values.
+
 ## 2026-10-13
 
 - **Design system step 4a (home hero)**: taller edge-to-edge photo; the dark shade now sits only behind the text (left side on desktop, bottom on phones) so the cakes and buns stay bright; bigger `text-display` headline on two lines; small uppercase label above it; white "Inquire for Custom Cakes" button and a see-through "Explore Daily Menu" button; white focus ring on the photo. (`components/hero-section.tsx`)

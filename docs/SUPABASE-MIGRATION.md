@@ -33,13 +33,13 @@ Do not simply switch back to Stripe/Blob after accepting new database edits or o
 
 ## Verification completed locally
 
-- scripts/test-supabase.cjs uses PGlite (real local PostgreSQL): schema, readiness gates, admin auth, parameterized SQL, exact cents, menu CRUD/hide, encrypted reservation retries/conflicts, statuses, campaigns, gallery.
-- Existing Stripe admin, Blob encryption, and spam/cache regression tests remain available.
+- `tests/unit/database.test.cjs` (`pnpm test`) uses PGlite (real local PostgreSQL): schema, readiness gates, admin auth, parameterized SQL, exact cents, menu CRUD/hide, encrypted reservation retries/conflicts, statuses, campaigns, gallery.
 - Cloud connection, final data migration and production cutover require Supabase access. No claim of cloud migration until those steps complete.
 
 ## Photo storage setup
 
 Configure these server-only variables in .env.local and Vercel:
+
 - SUPABASE_URL: project URL
 - SUPABASE_SECRET_KEY: server secret key (legacy SUPABASE_SERVICE_ROLE_KEY also supported)
 - SUPABASE_STORAGE_BUCKET: bakery-images
@@ -56,7 +56,6 @@ The switches are independent: menu, content, and photo uploads can be verified a
 Existing images: export the authoritative URL inventory from gallery, menu and campaign records after source storage recovers. Copy the original files into Supabase; verify byte hashes/content type and that each public destination URL loads before replacing references. Preserve an old-to-new URL mapping privately and never delete source files during this migration. Keep external Yelp/ImgBB URLs until intentionally migrated; do not assume every photo belongs to Blob. A paused source cannot be recovered by creating Supabase. Existing Blob photos may remain unavailable until their source access returns.
 
 Do not disconnect Stripe or delete Blob until the data and photo migration is verified and the rollback window has passed.
-
 
 ## Supabase CA certificate
 

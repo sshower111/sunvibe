@@ -120,9 +120,6 @@ export function searchMenu(products: MenuProduct[], query: string): MenuSearchRe
     corrected: needsFuzzy.size > 0 && scored.length > 0,
   }
 }
-export function rankMenuSearch(products: MenuProduct[], query: string): MenuProduct[] {
-  return searchMenu(products, query).results
-}
 export function menuDescription(text: string, limit = 60): string {
   const normalized = text.trim().replace(/\s+/g, ' ')
   if (normalized.length <= limit) return normalized

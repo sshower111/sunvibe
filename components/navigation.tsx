@@ -72,7 +72,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             className="flex h-12 w-[180px] shrink-0 items-center rounded focus-visible:outline-2 focus-visible:outline-primary"
           >
             <img
-              src="/logoBlack.png"
+              src="/logo-dark.png"
               width={600}
               height={204}
               alt="Sunville Bakery"

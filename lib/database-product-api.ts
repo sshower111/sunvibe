@@ -2,7 +2,7 @@ import 'server-only'
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
-import { isAdminRequest } from './occasion-admin'
+import { isAdminRequest } from './admin-auth'
 import { verifiedDatabase } from './database'
 import { databaseMenu, menuRow } from './database-menu'
 const price = z.string().regex(/^\d{1,6}(?:\.\d{1,2})?$/)
