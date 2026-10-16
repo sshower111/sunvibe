@@ -9,7 +9,7 @@ The refactor is done in steps, each reviewed before the next:
 1. **Tokens** (done, 2026-10-13): colors, radius, shadow, motion, spacing, type scale.
 2. **Interactive states** (done, 2026-10-13): hover/pressed, focus rings, disabled, loading.
 3. **Responsive** (done, 2026-10-13): fluid sizing, text wrapping, mobile padding, 44px touch targets.
-4. **Components**, one at a time: hero (done, 2026-10-13), menu grid (done, 2026-10-16), cake inquiry form, header and mobile menu.
+4. **Components**, one at a time: hero (done, 2026-10-13), menu grid (done, 2026-10-16), cake inquiry form (done, 2026-10-16), header and mobile menu.
 
 ## Color
 
@@ -51,7 +51,7 @@ Cards and popovers stay pure white. Dark mode is not used.
 - **Hover / pressed**: buttons darken on hover and darken more and shrink slightly (98%) when pressed. Outline buttons also get a darker border. Menu cards lift 2px with `shadow-pop` and their photo zooms to 104% (`menu-card-photo`), only on devices with a mouse. Form fields get a darker border on hover.
 - **Disabled**: 50% opacity, no clicks (buttons); fields get a soft background and a not-allowed cursor. Links styled as buttons use `aria-disabled`.
 - **Loading**: `<Button loading>` shows a spinner, disables the button and sets `aria-busy` (used on contact, cake inquiry, admin sign-in, add photo link). `<Skeleton>` (`components/ui/skeleton.tsx`, `skeleton` utility) is a pulsing placeholder; always pair it with a screen-reader "Loading…" status. Menu pages use `MenuGridSkeleton` (`components/menu-grid-skeleton.tsx`), which has the same shape as a menu card; the admin menu and photo lists use `Skeleton` directly.
-- **Form messages** (`components/ui/form-message.tsx`): `FormAlert` (error or success box with icon) goes right above the submit button; `FieldError` is a small red line under one field. Forms use `noValidate` so the browser's own bubbles don't appear, and invalid fields get `aria-invalid` (red border).
+- **Form messages** (`components/ui/form-message.tsx`): `FormAlert` (error or success box with icon) goes right above the submit button and lists every field problem (contact and cake inquiry forms); fields point to it with `aria-describedby`. `FieldError` is a small red line under one field, only for messages that appear without pressing submit (for example a photo that cannot be added). Forms use `noValidate` so the browser's own bubbles don't appear, and invalid fields get `aria-invalid` (red border).
 - Checkboxes and radios use the brand color. Buttons, summaries and labels show a pointer cursor.
 
 ## Responsive

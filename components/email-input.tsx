@@ -75,7 +75,7 @@ export function EmailInput({
           id={listId}
           role="listbox"
           aria-label="Email suggestions"
-          className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-xl border bg-white p-1 shadow-lg"
+          className="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-lg border bg-popover p-1 shadow-pop"
         >
           {options.map((option, index) => {
             const at = option.indexOf('@')
@@ -91,7 +91,7 @@ export function EmailInput({
                 }}
                 onMouseEnter={() => setActive(index)}
                 className={
-                  'flex min-h-12 cursor-pointer items-center rounded-lg px-3 text-sm ' +
+                  'flex min-h-12 cursor-pointer items-center rounded-sm px-3 text-sm ' +
                   (index === active ? 'bg-secondary' : 'hover:bg-secondary')
                 }
               >

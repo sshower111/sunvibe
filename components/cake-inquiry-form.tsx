@@ -21,6 +21,8 @@ import { cakeCatalog, cakeLabel, deliveryOptions } from '@/lib/cake-catalog'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
 import { formatPhone } from '@/lib/form-helpers'
 import { EmailInput } from '@/components/email-input'
+import { FieldError, FormAlert } from '@/components/ui/form-message'
+import { ImagePlus } from 'lucide-react'
 
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [
@@ -46,6 +48,7 @@ const initial = {
   acknowledged: '',
 }
 type Field = keyof typeof initial
+const fieldOrder = fieldsByStep.flat()
 function PhotoPreview({ file }: { file: File }) {
   const [url, setUrl] = useState('')
   useEffect(() => {
@@ -54,7 +57,7 @@ function PhotoPreview({ file }: { file: File }) {
     return () => URL.revokeObjectURL(value)
   }, [file])
   return url ? (
-    <img src={url} alt="Your inspiration reference" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+    <img src={url} alt="Your inspiration reference" className="h-16 w-16 shrink-0 rounded-md object-cover" />
   ) : null
 }
 export function CakeInquiryForm({ minDate }: { minDate: string }) {
@@ -77,6 +80,14 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
     setErrors(current => ({ ...current, [key]: '' }))
     requestId.current = ''
   }
+  const hints: Partial<Record<Field, string>> = {
+    eventDate: 'Choose a date at least 3 days away.',
+    fulfillment:
+      data.fulfillment === 'Pickup'
+        ? `Pickup: ${SITE.street}, Las Vegas.`
+        : 'Delivery availability and destination are confirmed with your quote.',
+    budget: 'Your budget helps us plan; it isn’t a price quote.',
+  }
   const navigate = (value: number) => {
     setStep(value)
     setError('')
@@ -90,23 +101,26 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
     name: key,
     value: data[key],
     'aria-invalid': !!errors[key],
-    'aria-describedby': errors[key] ? `cake-${key}-error` : undefined,
+    'aria-describedby':
+      [hints[key] && `cake-${key}-hint`, errors[key] && 'cake-form-errors'].filter(Boolean).join(' ') || undefined,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       update(key, event.target.value),
   })
+  // Field problems are listed together above the submit button (see the error summary below).
   const field = (key: Field, label: string, child: React.ReactNode) => (
     <div className="min-w-0">
       <label htmlFor={`cake-${key}`} className="mb-2 block text-sm font-semibold">
         {label}
       </label>
       {child}
-      {errors[key] && (
-        <p id={`cake-${key}-error`} className="mt-2 text-sm text-red-700">
-          {errors[key]}
+      {hints[key] && (
+        <p id={`cake-${key}-hint`} className="mt-2 text-sm text-muted-foreground">
+          {hints[key]}
         </p>
       )}
     </div>
   )
+  const fieldMessages = [...new Set(fieldOrder.map(key => errors[key]).filter(Boolean))]
   const validate = (all = false) => {
     const result = cakeInquirySchema.safeParse(data)
     const issues = result.success
@@ -176,7 +190,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         ref={feedback}
         tabIndex={-1}
         role="status"
-        className="rounded-xl border border-green-800/20 bg-green-50 card-pad"
+        className="rounded-lg border border-success/25 bg-success-tint card-pad"
       >
         <h2 className="heading-2">Your cake inquiry is on its way</h2>
         <p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p>
@@ -191,21 +205,17 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       </div>
     )
   return (
-    <form
-      method="post"
-      onSubmit={submit}
-      noValidate
-      aria-busy={busy}
-      className="rounded-xl border border-border bg-card card-pad shadow-sm"
-    >
+    <form method="post" onSubmit={submit} noValidate aria-busy={busy} className="rounded-lg border bg-card card-pad">
       <ol aria-label="Inquiry progress" className="mb-8 grid grid-cols-4 gap-2">
         {steps.map((name, index) => (
           <li
             key={name}
             aria-current={step === index ? 'step' : undefined}
-            className={`border-t-4 pt-3 ${index <= step ? 'border-primary' : 'border-border'}`}
+            className={`border-t-4 pt-3 transition-colors ${index <= step ? 'border-primary' : 'border-border'}`}
           >
-            <span className="block text-xs font-semibold text-primary">{index + 1}</span>
+            <span className={`block text-xs font-semibold ${index <= step ? 'text-primary' : 'text-muted-foreground'}`}>
+              {index + 1}
+            </span>
             <span
               className={`mt-1 text-xs sm:text-sm ${step === index ? 'block font-semibold' : 'hidden sm:block text-muted-foreground'}`}
             >
@@ -214,10 +224,10 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
           </li>
         ))}
       </ol>
-      <h3 ref={heading} tabIndex={-1} className="heading-3 mb-2 scroll-mt-32 focus:outline-none">
+      <p className="eyebrow mb-1">Step {step + 1} of 4</p>
+      <h3 ref={heading} tabIndex={-1} className="heading-3 mb-6 scroll-mt-32 focus:outline-none">
         {steps[step]}
       </h3>
-      <p className="mb-6 text-sm text-muted-foreground">Step {step + 1} of 4</p>
       <fieldset disabled={busy} className="min-w-0 space-y-5">
         <legend className="sr-only">{steps[step]}</legend>
         {step === 0 && (
@@ -234,7 +244,6 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
               )}
               {field('eventDate', 'Event date', <Input {...control('eventDate')} type="date" required min={minDate} />)}
             </div>
-            <p className="text-sm text-muted-foreground">Choose a date at least 3 days away.</p>
             {data.fulfillment !== 'Pickup' &&
               field(
                 'deliveryAddress',
@@ -255,11 +264,6 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                 ))}
               </NativeSelect>,
             )}
-            <p className="text-sm text-muted-foreground">
-              {data.fulfillment === 'Pickup'
-                ? `Pickup: ${SITE.street}, Las Vegas.`
-                : 'Delivery availability and destination are confirmed with your quote.'}
-            </p>
           </>
         )}
         {step === 1 && (
@@ -337,7 +341,6 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                 ))}
               </NativeSelect>,
             )}
-            <p className="text-sm text-muted-foreground">Your budget helps us plan; it isn’t a price quote.</p>
           </>
         )}
         {step === 2 && (
@@ -378,14 +381,15 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
               <label htmlFor="cake-photos" className="mb-2 block text-sm font-semibold">
                 Inspiration photos (optional)
               </label>
-              <p id="cake-photo-help" className="sr-only">
-                Up to 5 photos.
+              <p id="cake-photo-help" className="mb-2 text-sm text-muted-foreground">
+                Up to {MAX_PHOTOS} photos. JPG, PNG and iPhone photos are fine.
               </p>
               <Input
                 id="cake-photos"
                 type="file"
                 multiple
-                disabled={preparing}
+                className="peer sr-only"
+                disabled={preparing || photos.length >= MAX_PHOTOS}
                 accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
                 aria-describedby={uploadError ? 'cake-photo-help cake-photo-error' : 'cake-photo-help'}
                 aria-invalid={!!uploadError}
@@ -414,19 +418,34 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                   }
                 }}
               />
-              {preparing && (
-                <p role="status" className="mt-2 text-sm text-muted-foreground">
-                  Preparing photo…
-                </p>
-              )}
-              {uploadError && (
-                <p id="cake-photo-error" role="alert" className="mt-2 text-sm text-red-700">
-                  {uploadError}
-                </p>
-              )}
+              <label
+                htmlFor="cake-photos"
+                className={`flex min-h-12 items-center justify-center gap-2 rounded-md border border-dashed bg-surface px-4 py-3 text-sm font-semibold transition-colors ${
+                  photos.length >= MAX_PHOTOS || preparing
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'border-input hover:border-foreground/40 hover:bg-secondary'
+                } ${uploadError ? 'border-danger' : ''} peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring`}
+              >
+                <ImagePlus aria-hidden="true" className="size-5 text-primary" />
+                {preparing
+                  ? 'Preparing photo…'
+                  : photos.length
+                    ? `Add more photos (${photos.length} of ${MAX_PHOTOS})`
+                    : 'Choose photos'}
+              </label>
+              <p role="status" className="sr-only">
+                {preparing ? 'Preparing photo…' : ''}
+              </p>
+              {/* Shown next to the picker because it appears the moment photos are chosen, not on submit. */}
+              <div role="alert">
+                <FieldError id="cake-photo-error">{uploadError}</FieldError>
+              </div>
               <ul className="mt-3 space-y-2">
                 {photos.map((file, index) => (
-                  <li key={file.name + index} className="flex min-w-0 items-center gap-3 rounded-lg bg-secondary p-3">
+                  <li
+                    key={file.name + index}
+                    className="flex min-w-0 items-center gap-3 rounded-md border bg-card p-2 pr-3"
+                  >
                     <PhotoPreview file={file} />
                     <span className="min-w-0 flex-1 break-all text-sm">{file.name}</span>
                     <Button
@@ -465,7 +484,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         )}
         {step === 3 && (
           <>
-            <div className="rounded-lg bg-secondary p-4">
+            <div className="surface rounded-lg card-pad">
               <dl className="space-y-3 text-sm">
                 {[
                   ['Event', `${data.eventType} · ${data.eventDate}`],
@@ -497,7 +516,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
             </div>
             <label
               htmlFor="cake-acknowledged"
-              className="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm"
+              className={`flex min-h-12 cursor-pointer items-start gap-3 rounded-md border p-3 text-sm ${errors.acknowledged ? 'border-danger' : ''}`}
             >
               <input
                 id="cake-acknowledged"
@@ -505,7 +524,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                 className="mt-1 size-5 shrink-0 accent-primary"
                 checked={data.acknowledged === 'yes'}
                 aria-invalid={!!errors.acknowledged}
-                aria-describedby={errors.acknowledged ? 'cake-acknowledged-error' : undefined}
+                aria-describedby={errors.acknowledged ? 'cake-form-errors' : undefined}
                 onChange={event => update('acknowledged', event.target.checked ? 'yes' : '')}
               />
               <span>
@@ -513,11 +532,6 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                 delivery.
               </span>
             </label>
-            {errors.acknowledged && (
-              <p id="cake-acknowledged-error" className="text-sm text-red-700">
-                {errors.acknowledged}
-              </p>
-            )}
             <ContactCaptcha ref={captcha} action="custom_cake" />
             <a
               href="/privacy"
@@ -527,12 +541,25 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
             </a>
           </>
         )}
-        <div ref={feedback} tabIndex={-1} className="focus:outline-none">
-          {error && (
-            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              {error}
-            </p>
+        {/* All messages sit right above the buttons, like the contact form. */}
+        <div ref={feedback} tabIndex={-1} className="space-y-3 focus:outline-none empty:hidden">
+          {fieldMessages.length > 0 && (
+            <FormAlert type="error" id="cake-form-errors">
+              {fieldMessages.length === 1 ? (
+                fieldMessages[0]
+              ) : (
+                <>
+                  Please check the highlighted fields:
+                  <ul className="mt-1 list-disc space-y-0.5 pl-5 font-normal">
+                    {fieldMessages.map(message => (
+                      <li key={message}>{message}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </FormAlert>
           )}
+          {error && <FormAlert type="error">{error}</FormAlert>}
         </div>
         <div className="flex flex-wrap justify-between gap-3 border-t pt-5">
           {step > 0 && (
