@@ -5,6 +5,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-10-16
 
+- **Contact form email**: the notification now has Reply-To set to the customer's email, so pressing Reply in the bakery inbox answers the customer directly (the cake inquiry email already did this). (`app/api/contact/route.ts`)
 - **Build setting**: `pnpm-workspace.yaml` now allows `sharp` to run its install script (`sharp: true`) instead of the placeholder text pnpm wrote, so installs no longer stop to ask about it.
 - **Repository cleanup** (no visible change to the site):
   - `package.json`: renamed from the `my-v0-project` template name to `sunville-bakery` with a description. The scripts are now `typecheck`, `test`, `format` and `format:check`; the broken `lint` script is removed. `@vercel/analytics` is pinned to `^2.0.1` instead of `latest`, `server-only` is declared, `prettier` is a dev dependency, and the unused `dotenv` is removed. The lockfile is updated to match.

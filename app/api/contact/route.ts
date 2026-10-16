@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
       {
         from: EMAIL_FROM,
         to: bakeryInbox(),
+        // Replying to the notification answers the customer directly
+        replyTo: email.trim().toLowerCase(),
         subject: `New Contact Form Submission from ${safeName}`,
         html: `
         <h2>New Contact Form Submission</h2>
