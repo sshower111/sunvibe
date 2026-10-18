@@ -5,6 +5,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-10-18
 
+- **Email sender**: site emails now come from `orders@sunvillebakerylv.com` instead of Resend's shared `onboarding@resend.dev` test address, so they are less likely to land in spam. The domain is verified in Resend (DNS records in Vercel). `orders@` has no mailbox; replies go to the customer. (`lib/email.ts`)
 - **Chinese copy in form emails**: the contact, cake inquiry and pre-order emails to the bakery now have a Traditional Chinese version right under the English one. Labels, headings and the site's own choices (event type, cake size, flavor, filling, budget, pickup/delivery) are translated; what the customer typed (name, message, notes, address) and menu item names stay as written. Translations live in the new `lib/email-zh.ts`; a test checks every form option has one. (`app/api/contact/route.ts`, `app/api/custom-cakes/route.ts`, `app/api/pre-orders/route.ts`, `tests/unit/email-zh.test.cjs`)
 
 ## 2026-10-16
