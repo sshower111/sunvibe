@@ -50,8 +50,8 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
     <span
       className={
         detail
-          ? 'block aspect-[4/3] overflow-hidden rounded-lg bg-secondary'
-          : 'block h-28 w-24 shrink-0 overflow-hidden rounded-md bg-secondary sm:aspect-[16/10] sm:h-auto sm:w-full sm:rounded-none'
+          ? 'block aspect-square overflow-hidden rounded-lg bg-secondary'
+          : 'block size-28 shrink-0 overflow-hidden rounded-md bg-secondary sm:aspect-square sm:h-auto sm:w-full sm:rounded-none'
       }
     >
       {valid && !failed ? (

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ExternalLink, ImageIcon, LogOut, Search } from 'lucide-react'
+import { ExternalLink, LogOut, Search } from 'lucide-react'
 import { GalleryPhotoUpload } from '@/components/gallery-photo-upload'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { AdminOccasions } from '@/components/admin-occasions'
 import { AdminPreOrders } from '@/components/admin-pre-orders'
 import { AdminProductCreate } from '@/components/admin-product-create'
 import { AdminProductEditor } from '@/components/admin-product-editor'
-import { hasMenuPhoto } from '@/components/menu-photo-field'
+import { MenuPhotoThumb } from '@/components/menu-photo-field'
 
 interface Product {
   id: string
@@ -387,19 +387,7 @@ export default function AdminPage() {
                 {shownProducts.map(product => (
                   <li key={product.id} className="flex flex-col gap-3 rounded-xl border bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
-                      {product.image && hasMenuPhoto(product.image) ? (
-                        <img
-                          src={product.image}
-                          alt=""
-                          loading="lazy"
-                          className="size-14 shrink-0 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-lg border border-dashed text-[10px] leading-tight text-muted-foreground">
-                          <ImageIcon aria-hidden="true" className="size-4" />
-                          No photo
-                        </span>
-                      )}
+                      <MenuPhotoThumb url={product.image} />
                       <div className="min-w-0 flex-1">
                         <p className="break-words font-semibold">{product.name}</p>
                         {product.category && <p className="text-xs text-muted-foreground">{product.category}</p>}

@@ -6,7 +6,7 @@ export function MenuGridSkeleton({ count = 6 }: { count?: number }) {
     <div aria-hidden="true" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }, (_, i) => (
         <div key={i} className="flex gap-3 overflow-hidden rounded-lg border bg-card p-3 sm:block sm:p-0">
-          <Skeleton className="h-28 w-24 shrink-0 sm:aspect-[16/10] sm:h-auto sm:w-full sm:rounded-none" />
+          <Skeleton className="size-28 shrink-0 sm:aspect-square sm:h-auto sm:w-full sm:rounded-none" />
           <div className="flex-1 space-y-2 sm:p-4">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-5 w-3/4" />
