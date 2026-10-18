@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { isAdminRequest } from './admin-auth'
 import { verifiedDatabase } from './database'
 import { databaseMenu, menuRow } from './database-menu'
+import { deletePhotoIfUnused } from './photo-storage'
 const price = z.string().regex(/^\d{1,6}(?:\.\d{1,2})?$/)
 const fields = z.object({
   name: z.string().trim().min(1).max(250),
@@ -61,8 +62,16 @@ export async function databaseProductRequest(req: NextRequest) {
       const productId = id.parse(body.productId)
       if (action === 'update') {
         const value = fields.parse(body)
-        rows =
-          await sql`UPDATE bakery_menu SET name=${value.name},description=${value.description},price_cents=${cents(value.price)} WHERE id=${productId} RETURNING *`
+        // Older clients do not send a photo; only change it when one is included.
+        if (typeof body.image === 'string') {
+          const [prior] = await sql`SELECT image FROM bakery_menu WHERE id=${productId}`
+          rows =
+            await sql`UPDATE bakery_menu SET name=${value.name},description=${value.description},price_cents=${cents(value.price)},image=${value.image} WHERE id=${productId} RETURNING *`
+          // A replaced or removed uploaded photo is deleted unless something else still uses it.
+          if (rows.length && prior?.image && prior.image !== value.image) await deletePhotoIfUnused(prior.image)
+        } else
+          rows =
+            await sql`UPDATE bakery_menu SET name=${value.name},description=${value.description},price_cents=${cents(value.price)} WHERE id=${productId} RETURNING *`
       } else if (action === 'toggle') {
         const active = z.boolean().parse(body.active)
         rows = await sql`UPDATE bakery_menu SET active=${active} WHERE id=${productId} RETURNING *`

@@ -4,9 +4,11 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 
 ## Menu
 - Search items, filter Visible / Hidden.
-- **Edit item**: name, description, price. Changes appear on the public menu right away.
+- Each item shows a small photo, or "No photo" if it has none.
+- **Edit item**: photo, name, description, price. Changes appear on the public menu right away.
+- **Photos**: in Edit item or Add menu item, tap **Add photo** (or **Change photo**) and pick one from your phone or computer. iPhone HEIC photos are converted and large photos resized automatically. It uploads straight away, but only shows on the menu after you press **Save changes** / **Add item**. **Remove photo** puts back "Photo coming soon". A replaced photo is deleted from storage unless the gallery or an occasion still uses it.
 - **Hide / Show**: removes an item from the public menu without deleting it.
-- **Add menu item**: name, price, category, optional photo link, description.
+- **Add menu item**: photo, name, price, category, description.
 
 ## Gallery
 - **Add photos**: pick one or more photos from your phone; they are converted and resized automatically.

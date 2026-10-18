@@ -6,9 +6,18 @@ import { Button } from '@/components/ui/button'
 import { adminPost } from '@/lib/admin-api'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { MenuPhotoField } from '@/components/menu-photo-field'
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
-type EditableProduct = { id: string; name: string; description: string; price: string; priceId: string }
+type EditableProduct = {
+  id: string
+  name: string
+  description: string
+  price: string
+  priceId: string
+  image?: string
+}
+const PLACEHOLDER = '/placeholder.svg'
 export function AdminProductEditor({
   product,
   onSaved,
@@ -23,6 +32,8 @@ export function AdminProductEditor({
   const [name, setName] = useState(product.name)
   const [description, setDescription] = useState(product.description || '')
   const [price, setPrice] = useState(product.price)
+  const [image, setImage] = useState(product.image || PLACEHOLDER)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -31,13 +42,15 @@ export function AdminProductEditor({
   const changed =
     name.trim() !== product.name ||
     description.trim() !== (product.description || '') ||
-    Number(price) !== Number(product.price)
+    Number(price) !== Number(product.price) ||
+    image !== (product.image || PLACEHOLDER)
   function changeOpen(next: boolean) {
     if (inFlight.current) return
     if (next) {
       setName(product.name)
       setDescription(product.description || '')
       setPrice(product.price)
+      setImage(product.image || PLACEHOLDER)
       setError('')
       setSaved(false)
       attempt.current = null
@@ -46,7 +59,7 @@ export function AdminProductEditor({
   }
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (inFlight.current) return
+    if (inFlight.current || uploading) return
     if (!name.trim()) {
       setError('Enter an item name.')
       return
@@ -58,7 +71,7 @@ export function AdminProductEditor({
     inFlight.current = true
     setSaving(true)
     setError('')
-    const draft = JSON.stringify({ name: name.trim(), description: description.trim(), price })
+    const draft = JSON.stringify({ name: name.trim(), description: description.trim(), price, image })
     if (attempt.current?.draft !== draft) attempt.current = { draft, id: crypto.randomUUID() }
     try {
       const data = await adminPost('/api/admin/menu', {
@@ -97,8 +110,9 @@ export function AdminProductEditor({
           }}
         >
           <DialogTitle className="heading-2 pr-10">Edit menu item</DialogTitle>
-          <DialogDescription>Update the name, description, and price together.</DialogDescription>
+          <DialogDescription>Update the photo, name, description, and price together.</DialogDescription>
           <form onSubmit={save} className="space-y-4" aria-busy={saving}>
+            <MenuPhotoField value={image} onChange={setImage} onBusyChange={setUploading} disabled={saving} />
             <div>
               <label htmlFor={id + '-name'} className="mb-2 block text-sm font-medium">
                 Item name
@@ -152,7 +166,7 @@ export function AdminProductEditor({
               </p>
             )}
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button type="submit" disabled={saving || !changed} className="sm:flex-1">
+              <Button type="submit" disabled={saving || uploading || !changed} className="sm:flex-1">
                 {saving ? 'Saving…' : 'Save changes'}
               </Button>
               <Button type="button" variant="outline" disabled={saving} onClick={() => changeOpen(false)}>

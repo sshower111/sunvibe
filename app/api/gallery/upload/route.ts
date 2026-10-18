@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
 
     const timestamp = randomUUID()
     const sanitized = sanitizeFilename(file.name)
-    const pathname = `gallery/${timestamp}-${sanitized}`
+    // Menu item photos go in their own folder; everything else (gallery, occasions) in gallery/.
+    const folder = formData.get('folder') === 'menu' ? 'menu' : 'gallery'
+    const pathname = `${folder}/${timestamp}-${sanitized}`
 
     const url = await uploadPhoto(pathname, file)
     return NextResponse.json({ success: true, url, filename: pathname })
