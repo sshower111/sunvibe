@@ -3,6 +3,10 @@
 All notable changes to the Sunville Bakery website will be documented in this file.
 
 
+## 2026-10-18
+
+- **Chinese copy in form emails**: the contact, cake inquiry and pre-order emails to the bakery now have a Traditional Chinese version right under the English one. Labels, headings and the site's own choices (event type, cake size, flavor, filling, budget, pickup/delivery) are translated; what the customer typed (name, message, notes, address) and menu item names stay as written. Translations live in the new `lib/email-zh.ts`; a test checks every form option has one. (`app/api/contact/route.ts`, `app/api/custom-cakes/route.ts`, `app/api/pre-orders/route.ts`, `tests/unit/email-zh.test.cjs`)
+
 ## 2026-10-16
 
 - **Design system step 4d (header and phone menu)**: the header is flat white (card token) and gets a soft shadow only once the page scrolls under it. Desktop links have a little more room, turn brown on hover, and the current page has a thicker underline. The phone menu now slides in with large rows separated by lines, a chevron on each row and a brown bar next to the current page, plus **Call** and **Directions** buttons and the opening hours at the bottom. The page behind it is dimmed and does not scroll; tapping the dimmed area, pressing Escape or picking a link closes the menu. Component-level focus rings were removed so the global one is used. (`components/navigation.tsx`)

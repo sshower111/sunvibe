@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
+import { ZH, zhOption } from '@/lib/email-zh'
 import { SITE } from '@/lib/site-info'
 import { preOrderSchema, priceOrder } from '@/lib/pre-order'
 import { getCampaign } from '@/lib/campaigns'
@@ -69,6 +70,20 @@ export async function POST(request: NextRequest) {
       'Pickup: ' + order.pickupDate,
       'Notes: ' + order.notes,
       'Reservation request only — call to confirm availability, delivery fees, and pickup time.',
+      // Traditional Chinese copy: labels translated, item names and customer text as written.
+      '',
+      '— 中文 —',
+      ZH.preorderHeading,
+      ZH.items + '：',
+      ...order.items.map(i => i.qty + ' × ' + i.name + ' @ $' + i.price.toFixed(2)),
+      ZH.itemsTotal + '：$' + (cents / 100).toFixed(2),
+      ZH.preorderFulfillment + '：' + zhOption(order.fulfillment),
+      ZH.name + '：' + order.name,
+      ZH.phone + '：' + order.phone,
+      ZH.email + '：' + (order.email || ZH.notProvided),
+      ZH.pickupDate + '：' + order.pickupDate,
+      ZH.preorderNotes + '：' + (order.notes || ZH.none),
+      ZH.preorderNote,
     ].join('\n')
     const resend = mailer()
     let notificationSent = false

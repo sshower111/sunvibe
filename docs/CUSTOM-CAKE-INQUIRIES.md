@@ -6,6 +6,7 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 
 - Hero and direct inquiry/serving-guide links; four size cards; quote-based price guidance.
 - Four steps: event, cake preferences, contact/photos, review and send. Previous entries survive back navigation and failed sends.
+- The email to the bakery has a Traditional Chinese copy under the English (labels and options translated, customer text as written). Contact and pre-order emails do the same. To change a translation, edit `lib/email-zh.ts`.
 - Problems (missing or invalid fields, unticked acknowledgement, could not send) are listed in one box right above the Continue / Send button, and the fields with problems turn red, the same as the contact form. A photo that cannot be added shows its message under the photo picker.
 - Event date uses Las Vegas calendar time and requires at least three days' notice. The visible guidance requests 3–5 days and explains that availability must be confirmed.
 - Optional reference images: up to five photos; any phone photo (including iPhone HEIC) is converted to JPEG and resized to 800 KB in the browser before sending; preview and removal controls.

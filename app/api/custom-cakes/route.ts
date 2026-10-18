@@ -4,6 +4,7 @@ import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
 import { cakeInquirySchema, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
+import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { escapeHtml, getClientIp, rateLimiter } from '@/lib/security'
 
@@ -78,9 +79,24 @@ export async function POST(request: NextRequest) {
       deliveryAddress: 'Delivery address / hotel',
       notes: 'Notes / dietary requests',
     }
+    // Chinese copy: option values are translated, typed values (name, notes, address…) stay as written.
+    const translated = new Set(['eventType', 'size', 'flavor', 'filling', 'budget', 'fulfillment'])
+    const zhRows = Object.keys(labels).map(key => {
+      const value = values[key as keyof typeof values]
+      const zh =
+        key === 'deliveryAddress' && parsed.data.fulfillment === 'Pickup'
+          ? ZH.bakeryPickup
+          : !value
+            ? ZH.none
+            : translated.has(key)
+              ? zhOption(value)
+              : value
+      return [ZH[key as keyof typeof ZH], zh] as [string, string]
+    })
     const text = Object.entries(labels)
       .map(([key, label]) => `${label}: ${values[key as keyof typeof values] || 'None'}`)
       .join('\n')
+      .concat('\n', zhText(ZH.cakeHeading, zhRows, ZH.cakeNotConfirmed))
     const html =
       '<h2>Custom cake inquiry — quote requested</h2><p>This is not a confirmed order.</p>' +
       Object.entries(labels)
@@ -88,7 +104,12 @@ export async function POST(request: NextRequest) {
           ([key, label]) =>
             `<p><strong>${label}:</strong> ${escapeHtml(values[key as keyof typeof values] || 'None').replace(/\n/g, '<br>')}</p>`,
         )
-        .join('')
+        .join('') +
+      zhHtml(
+        ZH.cakeHeading,
+        zhRows.map(([label, value]) => [label, escapeHtml(value).replace(/\n/g, '<br>')]),
+        ZH.cakeNotConfirmed,
+      )
     const result = await mailer().emails.send(
       {
         from: EMAIL_FROM,

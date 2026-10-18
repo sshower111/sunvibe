@@ -102,6 +102,13 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert(mail[0].body.html.includes('&lt;script&gt;'))
   assert.equal(mail[0].body.attachments[0].filename, 'cake-reference-1.png')
   assert.equal(mail[0].body.replyTo, valid.email)
+  // Traditional Chinese copy under the English: labels and options translated, typed text as written and escaped.
+  const zh = mail[0].body.html.slice(mail[0].body.html.indexOf('lang="zh-Hant"'))
+  assert(zh.includes('<strong>活動類型：</strong>生日'))
+  assert(zh.includes('<strong>蛋糕尺寸：</strong>8 吋圓形'))
+  assert(zh.includes('<strong>送貨地址／酒店：</strong>店內自取'))
+  assert(zh.includes('&lt;img src=x&gt; allergy request') && !zh.includes('<img'))
+  assert(mail[0].body.text.includes('\n— 中文 —\n訂製蛋糕查詢（需報價）'))
   assert.equal(mail[0].options.idempotencyKey, 'cake-' + valid.requestId)
   emailError = true
   assert.equal((await post()).status, 502)
