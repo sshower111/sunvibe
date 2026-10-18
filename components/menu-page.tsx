@@ -52,7 +52,7 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
     <span
       className={
         detail
-          ? 'block aspect-square overflow-hidden rounded-lg bg-secondary'
+          ? 'mx-auto block size-[min(calc(100vw-4rem),42dvh,28rem)] shrink-0 overflow-hidden rounded-lg bg-secondary'
           : 'block size-28 shrink-0 overflow-hidden rounded-md bg-secondary sm:aspect-square sm:h-auto sm:w-full sm:rounded-none'
       }
     >
@@ -65,7 +65,7 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
               alt={detail ? product.name : ''}
               fill
               sizes={
-                detail ? '(min-width: 640px) 512px, 90vw' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 96px'
+                detail ? '(min-width: 640px) 512px, 90vw' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 112px'
               }
               loading={detail ? 'eager' : 'lazy'}
               onError={() => setFailed(true)}
@@ -239,7 +239,7 @@ export default function MenuPage({
             href={directions}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex min-h-11 items-center text-base text-white/85 underline underline-offset-4 hover:text-white"
+            className="mt-1 hidden min-h-11 items-center text-base text-white/85 underline underline-offset-4 hover:text-white sm:inline-flex"
           >
             {SITE.address}
             <span className="sr-only"> (opens a new tab)</span>
@@ -440,8 +440,8 @@ export default function MenuPage({
                         <ProductImage product={product} />
                         <div className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4">
                           <span className="eyebrow mb-1">{menuGroup(product)}</span>
-                          <ItemName name={product.name} />
-                          <span className="mb-3 mt-2 break-words text-sm leading-relaxed text-muted-foreground sm:my-0">
+                          <ItemName name={product.name} zhClassName="text-[1.25rem] sm:text-[1.375rem]" />
+                          <span className="mb-3 mt-2 line-clamp-2 break-words text-sm leading-relaxed text-muted-foreground sm:my-0 sm:line-clamp-none">
                             {menuDescription(product.description, 160)}
                           </span>
                           <span className="mt-auto flex items-center justify-between gap-2 sm:pt-2">

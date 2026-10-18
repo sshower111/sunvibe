@@ -18,12 +18,14 @@ export function PageBand({
 }) {
   return (
     <section aria-labelledby={id} className={cn('signboard border-b-[6px] border-gold', className)}>
-      <div className="site-container flex flex-col gap-6 pb-[clamp(2rem,5vw,3.5rem)] pt-[calc(var(--header-height)+clamp(2rem,5vw,3.5rem))] sm:flex-row sm:items-end sm:justify-between">
+      <div className="site-container flex flex-col gap-6 pb-[clamp(1.5rem,5vw,3.5rem)] pt-[calc(var(--header-height)+clamp(1.5rem,5vw,3.5rem))] sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 max-w-3xl">
           <h1 id={id} className="heading-1">
             {title}
           </h1>
-          {children && <div className="mt-4 text-lg leading-relaxed text-white/90">{children}</div>}
+          {children && (
+            <div className="mt-3 text-base leading-relaxed text-white/90 sm:mt-4 sm:text-lg">{children}</div>
+          )}
         </div>
         {aside && <div className="shrink-0">{aside}</div>}
       </div>

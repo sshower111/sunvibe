@@ -69,52 +69,51 @@ export function AboutSection() {
   const [photoFailed, setPhotoFailed] = useState(false)
   return (
     <section id="about" aria-labelledby="about-heading" className="-scroll-mt-4 bg-background section-space">
-      <div className="site-container">
-        <div className="grid items-start gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:gap-16">
-          <div>
-            <h2 id="about-heading" className="heading-1">
-              A family bakery since 2002
-            </h2>
-            <div className="mt-6 max-w-[60ch] space-y-4 text-lg leading-relaxed text-ink">
-              <p>
-                After honing his craft in San Francisco, Johnny brought his passion for Chinese baked goods to Las
-                Vegas. Today, he leads the baking at Sunville, while May welcomes customers and decorates cakes.
-              </p>
-              <p className="text-ink-muted">Planning a celebration? Call us for quantities and pickup times.</p>
-            </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/menu" className={buttonVariants()}>
-                See the full menu
-              </Link>
-              <Link href="/contact" className={buttonVariants({ variant: 'outline' })}>
-                Plan your visit
-              </Link>
-            </div>
+      {/* Phones and tablets: story, favorites, then Johnny's photo. Desktop: photo beside the story, favorites below. */}
+      <div className="site-container grid items-start gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+        <div className="order-1">
+          <h2 id="about-heading" className="heading-1">
+            A family bakery since 2002
+          </h2>
+          <div className="mt-6 max-w-[60ch] space-y-4 text-lg leading-relaxed text-ink">
+            <p>
+              After honing his craft in San Francisco, Johnny brought his passion for Chinese baked goods to Las Vegas.
+              Today, he leads the baking at Sunville, while May welcomes customers and decorates cakes.
+            </p>
+            <p className="text-ink-muted">Planning a celebration? Call us for quantities and pickup times.</p>
           </div>
-          <figure>
-            {!photoFailed ? (
-              <span className="relative block aspect-[4/5] overflow-hidden rounded-lg bg-surface">
-                <Image
-                  src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg"
-                  alt="Johnny, Sunville Bakery’s founder, presenting a celebration cake"
-                  fill
-                  sizes="(min-width: 768px) 22rem, 100vw"
-                  loading="lazy"
-                  onError={() => setPhotoFailed(true)}
-                  className="object-cover object-[50%_70%]"
-                />
-              </span>
-            ) : (
-              <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-surface p-6 font-serif text-2xl text-brand">
-                Meet our founder
-              </div>
-            )}
-            <figcaption className="mt-3 text-sm text-ink-muted">
-              <span className="font-serif text-lg text-ink">Johnny</span>, founder and head baker
-            </figcaption>
-          </figure>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/menu" className={buttonVariants()}>
+              See the full menu
+            </Link>
+            <Link href="/contact" className={buttonVariants({ variant: 'outline' })}>
+              Plan your visit
+            </Link>
+          </div>
         </div>
-        <div className="mt-[clamp(3rem,6vw,5rem)]">
+        <figure className="order-3 md:max-w-md lg:order-2 lg:max-w-none">
+          {!photoFailed ? (
+            <span className="relative block aspect-[4/3] overflow-hidden rounded-lg bg-surface lg:aspect-[4/5]">
+              <Image
+                src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg"
+                alt="Johnny, Sunville Bakery’s founder, presenting a celebration cake"
+                fill
+                sizes="(min-width: 1024px) 22rem, (min-width: 768px) 28rem, 100vw"
+                loading="lazy"
+                onError={() => setPhotoFailed(true)}
+                className="object-cover object-[50%_70%]"
+              />
+            </span>
+          ) : (
+            <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-surface p-6 font-serif text-2xl text-brand">
+              Meet our founder
+            </div>
+          )}
+          <figcaption className="mt-3 text-sm text-ink-muted">
+            <span className="font-serif text-lg text-ink">Johnny</span>, founder and head baker
+          </figcaption>
+        </figure>
+        <div className="order-2 lg:order-3 lg:col-span-2 lg:mt-[clamp(1rem,4vw,3rem)]">
           <h3 className="heading-2">Customer favorites</h3>
           <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-x-6">
             {favorites.map(item => (

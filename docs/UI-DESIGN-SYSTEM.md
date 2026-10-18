@@ -65,6 +65,8 @@ Cards and popovers are white. Dark mode is not used.
 - Fixed bottom bars add `env(safe-area-inset-bottom)` padding.
 - On dark backgrounds set `[--ring:#fff]` so the focus ring stays visible.
 - Check new pages at 320, 390 and 768px: no sideways scrolling.
+- Home hero and story: side by side only from 1024px; phones and tablets stack them (photo, then sign; story, favorites, then Johnny's photo).
+- Contact: the form comes first on phones; visit details move beside it from 1024px.
 
 ## Header
 
