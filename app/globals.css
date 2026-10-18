@@ -6,45 +6,48 @@
 
 /*
  * Design tokens — Sunville Bakery.
- * Warm bakery palette: brown primary, gold accent, off-white background.
+ * Hong Kong bakery counter: pastry-box red, egg-wash gold, pink box paper, char-siu brown ink.
  * Change a value here and it updates everywhere. See docs/UI-DESIGN-SYSTEM.md.
  */
 :root {
-  /* Raw palette — the original warm bakery colors */
-  --ink: oklch(0.22 0.015 280);
-  --ink-muted: oklch(0.44 0.015 280);
-  --paper: oklch(0.98 0.005 90);
-  --surface: oklch(0.95 0.008 90);
-  --line: oklch(0.91 0.008 90);
-  --input-line: oklch(0.62 0.012 280);
-  --brand: oklch(0.38 0.1 35);
-  --accent-warm: oklch(0.8 0.12 90);
-  --accent-ink: oklch(0.15 0.015 280);
-  --accent-tint: oklch(0.8 0.12 90);
+  /* Raw palette */
+  --ink: #2b1a14; /* char-siu brown: body text, footer */
+  --ink-muted: #6b5650;
+  --paper: #ffffff;
+  --surface: #fbede8; /* pink box paper: soft sections */
+  --surface-soft: #fdf6f3;
+  --line: #f0dcd5;
+  --input-line: #9c8a84;
+  --brand: #a3201c; /* pastry-box red */
+  --brand-deep: #7a1612;
+  --gold: #e9a93b; /* egg-wash gold (pineapple bun crust); fills only, never text on white */
+  --accent-warm: var(--gold);
+  --accent-ink: #4a2f06;
+  --accent-tint: #fce7b8;
   --success: #1e6b3a;
   --success-tint: #eaf5ee;
   --warning: #8a5300;
   --warning-tint: #fdf3e1;
-  --danger: oklch(0.55 0.22 25);
+  --danger: #c0262d;
   --danger-tint: #fdeceb;
 
   /* Roles used by the shadcn components */
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(1 0 0);
+  --card: #ffffff;
   --card-foreground: var(--ink);
-  --popover: oklch(1 0 0);
+  --popover: #ffffff;
   --popover-foreground: var(--ink);
   --primary: var(--brand);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.96 0.008 90);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-soft);
   --secondary-foreground: var(--ink);
   --muted: var(--surface);
   --muted-foreground: var(--ink-muted);
   --accent: var(--accent-tint);
   --accent-foreground: var(--accent-ink);
   --destructive: var(--danger);
-  --destructive-foreground: oklch(1 0 0);
+  --destructive-foreground: #ffffff;
   --border: var(--line);
   --input: var(--input-line);
   --ring: var(--primary);
@@ -66,9 +69,8 @@
   --heading-1: clamp(2.125rem, 1.7rem + 2vw, 3.25rem);
   --heading-2: clamp(1.625rem, 1.35rem + 1vw, 2.25rem);
   --heading-3: 1.25rem;
-  --tracking-display: -0.03em;
-  --tracking-heading: -0.02em;
-  --tracking-eyebrow: 0.08em;
+  --tracking-display: -0.02em;
+  --tracking-heading: -0.01em;
 }
 @media (min-width: 768px) {
   :root {
@@ -77,8 +79,9 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), Arial, sans-serif;
-  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-body), Arial, sans-serif;
+  --font-serif: var(--font-display), Georgia, serif;
+  --font-han: var(--font-han-serif), 'Noto Serif TC', 'Songti TC', serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -100,6 +103,9 @@
   --color-ring: var(--ring);
   --color-ink: var(--ink);
   --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-gold: var(--gold);
+  --color-surface-soft: var(--surface-soft);
   --color-ink-muted: var(--ink-muted);
   --color-surface: var(--surface);
   --color-accent-warm: var(--accent-warm);
@@ -115,10 +121,10 @@
 /* Shape scale: rounded-sm / rounded-md / rounded-lg, shadow-pop, ease-standard. */
 @theme static {
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 16px;
-  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.07), 0 1px 2px rgb(0 0 0 / 0.04);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
+  --shadow-pop: 0 10px 28px rgb(122 22 18 / 0.1), 0 1px 2px rgb(43 26 20 / 0.06);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -128,7 +134,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), Arial, sans-serif;
+    font-family: var(--font-body), Arial, sans-serif;
     font-size: 1rem;
     line-height: 1.6;
     font-feature-settings:
@@ -145,7 +151,7 @@
   h5,
   h6 {
     letter-spacing: var(--tracking-heading);
-    font-weight: 600;
+    font-weight: 400;
   }
   /* Even line breaks: headings balance, paragraphs avoid a lonely last word. */
   h4,
@@ -257,27 +263,27 @@ html {
 }
 @utility heading-1 {
   color: var(--heading-color, var(--primary));
-  font-family: var(--font-playfair), Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
   font-size: var(--heading-1);
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.15;
   letter-spacing: var(--tracking-heading);
   text-wrap: balance;
 }
 @utility heading-2 {
   color: var(--heading-color, var(--primary));
-  font-family: var(--font-playfair), Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
   font-size: var(--heading-2);
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.2;
   letter-spacing: var(--tracking-heading);
   text-wrap: balance;
 }
 @utility heading-3 {
   color: var(--heading-color, var(--primary));
-  font-family: var(--font-playfair), Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
   font-size: var(--heading-3);
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.35;
   letter-spacing: var(--tracking-heading);
 }
@@ -286,7 +292,7 @@ html {
 }
 @utility heading-label {
   color: inherit;
-  font-family: var(--font-inter), Arial, sans-serif;
+  font-family: var(--font-body), Arial, sans-serif;
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
@@ -359,7 +365,6 @@ html {
   background: var(--card);
   padding: 0.75rem;
   text-align: left;
-  box-shadow: 0 1px 3px #0000000a;
   transition:
     box-shadow var(--duration-base) var(--ease-standard),
     transform var(--duration-base) var(--ease-standard),
@@ -367,6 +372,7 @@ html {
   /* Lift only on devices with a real hover (not on tap). */
   @media (hover: hover) {
     &:hover {
+      border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
       box-shadow: var(--shadow-pop);
       transform: translateY(-2px);
     }
@@ -420,7 +426,7 @@ html {
   transform: translateY(-150%);
   padding: 12px 20px;
   background: #fff;
-  color: #302018;
+  color: var(--ink);
   border: 2px solid currentColor;
   border-radius: var(--radius-md);
 }
@@ -437,20 +443,18 @@ input[type='search']::-webkit-search-cancel-button {
 /* Design-system utilities. */
 @utility text-display {
   color: var(--heading-color, var(--primary));
-  font-family: var(--font-playfair), Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
   font-size: var(--text-display);
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.05;
   letter-spacing: var(--tracking-display);
   text-wrap: balance;
 }
 @utility eyebrow {
   color: var(--ink-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 500;
   line-height: 1.4;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
 }
 @utility text-pretty-body {
   max-width: 65ch;
@@ -499,4 +503,27 @@ input[type='search']::-webkit-search-cancel-button {
 }
 @utility card-pad-lg {
   padding: clamp(1.25rem, 0.5rem + 3vw, 2.5rem);
+}
+
+/* Chinese item names, set large like a bakery shelf label. */
+@utility han {
+  font-family: var(--font-han);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+@utility han-label {
+  color: var(--brand);
+  font-family: var(--font-han);
+  font-size: 1.375rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.25;
+}
+/* Red signboard used by the home hero and page headers. White text, gold rule. */
+@utility signboard {
+  --heading-color: #ffffff;
+  --ring: #ffffff;
+  background: var(--brand);
+  color: #ffffff;
 }

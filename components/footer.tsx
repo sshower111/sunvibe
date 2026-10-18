@@ -8,10 +8,13 @@ const linkStyle =
 
 export function Footer() {
   return (
-    <footer aria-label="Sunville Bakery information" className="bg-primary text-white [--ring:#fff]">
+    <footer
+      aria-label="Sunville Bakery information"
+      className="border-t-[6px] border-gold bg-ink text-white [--ring:#fff]"
+    >
       <div className="site-container section-space">
         <div className="sm:hidden">
-          <p className="font-serif text-xl font-semibold">Sunville Bakery</p>
+          <p className="font-serif text-2xl">Sunville Bakery</p>
           <div className="mt-2 flex flex-wrap gap-x-6">
             <a href={SITE.phoneHref} className={linkStyle}>
               Call the bakery
@@ -79,7 +82,7 @@ export function Footer() {
             </p>
             <a
               href={SITE.phoneHref}
-              className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-primary hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+              className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-gold px-4 text-sm font-semibold text-ink hover:bg-[#f2bd5e] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
             >
               <Phone aria-hidden="true" className="h-4 w-4" />
               Call to order
@@ -87,7 +90,7 @@ export function Footer() {
           </div>
 
           <section aria-labelledby="footer-visit" className="min-w-0">
-            <h2 id="footer-visit" className="heading-label mb-3">
+            <h2 id="footer-visit" className="heading-label mb-3 text-gold">
               Visit & contact
             </h2>
             <address className="text-sm not-italic leading-relaxed text-white/90">
@@ -112,7 +115,7 @@ export function Footer() {
           </section>
 
           <section aria-labelledby="footer-hours">
-            <h2 id="footer-hours" className="heading-label mb-3">
+            <h2 id="footer-hours" className="heading-label mb-3 text-gold">
               Bakery hours (PT)
             </h2>
             <dl className="space-y-3 text-sm leading-relaxed">
@@ -128,7 +131,7 @@ export function Footer() {
           </section>
 
           <nav aria-label="Footer navigation">
-            <h2 className="heading-label mb-1">Explore</h2>
+            <h2 className="heading-label mb-1 text-gold">Explore</h2>
             <ul>
               <li>
                 <Link href="/menu" className={linkStyle}>

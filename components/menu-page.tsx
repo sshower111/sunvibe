@@ -1,5 +1,7 @@
 'use client'
 
+import { ItemName } from '@/components/item-name'
+import { PageBand } from '@/components/page-band'
 import { SITE } from '@/lib/site-info'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
@@ -179,64 +181,71 @@ export default function MenuPage({
     <div className="min-h-screen bg-background">
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        <div className="site-container page-space">
-          <header className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <div>
-              <p className="eyebrow mb-2">Sunville Bakery · Las Vegas</p>
-              <h1 className="heading-1">Fresh buns & pastries in Las Vegas</h1>
-              <button
-                type="button"
-                aria-expanded={hoursOpen}
-                aria-controls="menu-hours"
-                onClick={() => setHoursOpen(!hoursOpen)}
-                className="mt-2 flex min-h-12 items-center gap-2 rounded-sm text-sm font-medium"
-              >
-                <span
-                  aria-hidden="true"
-                  className={'h-2 w-2 shrink-0 rounded-full ' + (status?.open ? 'bg-success' : 'bg-ink-muted')}
-                />
-                <span className="text-left">
-                  {status?.text || 'View store hours'}{' '}
-                  <span className="whitespace-nowrap text-muted-foreground">(Las Vegas)</span>
-                </span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')}
-                />
-              </button>
-              <div id="menu-hours" hidden={!hoursOpen} className="mt-1 rounded-lg border bg-card p-4 text-sm leading-7">
-                <p>
-                  {SITE.hours.dailyDays}: {SITE.hours.daily}
-                </p>
-                <p>Wednesday: {SITE.hours.wednesday}</p>
-                <p className="text-muted-foreground">All hours are Pacific Time.</p>
-              </div>
-            </div>
-            <div className="hidden flex-wrap gap-2 sm:flex sm:pt-2">
-              <Button asChild className="min-h-12">
+        <PageBand
+          id="menu-heading"
+          title="Fresh buns & pastries in Las Vegas"
+          aside={
+            <div className="hidden flex-wrap gap-2 sm:flex">
+              <Button asChild className="min-h-12 bg-white text-brand hover:bg-white/90 active:bg-white/80">
                 <a href={phone}>
                   <Phone aria-hidden="true" />
                   Call to order
                 </a>
               </Button>
-              <Button asChild variant="outline" className="min-h-12">
+              <Button
+                asChild
+                variant="outline"
+                className="min-h-12 border-white/70 bg-transparent text-white hover:border-white hover:bg-white/10"
+              >
                 <a href={directions} target="_blank" rel="noopener noreferrer">
                   <MapPin aria-hidden="true" />
                   Directions<span className="sr-only"> (opens a new tab)</span>
                 </a>
               </Button>
             </div>
-          </header>
+          }
+        >
+          <button
+            type="button"
+            aria-expanded={hoursOpen}
+            aria-controls="menu-hours"
+            onClick={() => setHoursOpen(!hoursOpen)}
+            className="flex min-h-12 items-center gap-2 rounded-sm text-base font-medium text-white"
+          >
+            <span
+              aria-hidden="true"
+              className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-[#6fd08c]' : 'bg-white/50')}
+            />
+            <span className="text-left">
+              {status?.text || 'View store hours'} <span className="whitespace-nowrap text-white/75">(Las Vegas)</span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')}
+            />
+          </button>
+          <div
+            id="menu-hours"
+            hidden={!hoursOpen}
+            className="mt-1 max-w-sm rounded-lg bg-card p-4 text-sm leading-7 text-ink"
+          >
+            <p>
+              {SITE.hours.dailyDays}: {SITE.hours.daily}
+            </p>
+            <p>Wednesday: {SITE.hours.wednesday}</p>
+            <p className="text-muted-foreground">All hours are Pacific Time.</p>
+          </div>
           <a
             href={directions}
             target="_blank"
             rel="noopener noreferrer"
-            className="mb-5 inline-block text-sm text-muted-foreground underline underline-offset-4"
+            className="mt-1 inline-flex min-h-11 items-center text-base text-white/85 underline underline-offset-4 hover:text-white"
           >
             {SITE.address}
             <span className="sr-only"> (opens a new tab)</span>
           </a>
-
+        </PageBand>
+        <div className="site-container pb-[var(--section-space)] pt-4">
           <section
             aria-label="Find menu items"
             className="sticky top-16 z-30 -mx-4 mb-6 border-b bg-background px-4 py-3 md:top-24 sm:mx-0 sm:px-0"
@@ -431,7 +440,7 @@ export default function MenuPage({
                         <ProductImage product={product} />
                         <div className="menu-card-copy flex min-w-0 flex-1 flex-col sm:p-4">
                           <span className="eyebrow mb-1">{menuGroup(product)}</span>
-                          <h2 className="heading-3">{product.name}</h2>
+                          <ItemName name={product.name} />
                           <span className="mb-3 mt-2 break-words text-sm leading-relaxed text-muted-foreground sm:my-0">
                             {menuDescription(product.description, 160)}
                           </span>
@@ -441,7 +450,9 @@ export default function MenuPage({
                         </div>
                       </article>
                       <DialogContent className="max-h-[85dvh] overflow-y-auto bg-card">
-                        <DialogTitle className="heading-3 pr-12">{product.name}</DialogTitle>
+                        <DialogTitle className="pr-12">
+                          <ItemName as="span" name={product.name} className="block" zhClassName="text-2xl" />
+                        </DialogTitle>
                         <ProductImage product={product} detail />
                         <p className="text-sm text-muted-foreground">{menuGroup(product)}</p>
                         <LeadTimeBadge product={product} />

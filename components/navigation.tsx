@@ -99,7 +99,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                 className="h-9 w-full object-contain object-left md:h-12"
               />
             </Link>
-            <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex lg:gap-3">
+            <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 md:flex lg:gap-2">
               {/* The logo already links home; drop "Home" on desktop when Pre-order needs the room. */}
               {links
                 .filter(link => !(preorderOpen && link.href === '/'))
@@ -109,7 +109,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                     href={link.href}
                     aria-current={pathname === link.href ? 'page' : undefined}
                     className={
-                      'inline-flex min-h-12 min-w-11 items-center justify-center rounded-sm px-2 text-sm font-medium decoration-2 underline-offset-[10px] transition-colors hover:text-primary ' +
+                      'inline-flex min-h-12 min-w-11 items-center justify-center rounded-sm px-2 text-[0.9375rem] font-medium decoration-[3px] underline-offset-[10px] transition-colors hover:text-brand ' +
                       (pathname === link.href ? 'text-primary underline' : 'text-foreground')
                     }
                   >
@@ -117,6 +117,14 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                   </Link>
                 ))}
             </nav>
+            {/* Calling is how most orders start, so it stays in view on wide screens. */}
+            <a
+              href={SITE.phoneHref}
+              className="action-button hidden shrink-0 items-center gap-2 bg-brand text-white hover:bg-brand-deep active:bg-brand-deep lg:inline-flex"
+            >
+              <Phone aria-hidden="true" className="size-4" />
+              {SITE.phone}
+            </a>
             <button
               ref={toggle}
               type="button"
@@ -124,7 +132,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
               aria-controls="mobile-navigation"
               aria-label={open ? 'Close navigation' : 'Open navigation'}
               onClick={() => setOpen(!open)}
-              className="-mr-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-primary transition-colors hover:bg-secondary active:bg-muted md:hidden"
+              className="-mr-2 ml-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-primary transition-colors hover:bg-secondary active:bg-muted md:hidden"
             >
               {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
             </button>
@@ -143,7 +151,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                     onClick={() => setOpen(false)}
                     aria-current={pathname === link.href ? 'page' : undefined}
                     className={
-                      'flex min-h-14 items-center justify-between gap-3 rounded-sm px-1 text-lg font-medium transition-colors ' +
+                      'flex min-h-14 items-center justify-between gap-3 rounded-sm px-1 font-serif text-xl transition-colors ' +
                       (pathname === link.href ? 'text-primary' : 'text-foreground active:bg-secondary')
                     }
                   >
@@ -162,7 +170,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             <div className="mt-4 grid grid-cols-2 gap-2">
               <a
                 href={SITE.phoneHref}
-                className="action-button inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80"
+                className="action-button inline-flex items-center justify-center gap-2 bg-brand text-white hover:bg-brand-deep active:bg-brand-deep"
               >
                 <Phone aria-hidden="true" className="size-4" />
                 Call
@@ -178,7 +186,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
               </a>
             </div>
             <p className="mt-3 text-center text-sm text-muted-foreground">
-              {SITE.hours.dailyDays} {SITE.hours.daily} · Wed {SITE.hours.wednesday}
+              {SITE.hours.dailyDays} {SITE.hours.daily}, Wednesday {SITE.hours.wednesday}
             </p>
           </nav>
         </div>

@@ -2,7 +2,7 @@
 
 All tokens live in `app/globals.css` (Tailwind 4, CSS-first). Change a token there and every page follows. Use the tokens and utilities below instead of raw colors, radii or font sizes.
 
-Look: the original warm bakery palette (brown primary, gold accent, off-white background) with a cleaner, more consistent layout.
+Look (2026-10-18 redesign): **Hong Kong bakery counter**. Pastry-box red, egg-wash gold (pineapple-bun crust), pink box paper, char-siu brown ink. One standout element: Chinese item names set large in red, like a shelf label. Everything else stays plain.
 
 The refactor is done in steps, each reviewed before the next:
 
@@ -13,24 +13,24 @@ The refactor is done in steps, each reviewed before the next:
 
 ## Color
 
-The original colors are kept. They now live under named tokens so later steps can stop using raw colors like `bg-white` or `text-red-600`.
+| Token                                      | Hex       | Use                                                                 |
+| ------------------------------------------ | --------- | ------------------------------------------------------------------- |
+| `brand` (`primary`)                        | `#a3201c` | Pastry-box red: buttons, headings, links, focus ring, page bands    |
+| `brand-deep`                               | `#7a1612` | Hover/pressed red                                                   |
+| `gold` (`accent-warm`)                     | `#e9a93b` | Egg-wash gold: ribbon edge under red bands and footer, footer CTA. Fills only, never text on white |
+| `surface`                                  | `#fbede8` | Pink box paper: soft sections (`bg-surface`, `bg-muted`)            |
+| `surface-soft` (`secondary`)               | `#fdf6f3` | Lightest tint: hovers, placeholders                                 |
+| `ink`                                      | `#2b1a14` | Char-siu brown: body text, footer background                        |
+| `ink-muted`                                | `#6b5650` | Secondary text                                                      |
+| `paper`                                    | `#ffffff` | Page background                                                     |
+| `line` / `input-line`                      |           | Borders / form field borders                                        |
+| `success`, `warning`, `danger` (+ `-tint`) |           | Status messages and errors                                          |
 
-| Token                                      | Use                                                            |
-| ------------------------------------------ | -------------------------------------------------------------- |
-| `ink`                                      | Body text (`text-foreground`)                                  |
-| `ink-muted`                                | Secondary text (`text-muted-foreground`)                       |
-| `paper`                                    | Off-white page background                                      |
-| `brand`                                    | Bakery brown: buttons, headings, links, focus ring (`primary`) |
-| `surface`                                  | Soft section background (`bg-surface`, `bg-muted`)             |
-| `line` / `input-line`                      | Borders / form field borders                                   |
-| `accent-warm` (`accent`)                   | Gold highlights                                                |
-| `success`, `warning`, `danger` (+ `-tint`) | Status messages and errors                                     |
-
-Cards and popovers stay pure white. Dark mode is not used.
+Cards and popovers are white. Dark mode is not used.
 
 ## Shape, depth, motion
 
-- Radius: `rounded-sm` 6px, `rounded-md` 10px (buttons and fields, `--control-radius`), `rounded-lg` 16px (cards, images). `rounded-xl` is the same as `rounded-lg`.
+- Radius: `rounded-sm` 6px, `rounded-md` 8px (buttons and fields, `--control-radius`), `rounded-lg` 12px (cards, images). `rounded-xl` is the same as `rounded-lg`.
 - Shadow: flat by default; `shadow-pop` only for menus, popovers and hovered cards.
 - Motion: `--duration-fast` 150ms, `--duration-base` 200ms, `ease-standard`. Reduced-motion users get no animation.
 
@@ -39,10 +39,13 @@ Cards and popovers stay pure white. Dark mode is not used.
 - `site-container`: 80rem max width, fluid gutter `--gutter` (16–32px).
 - `section-space`: fluid 48–96px vertical padding. `page-space`: clears the fixed header (`--header-height`, 64px / 96px on desktop).
 - Touch targets: `--tap` 44px minimum on phones and tablets.
-- Type: Playfair Display headings, Inter body at 16px/1.6.
+- Type: Young Serif headings (one weight, 400; never bold), Figtree body at 16px/1.6, Noto Serif HK Black for Chinese (`han`, `han-label`).
   - `text-display` 40–72px (hero), `heading-1` 34–52px, `heading-2` 26–36px, `heading-3` 20px. Headings balance their line breaks.
-  - `eyebrow`: small uppercase label above a heading. `text-pretty-body`: muted paragraph, 65 characters wide, no orphans.
+  - `eyebrow`: small muted sentence-case label (no capitals or letter spacing). `text-pretty-body`: muted paragraph, 65 characters wide, no orphans.
   - `heading-label`: compact sans-serif label for footer and contact subsections. `heading-on-dark` for headings over photos.
+- `han-label`: red Chinese item name. Use `<ItemName name="Pineapple Bun 菠蘿包" />` (`components/item-name.tsx`), which splits the English and Chinese with `splitName` (`lib/bilingual.ts`).
+- `signboard`: red background, white text and headings. `<PageBand>` (`components/page-band.tsx`) is the red band with the gold edge at the top of menu, custom cakes, gallery and contact. It pads itself under the fixed header.
+- `<StoreStatus>` (`components/store-status.tsx`): live open/closed line in Las Vegas time; `onLight` for white backgrounds.
 - Other utilities: `surface`, `badge`, `price` (tabular numbers), `action-button`, `form-control`, `menu-card`.
 
 ## Interactive states
@@ -65,8 +68,8 @@ Cards and popovers stay pure white. Dark mode is not used.
 
 ## Header
 
-- `components/navigation.tsx`: white header, `shadow-pop` once the page has scrolled. Desktop: text links, current page brown with a 2px underline.
-- Phone menu: full-width list below the header (56px rows, chevrons, brown bar on the current page), then Call and Directions buttons and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening past 768px closes it.
+- `components/navigation.tsx`: white header, `shadow-pop` once the page has scrolled. Desktop: text links, current page red with a 3px underline; a red phone button on screens 1024px and wider.
+- Phone menu: full-width list below the header (56px rows in Young Serif, chevrons, red bar on the current page), then Call and Directions buttons and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening past 768px closes it.
 
 ## Rules
 

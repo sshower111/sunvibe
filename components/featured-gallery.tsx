@@ -54,7 +54,7 @@ export function FeaturedGallery({ images: galleryImages }: { images: string[] })
   }, [galleryImages])
   const photos = shown ?? galleryImages.slice(0, 6)
   return (
-    <section aria-labelledby="featured-heading" className="border-t bg-white section-space">
+    <section aria-labelledby="featured-heading" className="bg-surface section-space">
       <div className="site-container">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -64,7 +64,7 @@ export function FeaturedGallery({ images: galleryImages }: { images: string[] })
           </div>
           <Link
             href="/gallery"
-            className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4"
+            className="inline-flex min-h-12 items-center font-medium text-brand underline underline-offset-4"
           >
             View all photos
           </Link>
@@ -87,7 +87,7 @@ export function FeaturedGallery({ images: galleryImages }: { images: string[] })
                   <FeaturedPhoto src={src} />
                 </button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90dvh] overflow-y-auto bg-white sm:max-w-3xl">
+              <DialogContent className="max-h-[90dvh] overflow-y-auto bg-card sm:max-w-3xl">
                 <DialogTitle className="heading-3 pr-8">A taste of Sunville</DialogTitle>
                 <DialogDescription>Photo {index + 1} from our bakery gallery.</DialogDescription>
                 <FeaturedPhoto src={src} detail />

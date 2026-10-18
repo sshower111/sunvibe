@@ -3,11 +3,12 @@
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 import { Navigation } from '@/components/navigation'
+import { PageBand } from '@/components/page-band'
 import { Footer } from '@/components/footer'
 import { galleryAlt, canOptimizeGalleryImage } from '@/lib/gallery-images'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { ArrowRight, ChevronLeft, ChevronRight, ImageIcon, ZoomIn } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ImageIcon, ZoomIn } from 'lucide-react'
 
 function GalleryPhoto({ src, index, expanded = false }: { src: string; index: number; expanded?: boolean }) {
   const [failed, setFailed] = useState(false)
@@ -66,18 +67,22 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        <div className="site-container page-space">
-          <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="mb-1 text-sm font-medium text-primary">A look inside Sunville Bakery</p>
-              <h1 className="heading-1">Our Las Vegas bakery gallery</h1>
-            </div>
-            <Button asChild variant="outline" className="min-h-12">
-              <a href="/menu">
-                Explore the menu <ArrowRight aria-hidden="true" />
-              </a>
+        <PageBand
+          id="gallery-heading"
+          title="Our Las Vegas bakery gallery"
+          aside={
+            <Button
+              asChild
+              variant="outline"
+              className="min-h-12 w-full border-white/70 bg-transparent text-white hover:border-white hover:bg-white/10 sm:w-auto"
+            >
+              <a href="/menu">Explore the menu</a>
             </Button>
-          </header>
+          }
+        >
+          <p>Buns, mooncakes and celebration cakes from our kitchen on Spring Mountain Road.</p>
+        </PageBand>
+        <div className="site-container section-space">
           {count ? (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
               {galleryImages.map((src, index) => (

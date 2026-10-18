@@ -31,35 +31,35 @@ const favorites = [
   },
   {
     name: 'Chiffon cakes',
-    note: 'Custom cakes',
+    note: '戚風蛋糕',
     href: '/custom-cakes',
     image: 'https://s3-media0.fl.yelpcdn.com/bphoto/UaEwo9xWpemyC6zVVuhY0g/o.jpg',
   },
 ]
 
+// Photo, then the Chinese name large in red (like the label on the shelf), then the English name.
 function FavoriteCard({ item }: { item: (typeof favorites)[number] }) {
   const [failed, setFailed] = useState(false)
   return (
-    <Link
-      href={item.href}
-      className="group block overflow-hidden rounded-xl border bg-white transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      <span className="relative block aspect-[4/3] bg-secondary">
+    <Link href={item.href} className="group block rounded-lg">
+      <span className="relative block aspect-square overflow-hidden rounded-lg bg-surface">
         {!failed && (
           <Image
             src={item.image}
             alt=""
             fill
-            sizes="(min-width: 1024px) 280px, (min-width: 768px) 25vw, 50vw"
+            sizes="(min-width: 1024px) 220px, (min-width: 768px) 22vw, 50vw"
             unoptimized={!canOptimizeGalleryImage(item.image)}
             onError={() => setFailed(true)}
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-300 ease-[var(--ease-standard)] group-hover:scale-[1.04]"
           />
         )}
       </span>
-      <span className="block p-3">
-        <span className="block font-semibold text-primary">{item.name}</span>
-        <span className="mt-0.5 block text-xs text-muted-foreground">{item.note}</span>
+      <span lang="zh-Hant" className="han-label mt-3 block text-[clamp(1.375rem,1.1rem+1vw,1.75rem)]">
+        {item.note}
+      </span>
+      <span className="mt-0.5 block text-sm font-medium text-ink group-hover:underline group-hover:underline-offset-4">
+        {item.name}
       </span>
     </Link>
   )
@@ -69,58 +69,59 @@ export function AboutSection() {
   const [photoFailed, setPhotoFailed] = useState(false)
   return (
     <section id="about" aria-labelledby="about-heading" className="-scroll-mt-4 bg-background section-space">
-      <div className="site-container grid items-start gap-8 md:grid-cols-[1.5fr_1fr] md:gap-12">
-        <div>
-          <p className="mb-2 text-sm font-semibold text-primary">Our story</p>
-          <h2 id="about-heading" className="heading-2 mb-5">
-            A family tradition since 2002
-          </h2>
-          <div className="max-w-2xl space-y-4 text-base leading-relaxed text-foreground">
-            <p>
-              After honing his craft in San Francisco, Johnny brought his passion for Chinese baked goods to Las Vegas.
-              Today, he leads the baking at Sunville, while May welcomes customers and decorates cakes.
-            </p>
-            <p>Planning a celebration? Call us for quantities and pickup times.</p>
+      <div className="site-container">
+        <div className="grid items-start gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:gap-16">
+          <div>
+            <h2 id="about-heading" className="heading-1">
+              A family bakery since 2002
+            </h2>
+            <div className="mt-6 max-w-[60ch] space-y-4 text-lg leading-relaxed text-ink">
+              <p>
+                After honing his craft in San Francisco, Johnny brought his passion for Chinese baked goods to Las
+                Vegas. Today, he leads the baking at Sunville, while May welcomes customers and decorates cakes.
+              </p>
+              <p className="text-ink-muted">Planning a celebration? Call us for quantities and pickup times.</p>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/menu" className={buttonVariants()}>
+                See the full menu
+              </Link>
+              <Link href="/contact" className={buttonVariants({ variant: 'outline' })}>
+                Plan your visit
+              </Link>
+            </div>
           </div>
-          <h3 className="heading-label mt-8 mb-3">Customer favorites</h3>
-          <div className="grid max-w-2xl grid-cols-2 gap-3">
+          <figure>
+            {!photoFailed ? (
+              <span className="relative block aspect-[4/5] overflow-hidden rounded-lg bg-surface">
+                <Image
+                  src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg"
+                  alt="Johnny, Sunville Bakery’s founder, presenting a celebration cake"
+                  fill
+                  sizes="(min-width: 768px) 22rem, 100vw"
+                  loading="lazy"
+                  onError={() => setPhotoFailed(true)}
+                  className="object-cover object-[50%_70%]"
+                />
+              </span>
+            ) : (
+              <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-surface p-6 font-serif text-2xl text-brand">
+                Meet our founder
+              </div>
+            )}
+            <figcaption className="mt-3 text-sm text-ink-muted">
+              <span className="font-serif text-lg text-ink">Johnny</span>, founder and head baker
+            </figcaption>
+          </figure>
+        </div>
+        <div className="mt-[clamp(3rem,6vw,5rem)]">
+          <h3 className="heading-2">Customer favorites</h3>
+          <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-x-6">
             {favorites.map(item => (
               <FavoriteCard key={item.name} item={item} />
             ))}
           </div>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/menu" className={buttonVariants()}>
-              See the full menu
-            </Link>
-            <Link href="/contact" className={buttonVariants({ variant: 'outline' })}>
-              Plan your visit
-            </Link>
-          </div>
         </div>
-        <figure className="overflow-hidden rounded-xl border bg-white">
-          {/* Cropped to 2:3, framed to keep the baker and the cake in view. */}
-          {!photoFailed ? (
-            <span className="relative block aspect-[2/3]">
-              <Image
-                src="https://s3-media0.fl.yelpcdn.com/bphoto/qGD2qXPzVo39_p2JpCohZQ/o.jpg"
-                alt="Johnny, Sunville Bakery’s founder, presenting a celebration cake"
-                fill
-                sizes="(min-width: 768px) 40vw, 100vw"
-                loading="lazy"
-                onError={() => setPhotoFailed(true)}
-                className="object-cover object-[50%_70%]"
-              />
-            </span>
-          ) : (
-            <div className="flex aspect-[4/3] items-center justify-center bg-secondary p-6 font-serif text-2xl text-primary">
-              Meet our founder
-            </div>
-          )}
-          <figcaption className="p-5">
-            <p className="font-serif text-xl font-semibold text-primary">Johnny</p>
-            <p className="mt-1 text-sm text-muted-foreground">Founder & head baker</p>
-          </figcaption>
-        </figure>
       </div>
     </section>
   )

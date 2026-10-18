@@ -9,7 +9,11 @@ import { Footer } from '@/components/footer'
 import { ContactCaptcha, type CaptchaHandle } from '@/components/contact-captcha'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { PageBand } from '@/components/page-band'
+import { StoreStatus } from '@/components/store-status'
+import { SITE } from '@/lib/site-info'
+import { Phone } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { FormAlert } from '@/components/ui/form-message'
 
@@ -126,14 +130,52 @@ export default function ContactPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
 
-      <main id="main-content" tabIndex={-1} className="flex-1 page-space">
-        <div className="site-container">
-          <div className="mx-auto max-w-2xl">
-            <h1 className="heading-1 mb-5 sm:mb-8">Contact us</h1>
+      <main id="main-content" tabIndex={-1} className="flex-1">
+        <PageBand id="contact-heading" title="Contact us">
+          <p>Questions about an order or a cake? Send us a message, or call while we’re open.</p>
+        </PageBand>
+        <div className="site-container section-space">
+          <div className="mx-auto grid max-w-5xl items-start gap-10 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-14">
+            <aside aria-labelledby="visit-heading" className="order-last space-y-6 lg:order-first">
+              <h2 id="visit-heading" className="heading-2">
+                Visit the bakery
+              </h2>
+              <div>
+                <StoreStatus onLight className="text-ink" />
+                <dl className="mt-3 space-y-2 text-sm leading-relaxed">
+                  <div>
+                    <dt className="text-ink-muted">{SITE.hours.dailyDays}</dt>
+                    <dd className="font-medium">{SITE.hours.daily}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-muted">Wednesday</dt>
+                    <dd className="font-medium">{SITE.hours.wednesday}</dd>
+                  </div>
+                </dl>
+              </div>
+              <address className="not-italic leading-relaxed">
+                {SITE.street}
+                <br />
+                {SITE.cityLine}
+                <br />
+                <a
+                  href={SITE.directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-11 font-medium text-brand underline underline-offset-4"
+                >
+                  Get directions<span className="sr-only"> (opens a new tab)</span>
+                </a>
+              </address>
+              <a href={SITE.phoneHref} className={buttonVariants({ variant: 'outline' })}>
+                <Phone aria-hidden="true" />
+                Call {SITE.phone}
+              </a>
+            </aside>
             <div className="min-w-0">
-              <Card className="gap-0 border-0 bg-transparent py-0 shadow-none sm:rounded-xl sm:border sm:border-border sm:bg-white sm:py-6 sm:shadow-sm">
+              <Card className="gap-0 border-0 bg-transparent py-0 shadow-none sm:rounded-xl sm:border sm:border-border sm:bg-card sm:py-6">
                 <CardContent className="p-0 sm:p-6">
-                  <h2 className="sr-only">Send us a message</h2>
+                  <h2 className="heading-2 mb-6">Send us a message</h2>
 
                   <form
                     method="post"
