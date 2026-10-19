@@ -23,6 +23,7 @@ All environment variables are listed with explanations in `.env.example`.
 
 ## Deploy
 
+Vercel deploys `main` automatically: `git push origin handoff-cleanup:main`.
 
 ## Where things are
 
@@ -32,3 +33,4 @@ All environment variables are listed with explanations in `.env.example`.
 - Admin sign-in and sessions: `lib/admin-auth.ts`
 - Tests: `tests/unit/*.test.cjs`, with `tests/helpers/load-ts.cjs` to load TypeScript modules and mock providers
 - Emails: `lib/email.ts` (Resend)
+- Admin guide: `docs/ADMIN_GUIDE.md` · Change history: `CHANGELOG.md` · Working rules: `CONTRIBUTING.md`

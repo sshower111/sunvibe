@@ -2,6 +2,7 @@
 
 All notable changes to the Sunville Bakery website will be documented in this file.
 
+Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
 ## 2026-10-19
 
@@ -21,6 +22,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 - **Email sender**: site emails now come from `orders@sunvillebakerylv.com` instead of Resend's shared `onboarding@resend.dev` test address, so they are less likely to land in spam. The domain is verified in Resend (DNS records in Vercel). `orders@` has no mailbox; replies go to the customer. (`lib/email.ts`)
 - **Chinese copy in form emails**: the contact, cake inquiry and pre-order emails to the bakery now have a Traditional Chinese version right under the English one. Labels, headings and the site's own choices (event type, cake size, flavor, filling, budget, pickup/delivery) are translated; what the customer typed (name, message, notes, address) and menu item names stay as written. Translations live in the new `lib/email-zh.ts`; a test checks every form option has one. (`app/api/contact/route.ts`, `app/api/custom-cakes/route.ts`, `app/api/pre-orders/route.ts`, `tests/unit/email-zh.test.cjs`)
 
+## 2026-10-19
+
+- **Repository**: project working rules moved to `CONTRIBUTING.md`; tool-specific files are no longer tracked.
+
 ## 2026-10-16
 
 - **Design system step 4d (header and phone menu)**: the header is flat white (card token) and gets a soft shadow only once the page scrolls under it. Desktop links have a little more room, turn brown on hover, and the current page has a thicker underline. The phone menu now slides in with large rows separated by lines, a chevron on each row and a brown bar next to the current page, plus **Call** and **Directions** buttons and the opening hours at the bottom. The page behind it is dimmed and does not scroll; tapping the dimmed area, pressing Escape or picking a link closes the menu. Component-level focus rings were removed so the global one is used. (`components/navigation.tsx`)
@@ -35,6 +40,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
   - Tests moved from `scripts/` to `tests/unit/*.test.cjs`, reformatted and fixed for the current code. They share a loader, `tests/helpers/load-ts.cjs`, and run with `pnpm test`. Removed four browser scripts that depended on the old admin login, local JSON data and a Windows-only Edge setup.
   - Removed dead code: the unused `constantTimeCompare` and the test-only `rankMenuSearch`. Helpers used in only one file are no longer exported. Rewrote outdated comments as plain documentation.
   - `.gitignore` now also covers OS and editor files, logs, test output and local audit files. Added `.env.example`, which lists every environment variable without values.
+  - Stopped tracking `audit-*.json` and `docs/SECURITY-AUDIT-2026-09-23.md`. They are kept on disk only.
 
 ## 2026-10-13
 
@@ -47,6 +53,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 ## 2026-10-12
 
 - **Contact & cake forms**: phone stops at 10 digits and formats as (702) 123-4567 while typing; email field shows a styled suggestion list of common domains (keith@ → keith@gmail.com, yahoo.com…; tap or arrow keys + Enter) via `components/email-input.tsx`. This replaced a short-lived inline grey completion. Shared helpers in `lib/form-helpers.ts`; server also rejects phones over 10 digits.
+- **Docs**: rewrote `README.md` and `docs/ADMIN_GUIDE.md` for the current site; removed Stripe/Blob notes from other docs; added `CONTRIBUTING.md` (working rules).
 - **Contact page**: now just a centered "Contact us" form. Removed "For orders, please call", the "Visit or call us" box (details are in the footer) and the unused "* Required" note. (`app/contact/page.tsx`)
 - **Cleanup phase 4**: Prettier formatting for all source (`pnpm format`); Occasions editor split into `components/admin-occasion-fields.tsx`; one seasonal banner component; maintenance mode handled in `middleware.ts` with a `/maintenance` page.
 - **Cleanup phase 3**: shared `lib/site-info.ts` (phone, address, hours, email), `lib/email.ts`, `lib/request-body.ts`, `lib/admin-api.ts`; admin menu API merged into `/api/admin/menu`; pre-order status updates no longer reload every order; TypeScript build checking turned back on.
@@ -70,6 +77,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-09-27
 
+- Security, caching and mobile admin overhaul, maintenance handoff. See `docs/HANDOFF-2026-09-27.md`.
 
 ## 2026-05-16 (update 2)
 
