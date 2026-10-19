@@ -3,6 +3,11 @@
 All notable changes to the Sunville Bakery website will be documented in this file.
 
 
+## 2026-10-19
+
+- **Home page photo strip**: "Customer favorites" and Johnny's photo are replaced by "From our bakery case", a slow, endless strip of every menu item that has a photo (Chinese name in red, English below; each links to the item on the menu). It pauses on hover, on keyboard focus and with a Pause button, and visitors who turn off motion get a strip they can swipe instead. New menu photos added in Admin appear in it automatically. If the menu cannot be read, it shows three fixed items. (`components/bakery-marquee.tsx`, `lib/marquee-items.ts`, `components/about-section.tsx`, `app/page.tsx`, `app/globals.css`)
+- **Home hero photo back as the background**: the bakery photo fills the hero again, with the words on a dark shade on the left (bottom on phones), instead of the red sign beside the photo. (`components/hero-section.tsx`)
+
 ## 2026-10-18
 
 - **Phone and tablet layout**: the homepage hero photo is shorter on phones so the buttons show without scrolling, and its two buttons sit side by side from 360px. Phones and tablets get the photo above the red sign, and the story section shows the favorites before Johnny's photo. The red page bands are shorter on phones, and the menu band hides the street address there (the bottom bar has Directions). Menu card descriptions on phones stop at two lines (the pop-up shows all of it). Fixed the menu pop-up photo overlapping the text under it on phones. (`components/hero-section.tsx`, `components/about-section.tsx`, `components/page-band.tsx`, `components/menu-page.tsx`, `app/contact/page.tsx`)

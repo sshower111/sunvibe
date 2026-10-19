@@ -4,15 +4,16 @@ import { AboutSection } from '@/components/about-section'
 import { FeaturedGallery } from '@/components/featured-gallery'
 import { Footer } from '@/components/footer'
 import { getPublicGallery } from '@/lib/public-gallery'
+import { getMarqueeItems } from '@/lib/marquee-items'
 
 export default async function Home() {
-  const { images } = await getPublicGallery()
+  const [{ images }, items] = await Promise.all([getPublicGallery(), getMarqueeItems()])
   return (
     <div className="min-h-screen">
       <Navigation sticky />
       <main id="main-content" tabIndex={-1}>
         <HeroSection />
-        <AboutSection />
+        <AboutSection items={items} />
         <FeaturedGallery images={images} />
       </main>
       <Footer />

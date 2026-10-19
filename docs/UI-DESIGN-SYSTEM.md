@@ -65,7 +65,8 @@ Cards and popovers are white. Dark mode is not used.
 - Fixed bottom bars add `env(safe-area-inset-bottom)` padding.
 - On dark backgrounds set `[--ring:#fff]` so the focus ring stays visible.
 - Check new pages at 320, 390 and 768px: no sideways scrolling.
-- Home hero and story: side by side only from 1024px; phones and tablets stack them (photo, then sign; story, favorites, then Johnny's photo).
+- Home hero: full-bleed bakery photo with a dark shade behind the words (left on 768px+, bottom on phones) and the gold ribbon edge.
+- Home photo strip (`components/bakery-marquee.tsx`): menu photos with a thin gold frame and red Chinese name, moving about 35px a second. Pauses on hover, focus and the Pause button; reduced-motion visitors get a scrollable strip. Items come from `lib/marquee-items.ts` (every menu item with a photo).
 - Contact: the form comes first on phones; visit details move beside it from 1024px.
 
 ## Header

@@ -527,3 +527,27 @@ input[type='search']::-webkit-search-cancel-button {
   background: var(--brand);
   color: #ffffff;
 }
+
+/* Home page photo strip (components/bakery-marquee.tsx). */
+@keyframes bakery-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.bakery-marquee-track {
+  animation: bakery-marquee var(--marquee-duration, 60s) linear infinite;
+}
+.bakery-marquee:hover .bakery-marquee-track,
+.bakery-marquee:focus-within .bakery-marquee-track,
+.bakery-marquee[data-paused] .bakery-marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bakery-marquee-track {
+    animation: none;
+  }
+  /* The copy only exists for the loop. */
+  .bakery-marquee-track > [aria-hidden='true'] {
+    display: none;
+  }
+}
