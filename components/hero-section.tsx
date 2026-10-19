@@ -1,8 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
-import { StoreStatus } from '@/components/store-status'
-import { SITE } from '@/lib/site-info'
 import { cn } from '@/lib/utils'
 
 // Edge-to-edge bakery photo. The shade sits behind the words only (bottom on phones, left on wider
@@ -47,23 +45,6 @@ export function HeroSection() {
             >
               Plan a custom cake
             </Link>
-          </div>
-          <div className="mt-6 sm:mt-8">
-            <StoreStatus />
-            <p className="mt-1 flex flex-wrap gap-x-5 text-sm text-white/85">
-              <a
-                href={SITE.directionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-h-11 underline-offset-4 hover:underline"
-              >
-                {SITE.street}
-                <span className="sr-only"> (opens a new tab)</span>
-              </a>
-              <a href={SITE.phoneHref} className="min-h-11 underline-offset-4 hover:underline">
-                {SITE.phone}
-              </a>
-            </p>
           </div>
         </div>
       </div>

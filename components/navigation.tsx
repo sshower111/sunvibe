@@ -9,7 +9,6 @@ import { SITE } from '@/lib/site-info'
 
 const baseLinks = [
   { href: '/', label: 'Home' },
-  { href: '/#about', label: 'About' },
   { href: '/menu', label: 'Menu' },
   { href: '/custom-cakes', label: 'Custom Cakes' },
   { href: '/gallery', label: 'Gallery' },
@@ -22,7 +21,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
   // "Pre-order" only appears while a festival campaign is active, so it stays reachable after the banner is dismissed.
   const { preorderOpen } = useSite()
   const links = preorderOpen
-    ? [...baseLinks.slice(0, 4), { href: '/pre-order', label: 'Pre-order' }, ...baseLinks.slice(4)]
+    ? [...baseLinks.slice(0, 3), { href: '/pre-order', label: 'Pre-order' }, ...baseLinks.slice(3)]
     : baseLinks
   const pathname = usePathname()
   const toggle = useRef<HTMLButtonElement>(null)

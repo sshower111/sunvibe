@@ -5,6 +5,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-10-19
 
+- **Simpler home page**: removed the open/closed line, address and phone from the hero, the "From our kitchen" heading and its buttons above the photo strip, and the "About" link from the header (the footer still links to the story). (`components/hero-section.tsx`, `components/about-section.tsx`, `components/navigation.tsx`)
 - **Home page photo strip**: "Customer favorites", Johnny's photo and the "A taste of Sunville" grid are replaced by "From our kitchen", a slow, endless strip of every photo in the gallery (each opens the gallery page). It stops while the mouse is over it or a photo has keyboard focus; visitors who turn off motion get a still strip they can swipe. Photos added or removed in Admin > Gallery show up in it automatically. (`components/bakery-marquee.tsx`, `components/about-section.tsx`, `app/page.tsx`, `app/globals.css`; removed `components/featured-gallery.tsx`)
 - **Home hero photo back as the background**: the bakery photo fills the hero again, with the words on a dark shade on the left (bottom on phones), instead of the red sign beside the photo. (`components/hero-section.tsx`)
 

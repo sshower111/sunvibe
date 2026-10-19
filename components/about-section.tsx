@@ -1,5 +1,3 @@
-import Link from 'next/link'
-import { buttonVariants } from '@/components/ui/button'
 import { BakeryMarquee } from '@/components/bakery-marquee'
 
 // "Our story" text, then the moving strip of gallery photos (components/bakery-marquee.tsx).
@@ -19,17 +17,6 @@ export function AboutSection({ images }: { images: string[] }) {
         </div>
       </div>
       <div className="mt-[clamp(2.5rem,6vw,4.5rem)]">
-        <div className="site-container mb-6 flex flex-wrap items-end justify-between gap-4">
-          <h3 className="heading-2">From our kitchen</h3>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/menu" className={buttonVariants()}>
-              See the full menu
-            </Link>
-            <Link href="/gallery" className={buttonVariants({ variant: 'outline' })}>
-              View all photos
-            </Link>
-          </div>
-        </div>
         <BakeryMarquee images={images} />
       </div>
     </section>
