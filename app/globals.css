@@ -538,8 +538,7 @@ input[type='search']::-webkit-search-cancel-button {
   animation: bakery-marquee var(--marquee-duration, 60s) linear infinite;
 }
 .bakery-marquee:hover .bakery-marquee-track,
-.bakery-marquee:focus-within .bakery-marquee-track,
-.bakery-marquee[data-paused] .bakery-marquee-track {
+.bakery-marquee:focus-within .bakery-marquee-track {
   animation-play-state: paused;
 }
 @media (prefers-reduced-motion: reduce) {

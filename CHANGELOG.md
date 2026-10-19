@@ -5,7 +5,7 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 ## 2026-10-19
 
-- **Home page photo strip**: "Customer favorites" and Johnny's photo are replaced by "From our bakery case", a slow, endless strip of every menu item that has a photo (Chinese name in red, English below; each links to the item on the menu). It pauses on hover, on keyboard focus and with a Pause button, and visitors who turn off motion get a strip they can swipe instead. New menu photos added in Admin appear in it automatically. If the menu cannot be read, it shows three fixed items. (`components/bakery-marquee.tsx`, `lib/marquee-items.ts`, `components/about-section.tsx`, `app/page.tsx`, `app/globals.css`)
+- **Home page photo strip**: "Customer favorites", Johnny's photo and the "A taste of Sunville" grid are replaced by "From our kitchen", a slow, endless strip of every photo in the gallery (each opens the gallery page). It stops while the mouse is over it or a photo has keyboard focus; visitors who turn off motion get a still strip they can swipe. Photos added or removed in Admin > Gallery show up in it automatically. (`components/bakery-marquee.tsx`, `components/about-section.tsx`, `app/page.tsx`, `app/globals.css`; removed `components/featured-gallery.tsx`)
 - **Home hero photo back as the background**: the bakery photo fills the hero again, with the words on a dark shade on the left (bottom on phones), instead of the red sign beside the photo. (`components/hero-section.tsx`)
 
 ## 2026-10-18
