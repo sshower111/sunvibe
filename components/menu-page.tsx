@@ -1,7 +1,6 @@
 'use client'
 
 import { ItemName } from '@/components/item-name'
-import { PageBand } from '@/components/page-band'
 import { SITE } from '@/lib/site-info'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
@@ -181,70 +180,45 @@ export default function MenuPage({
     <div className="min-h-screen bg-background">
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        <PageBand
-          id="menu-heading"
-          title="Fresh buns & pastries in Las Vegas"
-          aside={
-            <div className="hidden flex-wrap gap-2 sm:flex">
-              <Button asChild className="min-h-12 bg-white text-brand hover:bg-white/90 active:bg-white/80">
-                <a href={phone}>
-                  <Phone aria-hidden="true" />
-                  Call to order
-                </a>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="min-h-12 border-white/70 bg-transparent text-white hover:border-white hover:bg-white/10"
-              >
-                <a href={directions} target="_blank" rel="noopener noreferrer">
-                  <MapPin aria-hidden="true" />
-                  Directions<span className="sr-only"> (opens a new tab)</span>
-                </a>
-              </Button>
+        {/* Red band with only the live open/closed status; the page title stays for screen readers. */}
+        <section aria-labelledby="menu-heading" className="signboard border-b-[6px] border-gold">
+          <div className="site-container pb-4 pt-[calc(var(--header-height)+1rem)]">
+            <h1 id="menu-heading" className="sr-only">
+              Fresh buns & pastries in Las Vegas
+            </h1>
+            <button
+              type="button"
+              aria-expanded={hoursOpen}
+              aria-controls="menu-hours"
+              onClick={() => setHoursOpen(!hoursOpen)}
+              className="flex min-h-12 items-center gap-2 rounded-sm text-base font-medium text-white"
+            >
+              <span
+                aria-hidden="true"
+                className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-[#6fd08c]' : 'bg-white/50')}
+              />
+              <span className="text-left">
+                {status?.text || 'View store hours'}{' '}
+                <span className="whitespace-nowrap text-white/75">(Las Vegas)</span>
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')}
+              />
+            </button>
+            <div
+              id="menu-hours"
+              hidden={!hoursOpen}
+              className="mt-1 max-w-sm rounded-lg bg-card p-4 text-sm leading-7 text-ink"
+            >
+              <p>
+                {SITE.hours.dailyDays}: {SITE.hours.daily}
+              </p>
+              <p>Wednesday: {SITE.hours.wednesday}</p>
+              <p className="text-muted-foreground">All hours are Pacific Time.</p>
             </div>
-          }
-        >
-          <button
-            type="button"
-            aria-expanded={hoursOpen}
-            aria-controls="menu-hours"
-            onClick={() => setHoursOpen(!hoursOpen)}
-            className="flex min-h-12 items-center gap-2 rounded-sm text-base font-medium text-white"
-          >
-            <span
-              aria-hidden="true"
-              className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-[#6fd08c]' : 'bg-white/50')}
-            />
-            <span className="text-left">
-              {status?.text || 'View store hours'} <span className="whitespace-nowrap text-white/75">(Las Vegas)</span>
-            </span>
-            <ChevronDown
-              aria-hidden="true"
-              className={'h-4 w-4 shrink-0 transition-transform ' + (hoursOpen ? 'rotate-180' : '')}
-            />
-          </button>
-          <div
-            id="menu-hours"
-            hidden={!hoursOpen}
-            className="mt-1 max-w-sm rounded-lg bg-card p-4 text-sm leading-7 text-ink"
-          >
-            <p>
-              {SITE.hours.dailyDays}: {SITE.hours.daily}
-            </p>
-            <p>Wednesday: {SITE.hours.wednesday}</p>
-            <p className="text-muted-foreground">All hours are Pacific Time.</p>
           </div>
-          <a
-            href={directions}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 hidden min-h-11 items-center text-base text-white/85 underline underline-offset-4 hover:text-white sm:inline-flex"
-          >
-            {SITE.address}
-            <span className="sr-only"> (opens a new tab)</span>
-          </a>
-        </PageBand>
+        </section>
         <div className="site-container pb-[var(--section-space)] pt-4">
           <section
             aria-label="Find menu items"

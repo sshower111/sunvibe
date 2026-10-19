@@ -91,44 +91,7 @@ export function CakeServingGuide() {
             </a>
           </p>
         )}
-        {/* Only the selected style is compared, so phones show 3–8 rows instead of all 16 cakes. */}
         <details className="mt-6 rounded-xl border bg-background">
-          <summary className="min-h-12 cursor-pointer px-5 py-4 font-semibold text-primary">
-            Compare {category === 'Multi-tier' ? 'tiered cake' : category.toLowerCase() + ' cake'} sizes
-          </summary>
-          <ul className="divide-y border-t px-2 sm:px-3">
-            {cakeCatalog
-              .filter(item => item.category === category)
-              .map(item => (
-                <li key={item.value}>
-                  <button
-                    type="button"
-                    aria-pressed={item.value === selected}
-                    aria-label={`View ${item.label} pricing`}
-                    onClick={() => {
-                      setSelected(item.value)
-                      document.getElementById('guide-cake-size')?.focus()
-                    }}
-                    className={
-                      'flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm transition-colors hover:bg-secondary ' +
-                      (item.value === selected ? 'bg-secondary' : '')
-                    }
-                  >
-                    <span>
-                      <span className="block font-semibold text-primary">{item.label}</span>
-                      <span className="block text-muted-foreground">{item.servings} servings</span>
-                    </span>
-                    <span className="shrink-0 font-medium tabular-nums">
-                      {item.prices.length > 1
-                        ? `${money(Math.min(...item.prices))}–${money(Math.max(...item.prices))}`
-                        : money(item.prices[0])}
-                    </span>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </details>
-        <details className="mt-4 rounded-xl border bg-background">
           <summary className="min-h-12 cursor-pointer px-5 py-4 font-semibold text-primary">Delivery fees</summary>
           <div className="border-t px-5 pb-5">
             <dl className="divide-y text-sm">

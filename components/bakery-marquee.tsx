@@ -11,7 +11,7 @@ function MarqueePhoto({ src, copy }: { src: string; copy: boolean }) {
   if (failed) return null
   return (
     <li
-      className="box-content w-[clamp(14rem,30vw,24rem)] shrink-0 pr-[clamp(1rem,2vw,1.5rem)]"
+      className="box-content w-[clamp(17rem,40vw,32rem)] shrink-0 pr-[clamp(1rem,2vw,1.5rem)]"
       aria-hidden={copy || undefined}
     >
       <Link
@@ -24,7 +24,7 @@ function MarqueePhoto({ src, copy }: { src: string; copy: boolean }) {
           src={src}
           alt=""
           fill
-          sizes="(min-width: 1024px) 24rem, 70vw"
+          sizes="(min-width: 1280px) 32rem, (min-width: 768px) 40vw, 85vw"
           unoptimized={!canOptimizeGalleryImage(src)}
           onError={() => setFailed(true)}
           className="object-cover transition-transform duration-300 ease-[var(--ease-standard)] group-hover:scale-[1.04]"
