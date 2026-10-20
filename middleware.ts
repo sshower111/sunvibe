@@ -10,11 +10,11 @@ const isStrict = (pathname: string) =>
 function policy(scriptSources: string, development: boolean) {
   return [
     "default-src 'self'",
-    `script-src 'self' ${scriptSources} https://challenges.cloudflare.com https://va.vercel-scripts.com ${development ? "'unsafe-eval'" : ''}`,
+    `script-src 'self' ${scriptSources} https://challenges.cloudflare.com https://va.vercel-scripts.com https://www.googletagmanager.com ${development ? "'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https: data: blob:",
     "font-src 'self' data:",
-    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
+    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
     'frame-src https://challenges.cloudflare.com',
     "object-src 'none'",
     "base-uri 'self'",

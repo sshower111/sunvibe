@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-20
+
+- **Google Analytics 4**: the site now loads the Google Analytics tag on every page when `NEXT_PUBLIC_GA_ID` (the G-… Measurement ID) is set in Vercel; with it empty, nothing loads. The security policy allows Google's tag and data hosts, and the privacy page now mentions Google Analytics and its cookies. (`app/layout.tsx`, `middleware.ts`, `app/privacy/page.tsx`, `.env.example`, `package.json`, `docs/ADMIN_GUIDE.md`)
+
 ## 2026-10-19
 
 - **Bigger strip photos, simpler menu header, no size compare list**: home page strip photos are larger (up to 32rem). The menu page's red band now shows only the open/closed status (with the hours drop-down); the title, address and Call/Directions buttons are gone from it (phones keep the bottom Call/Directions bar). Removed "Compare … cake sizes" from Sizes & prices on the custom cakes page. (`components/bakery-marquee.tsx`, `components/menu-page.tsx`, `components/cake-serving-guide.tsx`)

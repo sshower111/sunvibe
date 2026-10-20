@@ -35,3 +35,9 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 ## Changing the password
 
 In Vercel set a new `ADMIN_PASSWORD` (type Secret) and redeploy. Keep `CAMPAIGN_STORAGE_SECRET` unchanged: it decrypts saved pre-orders.
+
+## Google Analytics
+
+1. In Google Analytics, open Admin > Data streams > the sunvillebakerylv.com web stream and copy the Measurement ID (starts with `G-`).
+2. In Vercel set `NEXT_PUBLIC_GA_ID` to that ID (Production) and redeploy. Clear it and redeploy to turn Google Analytics off.
+3. Check it works: open the site, then Google Analytics > Reports > Realtime should show your visit within a minute.

@@ -8,6 +8,7 @@ import type { Metadata } from 'next'
 import { Figtree, Noto_Serif_HK, Young_Serif } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { SiteProvider } from '@/components/site-context'
 import './globals.css'
 
@@ -37,6 +38,9 @@ export const metadata: Metadata = {
   ...pageMetadata('/'),
   robots: { index: true, follow: true },
 }
+
+// Google Analytics 4 loads only when the Measurement ID (G-…) is set in Vercel.
+const gaId = process.env.NEXT_PUBLIC_GA_ID
 
 // Public pages are cached and rebuilt at most every 15 minutes (or right after an admin edit),
 // so a campaign's start/end date still takes effect on time.
@@ -68,6 +72,7 @@ export default async function RootLayout({
           <SpeedInsights />
         </SiteProvider>
       </body>
+      {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>
   )
 }

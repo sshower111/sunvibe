@@ -32,8 +32,13 @@ export default function PrivacyPage() {
         <section className="mt-8 space-y-4">
           <h2 className="heading-2">Website measurement</h2>
           <p>
-            We use Vercel Analytics and Speed Insights to understand website use and performance. These services process
-            website usage and performance measurements.
+            We use Vercel Analytics, Speed Insights and Google Analytics to understand website use and performance.
+            These services process website usage and performance measurements, and Google Analytics sets cookies in your
+            browser. See{' '}
+            <a href="https://policies.google.com/technologies/partner-sites" className="underline underline-offset-4">
+              how Google uses information from sites that use its services
+            </a>
+            .
           </p>
         </section>
         <section className="my-8 space-y-4">
