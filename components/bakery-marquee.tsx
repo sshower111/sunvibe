@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type React from 'react'
 import { canOptimizeGalleryImage, galleryAlt } from '@/lib/gallery-images'
 
@@ -36,16 +36,22 @@ function MarqueePhoto({ src, copy }: { src: string; copy: boolean }) {
 
 // A slow, endless strip of gallery photos. The set is drawn twice so the loop has no seam; the copy
 // is hidden from screen readers and the keyboard. It stops on hover and keyboard focus, and visitors
-// who ask for reduced motion get a still strip they can swipe instead.
+// who ask for reduced motion get a still strip they can swipe instead. Each visit starts the loop at
+// a random point (a negative animation delay), set after load so the server and browser HTML match.
 export function BakeryMarquee({ images }: { images: string[] }) {
+  const trackRef = useRef<HTMLUListElement>(null)
+  const duration = images.length * 10
+  useEffect(() => {
+    if (trackRef.current) trackRef.current.style.animationDelay = `-${(Math.random() * duration).toFixed(2)}s`
+  }, [duration])
   if (!images.length) return null
   return (
     <div
       className="bakery-marquee overflow-hidden motion-reduce:overflow-x-auto"
-      style={{ '--marquee-duration': `${images.length * 10}s` } as React.CSSProperties}
+      style={{ '--marquee-duration': `${duration}s` } as React.CSSProperties}
     >
       {/* Spacing sits inside each photo (right padding) so half the strip is exactly one set: a seamless loop. */}
-      <ul className="bakery-marquee-track flex w-max pb-2 pl-[var(--gutter)] motion-safe:pl-0">
+      <ul ref={trackRef} className="bakery-marquee-track flex w-max pb-2 pl-[var(--gutter)] motion-safe:pl-0">
         {images.map(src => (
           <MarqueePhoto key={src} src={src} copy={false} />
         ))}

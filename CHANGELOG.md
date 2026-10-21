@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-21
+
+- **Photo strip starts at a random photo**: the home page strip now begins at a different point on each visit instead of always on the same photo. (`components/bakery-marquee.tsx`)
+
 ## 2026-10-20
 
 - **Google Analytics 4**: the site now loads the Google Analytics tag on every page when `NEXT_PUBLIC_GA_ID` (the G-… Measurement ID) is set in Vercel; with it empty, nothing loads. The security policy allows Google's tag and data hosts, and the privacy page now mentions Google Analytics and its cookies. (`app/layout.tsx`, `middleware.ts`, `app/privacy/page.tsx`, `.env.example`, `package.json`, `docs/ADMIN_GUIDE.md`)
