@@ -15,9 +15,9 @@ function MarqueePhoto({ src, copy }: { src: string; copy: boolean }) {
       aria-hidden={copy || undefined}
     >
       <Link
-        href="/gallery"
+        href={'/gallery?photo=' + encodeURIComponent(src)}
         tabIndex={copy ? -1 : undefined}
-        aria-label={copy ? undefined : 'Open the gallery: ' + galleryAlt(src)}
+        aria-label={copy ? undefined : 'Open in the gallery: ' + galleryAlt(src)}
         className="group relative block aspect-square overflow-hidden rounded-lg border-2 border-gold/70 bg-surface"
       >
         <Image

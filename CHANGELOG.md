@@ -6,6 +6,7 @@ Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.
 
 ## 2026-10-21
 
+- **Strip photos open enlarged in the gallery**: clicking a photo in the home page strip opens the gallery with that photo already showing in the large viewer (arrows and swipe still move to the others). (`components/bakery-marquee.tsx`, `components/gallery-view.tsx`)
 - **Photo strip starts at a random photo**: the home page strip now begins at a different point on each visit instead of always on the same photo. (`components/bakery-marquee.tsx`)
 
 ## 2026-10-20

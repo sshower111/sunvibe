@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigation } from '@/components/navigation'
 import { PageBand } from '@/components/page-band'
 import { Footer } from '@/components/footer'
@@ -63,6 +63,20 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
   const count = galleryImages.length
   const move = (direction: number) =>
     setSelected(index => (index === null ? null : (index + direction + count) % count))
+  // A photo clicked in the home page strip arrives as /gallery?photo=<url>: open it straight away,
+  // then drop the query so closing, refreshing or sharing the page shows the plain gallery.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const photo = params.get('photo')
+    if (!photo) return
+    window.history.replaceState(null, '', window.location.pathname)
+    const index = galleryImages.indexOf(photo)
+    if (index === -1) return
+    const thumb = document.querySelector<HTMLButtonElement>(`[data-gallery-index="${index}"]`)
+    thumb?.scrollIntoView({ block: 'center' })
+    triggerRef.current = thumb
+    setSelected(index)
+  }, [galleryImages])
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -89,6 +103,7 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
                 <button
                   type="button"
                   key={src + index}
+                  data-gallery-index={index}
                   aria-label={'Enlarge: ' + galleryAlt(src)}
                   onClick={event => {
                     triggerRef.current = event.currentTarget
