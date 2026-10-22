@@ -6,6 +6,7 @@ Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.
 
 ## 2026-10-22
 
+- **Cake event date: past and too-soon days can't be picked**: the event date is now chosen from a calendar where days before the earliest allowed date (3 days out, Las Vegas time) are greyed out and can't be tapped. Phone browsers ignored the old date box's limit, so past dates could be picked. The 3-day check when sending is unchanged. (`components/event-date-picker.tsx`, `components/cake-inquiry-form.tsx`)
 - **Cake inquiry: optional event time**: step 1 now has an "Event time (optional)" field next to the event date. Customers can leave it blank if it isn't decided; the bakery email then shows "Not decided yet" (未定 in the Chinese copy). When a time is given it shows as e.g. 2:30 PM in the review step, the email and its subject. (`components/cake-inquiry-form.tsx`, `lib/cake-inquiry.ts`, `app/api/custom-cakes/route.ts`, `lib/email-zh.ts`, `tests/unit/cake-inquiry.test.cjs`)
 
 ## 2026-10-21

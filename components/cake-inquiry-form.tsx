@@ -22,6 +22,7 @@ import { cakeCatalog, cakeLabel, deliveryOptions } from '@/lib/cake-catalog'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
 import { formatPhone } from '@/lib/form-helpers'
 import { EmailInput } from '@/components/email-input'
+import { EventDatePicker } from '@/components/event-date-picker'
 import { FieldError, FormAlert } from '@/components/ui/form-message'
 import { ImagePlus } from 'lucide-react'
 
@@ -245,7 +246,18 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                   ))}
                 </NativeSelect>,
               )}
-              {field('eventDate', 'Event date', <Input {...control('eventDate')} type="date" required min={minDate} />)}
+              {field(
+                'eventDate',
+                'Event date',
+                <EventDatePicker
+                  id="cake-eventDate"
+                  value={data.eventDate}
+                  minDate={minDate}
+                  onChange={value => update('eventDate', value)}
+                  invalid={!!errors.eventDate}
+                  describedBy={control('eventDate')['aria-describedby']}
+                />,
+              )}
               {field('eventTime', 'Event time (optional)', <Input {...control('eventTime')} type="time" step={900} />)}
             </div>
             {data.fulfillment !== 'Pickup' &&
