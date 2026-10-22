@@ -16,11 +16,15 @@ const craft = [
   },
 ]
 
-// Story, how we bake, then the moving strip of gallery photos (components/bakery-marquee.tsx).
+// The moving strip of gallery photos (components/bakery-marquee.tsx), then the story and how we bake.
 export function AboutSection({ images }: { images: string[] }) {
   return (
-    <section id="about" aria-labelledby="about-heading" className="-scroll-mt-4 bg-background section-space">
-      <div className="site-container">
+    <section aria-labelledby="about-heading" className="bg-background section-space">
+      <BakeryMarquee images={images} />
+      <div
+        id="about"
+        className="site-container mt-[clamp(3rem,7vw,5.5rem)] scroll-mt-[calc(var(--header-height)+1rem)]"
+      >
         <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <h2 id="about-heading" className="heading-1">
             A family bakery since 2002
@@ -46,9 +50,6 @@ export function AboutSection({ images }: { images: string[] }) {
             ))}
           </ul>
         </div>
-      </div>
-      <div className="mt-[clamp(3rem,7vw,5.5rem)]">
-        <BakeryMarquee images={images} />
       </div>
     </section>
   )
