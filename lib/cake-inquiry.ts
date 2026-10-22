@@ -40,6 +40,13 @@ export function earliestCakeDate(now = new Date()) {
   date.setUTCDate(date.getUTCDate() + 3)
   return date.toISOString().slice(0, 10)
 }
+// Event time is optional ('' = not decided yet). Stored as 24-hour HH:MM from <input type="time">.
+export function formatEventTime(value: string) {
+  const match = /^(\d{2}):(\d{2})$/.exec(value)
+  if (!match) return ''
+  const hour = Number(match[1])
+  return `${hour % 12 || 12}:${match[2]} ${hour < 12 ? 'AM' : 'PM'}`
+}
 export const cakeInquirySchema = z.object({
   name: z.string().trim().min(1, 'Enter your name.').max(100),
   email: z.string().trim().email('Enter a valid email address.').max(100),
@@ -60,6 +67,11 @@ export const cakeInquirySchema = z.object({
       const d = new Date(v + 'T12:00:00Z')
       return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= earliestCakeDate()
     }, 'Please allow at least 3 days (Las Vegas time).'),
+  eventTime: z
+    .string()
+    .trim()
+    .regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d)?$/, 'Choose a time, or leave it blank if not decided.')
+    .default(''),
   eventType: z.enum(eventTypes),
   servings: z
     .string()

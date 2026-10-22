@@ -13,6 +13,7 @@ import {
   budgets,
   flavors,
   fillings,
+  formatEventTime,
   MAX_PHOTO_BYTES,
   MAX_PHOTOS,
 } from '@/lib/cake-inquiry'
@@ -26,7 +27,7 @@ import { ImagePlus } from 'lucide-react'
 
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [
-  ['eventDate', 'eventType', 'fulfillment', 'deliveryAddress'],
+  ['eventDate', 'eventTime', 'eventType', 'fulfillment', 'deliveryAddress'],
   ['servings', 'size', 'flavor', 'filling', 'budget'],
   ['name', 'email', 'phone', 'notes'],
   ['acknowledged'],
@@ -36,6 +37,7 @@ const initial = {
   email: '',
   phone: '',
   eventDate: '',
+  eventTime: '',
   eventType: 'Birthday',
   servings: '',
   size: 'Not sure',
@@ -82,6 +84,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
   }
   const hints: Partial<Record<Field, string>> = {
     eventDate: 'Choose a date at least 3 days away.',
+    eventTime: 'Leave blank if not decided yet.',
     fulfillment:
       data.fulfillment === 'Pickup'
         ? `Pickup: ${SITE.street}, Las Vegas.`
@@ -243,6 +246,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                 </NativeSelect>,
               )}
               {field('eventDate', 'Event date', <Input {...control('eventDate')} type="date" required min={minDate} />)}
+              {field('eventTime', 'Event time (optional)', <Input {...control('eventTime')} type="time" step={900} />)}
             </div>
             {data.fulfillment !== 'Pickup' &&
               field(
@@ -487,7 +491,10 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
             <div className="surface rounded-lg card-pad">
               <dl className="space-y-3 text-sm">
                 {[
-                  ['Event', `${data.eventType} · ${data.eventDate}`],
+                  [
+                    'Event',
+                    [data.eventType, data.eventDate, formatEventTime(data.eventTime)].filter(Boolean).join(' · '),
+                  ],
                   ['Cake', `${data.servings} servings · ${cakeLabel(data.size)}`],
                   ['Preferences', `${data.flavor} / ${data.filling}`],
                   ['Budget', data.budget],

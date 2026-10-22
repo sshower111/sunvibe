@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-22
+
+- **Cake inquiry: optional event time**: step 1 now has an "Event time (optional)" field next to the event date. Customers can leave it blank if it isn't decided; the bakery email then shows "Not decided yet" (未定 in the Chinese copy). When a time is given it shows as e.g. 2:30 PM in the review step, the email and its subject. (`components/cake-inquiry-form.tsx`, `lib/cake-inquiry.ts`, `app/api/custom-cakes/route.ts`, `lib/email-zh.ts`, `tests/unit/cake-inquiry.test.cjs`)
+
 ## 2026-10-21
 
 - **Strip photos open enlarged in the gallery**: clicking a photo in the home page strip opens the gallery with that photo already showing in the large viewer (arrows and swipe still move to the others). (`components/bakery-marquee.tsx`, `components/gallery-view.tsx`)

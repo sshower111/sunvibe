@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
-import { cakeInquirySchema, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
+import { cakeInquirySchema, formatEventTime, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { verifyTurnstile } from '@/lib/turnstile'
@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
     const values = {
       ...parsed.data,
       size: cakeLabel(parsed.data.size),
+      eventTime: formatEventTime(parsed.data.eventTime) || 'Not decided yet',
       deliveryAddress: parsed.data.fulfillment === 'Pickup' ? 'Bakery pickup' : parsed.data.deliveryAddress,
     }
     const labels: Record<string, string> = {
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
       email: 'Email',
       phone: 'Phone',
       eventDate: 'Event date',
+      eventTime: 'Event time',
       eventType: 'Event',
       servings: 'Servings requested',
       size: 'Cake size',
@@ -86,11 +88,13 @@ export async function POST(request: NextRequest) {
       const zh =
         key === 'deliveryAddress' && parsed.data.fulfillment === 'Pickup'
           ? ZH.bakeryPickup
-          : !value
-            ? ZH.none
-            : translated.has(key)
-              ? zhOption(value)
-              : value
+          : key === 'eventTime' && !parsed.data.eventTime
+            ? ZH.notDecided
+            : !value
+              ? ZH.none
+              : translated.has(key)
+                ? zhOption(value)
+                : value
       return [ZH[key as keyof typeof ZH], zh] as [string, string]
     })
     const text = Object.entries(labels)
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
         from: EMAIL_FROM,
         to: bakeryInbox(),
         replyTo: values.email,
-        subject: `Custom cake inquiry: ${values.eventType} · ${values.eventDate}`,
+        subject: `Custom cake inquiry: ${[values.eventType, values.eventDate, formatEventTime(parsed.data.eventTime)].filter(Boolean).join(' · ')}`,
         text,
         html,
         attachments,
