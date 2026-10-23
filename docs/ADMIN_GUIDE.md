@@ -37,7 +37,7 @@ Orders show as a table (ordered, pickup, cake, customer, status, phone, email). 
 
 - **Needs approval**: same-day orders, and next-day orders for 6", 10", 12", 1/2 sheet and full sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.
 - **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.
-- **Copy for Mom** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text Mom** opens Messages with it filled in.
+- **Copy for kitchen** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text kitchen** opens Messages with it filled in.
 - **Test order (paid)** adds a sample 8" order 3 days out; **Test order (needs approval)** adds a 10" order for tomorrow so Approve & charge / Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
 - Refunds and changes to paid orders: Square Dashboard → Transactions, search by the order number (e.g. `#1001`). Orders are numbered in sequence; a failed payment can leave a gap.
 

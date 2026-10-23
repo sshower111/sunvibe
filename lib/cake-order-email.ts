@@ -9,7 +9,7 @@ import {
   formatPickupDate,
   formatPickupTime,
   formatVegasTime,
-  momText,
+  kitchenText,
   orderRef,
   sizeLabel,
   type StoredCakeOrder,
@@ -74,7 +74,7 @@ async function send(
   }
 }
 
-/** New order: to the bakery (with the Chinese text for Mom) and to the customer. */
+/** New order: to the bakery (with the Chinese copy for the kitchen) and to the customer. */
 export async function sendNewOrderEmails(o: StoredCakeOrder) {
   const ref = orderRef(o)
   const held = o.status === 'awaiting_approval'
@@ -94,7 +94,7 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
         ]
       : [`Paid online: ${money(o.price)}. Admin → Cake orders: ${admin}`],
     rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
-    after: ['— For Mom —', momText(o)],
+    after: ['— Chinese copy for the kitchen —', kitchenText(o)],
   })
   const customer = send(`cake-order-customer-${o.id}`, {
     to: customerEmail(o),
@@ -179,7 +179,7 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
       subject: tag(o, `Paid: custom cake ${orderRef(o)} · ${o.name} · ${pickup(o)}`),
       paragraphs: [`${o.name} paid the ${what} online. Admin → Cake orders: ${SITE_URL}/admin?tab=cake-orders`],
       rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
-      after: ['— For Mom —', momText(o)],
+      after: ['— Chinese copy for the kitchen —', kitchenText(o)],
     }),
   ])
 }

@@ -6,7 +6,7 @@ import {
   formatPickupTime,
   formatVegasTime,
   isDelivery,
-  momText,
+  kitchenText,
   orderRef,
   sizeLabel,
   type CakeOrderStatus,
@@ -94,7 +94,7 @@ export function AdminCakeOrders() {
   }
   async function copy(order: StoredCakeOrder) {
     try {
-      await navigator.clipboard.writeText(momText(order))
+      await navigator.clipboard.writeText(kitchenText(order))
       setCopied(order.id)
       setTimeout(() => setCopied(c => (c === order.id ? '' : c)), 2500)
     } catch {
@@ -253,10 +253,10 @@ export function AdminCakeOrders() {
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Button size="sm" variant="outline" onClick={() => copy(o)}>
-                        {copied === o.id ? 'Copied!' : 'Copy for Mom'}
+                        {copied === o.id ? 'Copied!' : 'Copy for kitchen'}
                       </Button>
                       <Button asChild size="sm" variant="outline" className="sm:hidden">
-                        <a href={'sms:?&body=' + encodeURIComponent(momText(o))}>Text Mom</a>
+                        <a href={'sms:?&body=' + encodeURIComponent(kitchenText(o))}>Text kitchen</a>
                       </Button>
                       {o.status === 'awaiting_approval' && (
                         <>

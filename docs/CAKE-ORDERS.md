@@ -43,13 +43,13 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
 
 - The order stores the agreed cake, pickup or delivery (with address), design notes, total price and an optional deposit.
 - The customer is emailed a link to `/pay/<order id>` (the random ID is the link's secret; the page isn't indexed). It works for 3 days; after that the order shows "Pay link expired" until **Resend link** gives it 3 more days.
-- Paying charges the full price or the deposit straight away (Square Online API rate). Status: `awaiting_payment` → `paid` or `deposit_paid`; the inquiry becomes Confirmed & paid. Receipt to the customer, notice (with the Chinese text for Mom) to the bakery.
+- Paying charges the full price or the deposit straight away (Square Online API rate). Status: `awaiting_payment` → `paid` or `deposit_paid`; the inquiry becomes Confirmed & paid. Receipt to the customer, notice (with the Chinese copy for the kitchen) to the bakery.
 - Test inquiries make test orders: emails go to the bakery inbox, and on the live site the pay page has a no-card test button.
 - Needs `db/005-custom-cake-orders.sql` (adds the two statuses).
 
 ## Emails
 
-- New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese text for Mom) and to the customer.
+- New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese copy for the kitchen) and to the customer.
 - Approved, declined or not approved in time: to the customer.
 
 ## Setup (Vercel environment variables)
