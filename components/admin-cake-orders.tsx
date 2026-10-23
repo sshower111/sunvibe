@@ -25,6 +25,8 @@ const filters = {
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
 type Filter = keyof typeof filters
 type SortKey = 'created' | 'pickup'
+// Small buttons so the table fits on a laptop screen.
+const compact = 'w-full !min-h-8 !px-2 !py-1 !text-xs'
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
@@ -174,12 +176,6 @@ export function AdminCakeOrders() {
                   Status
                 </th>
                 <th scope="col" className="px-3 py-2">
-                  Phone
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Email
-                </th>
-                <th scope="col" className="px-3 py-2">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -207,7 +203,7 @@ export function AdminCakeOrders() {
                     </div>
                     {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="min-w-44 px-3 py-2">
                     {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
                     {o.test && (
                       <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
@@ -217,6 +213,16 @@ export function AdminCakeOrders() {
                     {o.kind === 'custom' && (
                       <span className="ml-1 rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold">CUSTOM</span>
                     )}
+                    <div className="mt-1 text-xs">
+                      <a className="whitespace-nowrap underline" href={'tel:' + o.phone.replace(/[^+0-9]/g, '')}>
+                        {o.phone}
+                      </a>
+                    </div>
+                    <div className="text-xs">
+                      <a className="break-words underline [overflow-wrap:anywhere]" href={`mailto:${o.email}`}>
+                        {o.email}
+                      </a>
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     <span className="whitespace-nowrap">
@@ -240,28 +246,19 @@ export function AdminCakeOrders() {
                       </div>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    <a className="underline" href={'tel:' + o.phone.replace(/[^+0-9]/g, '')}>
-                      {o.phone}
-                    </a>
-                  </td>
                   <td className="px-3 py-2">
-                    <a className="break-all underline" href={`mailto:${o.email}`}>
-                      {o.email}
-                    </a>
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => copy(o)}>
+                    <div className="flex w-32 flex-col gap-1.5">
+                      <Button size="sm" variant="outline" className={compact} onClick={() => copy(o)}>
                         {copied === o.id ? 'Copied!' : 'Copy for kitchen'}
                       </Button>
-                      <Button asChild size="sm" variant="outline" className="sm:hidden">
+                      <Button asChild size="sm" variant="outline" className={compact + ' sm:hidden'}>
                         <a href={'sms:?&body=' + encodeURIComponent(kitchenText(o))}>Text kitchen</a>
                       </Button>
                       {o.status === 'awaiting_approval' && (
                         <>
                           <Button
                             size="sm"
+                            className={compact}
                             disabled={busy}
                             onClick={() => act(o.id, 'approve', `Approve and charge $${o.price.toFixed(2)}?`)}
                           >
@@ -269,6 +266,7 @@ export function AdminCakeOrders() {
                           </Button>
                           <Button
                             size="sm"
+                            className={compact}
                             variant="outline"
                             disabled={busy}
                             onClick={() =>
@@ -285,11 +283,12 @@ export function AdminCakeOrders() {
                       )}
                       {o.kind === 'custom' && (o.status === 'awaiting_payment' || o.status === 'expired') && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => copyLink(o)}>
+                          <Button size="sm" variant="outline" className={compact} onClick={() => copyLink(o)}>
                             {copied === 'link-' + o.id ? 'Copied!' : 'Copy pay link'}
                           </Button>
                           <Button
                             size="sm"
+                            className={compact}
                             variant="outline"
                             disabled={busy}
                             onClick={() => act(o.id, 'resend_link', `Email ${o.email} a new pay link (valid 3 days)?`)}
@@ -299,17 +298,35 @@ export function AdminCakeOrders() {
                         </>
                       )}
                       {(o.status === 'paid' || o.status === 'deposit_paid') && (
-                        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'picked_up')}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={compact}
+                          disabled={busy}
+                          onClick={() => act(o.id, 'picked_up')}
+                        >
                           Mark picked up
                         </Button>
                       )}
                       {o.status === 'picked_up' && (
-                        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'not_picked_up')}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={compact}
+                          disabled={busy}
+                          onClick={() => act(o.id, 'not_picked_up')}
+                        >
                           Undo picked up
                         </Button>
                       )}
                       {o.test && (
-                        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'delete')}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={compact}
+                          disabled={busy}
+                          onClick={() => act(o.id, 'delete')}
+                        >
                           Delete test
                         </Button>
                       )}
