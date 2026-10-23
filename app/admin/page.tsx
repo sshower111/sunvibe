@@ -312,13 +312,17 @@ export default function AdminPage() {
         {/* Tabs scroll sideways on phones instead of wrapping onto several lines. */}
         <nav
           aria-label="Admin sections"
-          className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-2 sm:px-8 [scrollbar-width:none]"
+          className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 sm:gap-2 sm:px-8 [scrollbar-width:none]"
         >
           {TABS.map(tab => (
-            <Button
+            <button
               key={tab.id}
-              className="shrink-0"
-              variant={activeTab === tab.id ? 'default' : 'outline'}
+              type="button"
+              className={`relative shrink-0 px-3 py-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:origin-center after:rounded-full after:bg-primary after:transition-transform after:duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
+                activeTab === tab.id
+                  ? 'text-primary after:scale-x-100'
+                  : 'text-muted-foreground after:scale-x-0 after:opacity-40 hover:text-foreground hover:after:scale-x-100'
+              }`}
               aria-pressed={activeTab === tab.id}
               onClick={() => {
                 setActiveTab(tab.id)
@@ -327,7 +331,7 @@ export default function AdminPage() {
               }}
             >
               {tab.label}
-            </Button>
+            </button>
           ))}
         </nav>
       </header>
