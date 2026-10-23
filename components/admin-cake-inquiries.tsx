@@ -14,6 +14,7 @@ import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
+import { draftReply } from '@/lib/inquiry-reply'
 
 const filters = {
   open: { label: 'Open', statuses: ['new', 'waiting_customer', 'checking_owner'] },
@@ -31,6 +32,9 @@ export function AdminCakeInquiries() {
   const [inquiries, setInquiries] = useState<StoredCakeInquiry[]>([])
   const [filter, setFilter] = useState<Filter>('open')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  // Reply drafts are only kept on this page; nothing is saved or sent.
+  const [replies, setReplies] = useState<Record<string, string>>({})
+  const [copied, setCopied] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -195,10 +199,81 @@ export function AdminCakeInquiries() {
                   </Button>
                 )}
               </div>
+              <ReplyDraft
+                inquiry={i}
+                text={replies[i.id]}
+                copied={copied === i.id}
+                onChange={text => setReplies(r => ({ ...r, [i.id]: text }))}
+                onCopied={() => setCopied(i.id)}
+              />
             </article>
           )
         })}
       </div>
     </section>
+  )
+}
+
+function ReplyDraft({
+  inquiry,
+  text,
+  copied,
+  onChange,
+  onCopied,
+}: {
+  inquiry: StoredCakeInquiry
+  text: string | undefined
+  copied: boolean
+  onChange: (text: string) => void
+  onCopied: () => void
+}) {
+  if (text === undefined)
+    return (
+      <Button variant="outline" onClick={() => onChange(draftReply(inquiry).body)}>
+        Draft reply
+      </Button>
+    )
+  const { subject } = draftReply(inquiry)
+  const gmail =
+    'https://mail.google.com/mail/?view=cm&fs=1&to=' +
+    encodeURIComponent(inquiry.email) +
+    '&su=' +
+    encodeURIComponent(subject) +
+    '&body=' +
+    encodeURIComponent(text)
+  const unfilled = /\[[^\]]+\]/.test(text)
+  return (
+    <div className="space-y-2">
+      <label htmlFor={'inquiry-reply-' + inquiry.id} className="block text-sm font-semibold">
+        Reply draft (edit before sending)
+      </label>
+      <Textarea id={'inquiry-reply-' + inquiry.id} rows={12} value={text} onChange={e => onChange(e.target.value)} />
+      {unfilled && (
+        <p className="text-sm text-amber-900">Fill in or delete the parts in [square brackets] before sending.</p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Button asChild>
+          <a href={gmail} target="_blank" rel="noopener noreferrer">
+            Open in Gmail
+          </a>
+        </Button>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(text)
+              onCopied()
+            } catch {
+              /* clipboard blocked: the text can still be selected by hand */
+            }
+          }}
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+        <Button variant="outline" onClick={() => onChange(draftReply(inquiry).body)}>
+          Start over
+        </Button>
+      </div>
+    </div>
   )
 }
