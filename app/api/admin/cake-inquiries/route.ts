@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
 // "Send test inquiry" in admin: a sample inquiry through the real email code, so the inbox shows exactly what a
 // customer's would look like. Both emails go to the bakery inbox with [TEST] subjects. It is also added to the list,
-// marked as a test, so Draft reply can be tried on it. The samples rotate to show different draft cases.
+// marked as a test, so statuses and notes can be tried on it. The samples rotate between a few typical inquiries.
 async function sendTestInquiry() {
   if (!process.env.RESEND_API_KEY)
     return NextResponse.json({ error: 'Email is not set up (RESEND_API_KEY).' }, { status: 503 })
