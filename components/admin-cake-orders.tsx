@@ -5,6 +5,7 @@ import {
   formatPickupDate,
   formatPickupTime,
   formatVegasTime,
+  isDelivery,
   momText,
   orderRef,
   sizeLabel,
@@ -17,7 +18,8 @@ import { NativeSelect } from './ui/select'
 
 const filters = {
   approval: { label: 'Needs approval', statuses: ['awaiting_approval'] },
-  upcoming: { label: 'To make', statuses: ['paid', 'processing'] },
+  payment: { label: 'Awaiting payment (custom)', statuses: ['awaiting_payment'] },
+  upcoming: { label: 'To make', statuses: ['paid', 'deposit_paid', 'processing'] },
   done: { label: 'Picked up', statuses: ['picked_up'] },
   closed: { label: 'Declined / expired', statuses: ['declined', 'expired', 'failed'] },
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
@@ -69,7 +71,7 @@ export function AdminCakeOrders() {
     })
   const act = (
     id: string,
-    action: 'approve' | 'decline' | 'picked_up' | 'not_picked_up' | 'delete',
+    action: 'approve' | 'decline' | 'picked_up' | 'not_picked_up' | 'delete' | 'resend_link',
     confirmText?: string,
   ) => {
     if (confirmText && !window.confirm(confirmText)) return
@@ -80,6 +82,15 @@ export function AdminCakeOrders() {
         setOrders((await request({ action: 'list' })).orders)
       }
     })
+  }
+  async function copyLink(order: StoredCakeOrder) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/pay/${order.id}`)
+      setCopied('link-' + order.id)
+      setTimeout(() => setCopied(c => (c === 'link-' + order.id ? '' : c)), 2500)
+    } catch {
+      setError('Could not copy the link.')
+    }
   }
   async function copy(order: StoredCakeOrder) {
     try {
@@ -183,6 +194,17 @@ export function AdminCakeOrders() {
                   <td className="min-w-48 px-3 py-2">
                     {sizeLabel(o.size)} · {o.flavor} · {o.filling}
                     {o.cakeMessage && <div className="text-muted-foreground">Writing: {o.cakeMessage}</div>}
+                    {isDelivery(o) && (
+                      <div className="text-muted-foreground">
+                        Delivery: {o.deliveryAddress} ({o.fulfillment})
+                      </div>
+                    )}
+                    <div className="text-muted-foreground">
+                      ${o.price.toFixed(2)}
+                      {o.deposit
+                        ? ` · deposit $${o.deposit.toFixed(2)}, balance $${(o.price - o.deposit).toFixed(2)}`
+                        : ''}
+                    </div>
                     {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
                   </td>
                   <td className="px-3 py-2">
@@ -192,12 +214,29 @@ export function AdminCakeOrders() {
                         TEST
                       </span>
                     )}
+                    {o.kind === 'custom' && (
+                      <span className="ml-1 rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold">CUSTOM</span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
-                    <span className="whitespace-nowrap">{cakeOrderStatusLabels[o.status]}</span>
+                    <span className="whitespace-nowrap">
+                      {o.kind === 'custom' && o.status === 'expired'
+                        ? 'Pay link expired'
+                        : cakeOrderStatusLabels[o.status]}
+                    </span>
                     {o.status === 'awaiting_approval' && o.approveBy && (
                       <div className="min-w-40 text-xs text-amber-900">
                         {o.approvalReason}. Approve by {formatVegasTime(o.approveBy)}
+                      </div>
+                    )}
+                    {o.status === 'awaiting_payment' && o.payBy && (
+                      <div className="min-w-40 text-xs text-muted-foreground">
+                        Link valid until {formatVegasTime(o.payBy)}
+                      </div>
+                    )}
+                    {o.status === 'deposit_paid' && o.deposit && (
+                      <div className="min-w-40 text-xs text-muted-foreground">
+                        Collect ${(o.price - o.deposit).toFixed(2)} at {isDelivery(o) ? 'delivery' : 'pickup'}
                       </div>
                     )}
                   </td>
@@ -244,7 +283,22 @@ export function AdminCakeOrders() {
                           </Button>
                         </>
                       )}
-                      {o.status === 'paid' && (
+                      {o.kind === 'custom' && (o.status === 'awaiting_payment' || o.status === 'expired') && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => copyLink(o)}>
+                            {copied === 'link-' + o.id ? 'Copied!' : 'Copy pay link'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => act(o.id, 'resend_link', `Email ${o.email} a new pay link (valid 3 days)?`)}
+                          >
+                            Resend link
+                          </Button>
+                        </>
+                      )}
+                      {(o.status === 'paid' || o.status === 'deposit_paid') && (
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'picked_up')}>
                           Mark picked up
                         </Button>

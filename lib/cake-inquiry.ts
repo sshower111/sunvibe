@@ -116,8 +116,8 @@ export const inquiryStatuses = [
 export type InquiryStatus = (typeof inquiryStatuses)[number]
 export const inquiryStatusLabels: Record<InquiryStatus, string> = {
   new: 'New',
-  waiting_customer: 'Waiting on customer',
-  checking_owner: 'Checking with Mom',
+  waiting_customer: 'Awaiting customer',
+  checking_owner: 'Under bakery review',
   confirmed_paid: 'Confirmed & paid',
   completed: 'Completed',
   cancelled: 'Cancelled',
@@ -133,4 +133,6 @@ export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged'> & {
   staffNotes: string
   /** Sample from admin "Send test inquiry"; can be deleted from admin. */
   test?: boolean
+  /** Admin list only: the custom cake order made from this inquiry, if any. */
+  order?: { ref: string; status: string }
 }

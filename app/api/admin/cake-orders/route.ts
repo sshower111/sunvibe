@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isAdminRequest } from '@/lib/admin-auth'
-import { deleteTestOrder, moveCakeOrder } from '@/lib/cake-orders-store'
+import { deleteTestOrder, getCakeOrder, moveCakeOrder } from '@/lib/cake-orders-store'
 import { approveOrder, createTestOrder, declineOrder, listCakeOrdersSettled } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
+import { resendPayLink } from '@/lib/custom-cake-orders'
 
 const actionSchema = z.object({
-  action: z.enum(['approve', 'decline', 'picked_up', 'not_picked_up', 'delete']),
+  action: z.enum(['approve', 'decline', 'picked_up', 'not_picked_up', 'delete', 'resend_link']),
   id: z.string().uuid(),
 })
 
@@ -34,14 +35,17 @@ export async function POST(req: NextRequest) {
     if (action === 'approve') await approveOrder(id)
     else if (action === 'decline') await declineOrder(id)
     else if (action === 'delete') await deleteTestOrder(id)
-    else if (
-      !(await moveCakeOrder(
-        id,
-        action === 'picked_up' ? 'paid' : 'picked_up',
-        action === 'picked_up' ? 'picked_up' : 'paid',
-      ))
-    )
-      throw new Error('This order changed. Refresh the list.')
+    else if (action === 'resend_link') {
+      if (!(await resendPayLink(id))) throw new Error('The email could not be sent. Please retry.')
+    } else if (action === 'picked_up') {
+      // Deposit orders: the balance is taken at pickup, so they can be marked picked up too.
+      if (!(await moveCakeOrder(id, 'paid', 'picked_up')) && !(await moveCakeOrder(id, 'deposit_paid', 'picked_up')))
+        throw new Error('This order changed. Refresh the list.')
+    } else {
+      const order = await getCakeOrder(id)
+      if (!(await moveCakeOrder(id, 'picked_up', order?.deposit ? 'deposit_paid' : 'paid')))
+        throw new Error('This order changed. Refresh the list.')
+    }
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : 'Cake orders unavailable. Please retry.'

@@ -39,3 +39,14 @@ export async function updateCakeInquiry(id: string, change: { status?: InquirySt
       : await sql`UPDATE bakery_cake_inquiries SET staff_notes=${change.staffNotes ? encode(change.staffNotes) : ''},updated_at=now() WHERE id=${id} RETURNING id`
   if (!rows.length) throw new Error('Inquiry not found')
 }
+
+export async function getCakeInquiry(id: string): Promise<StoredCakeInquiry | null> {
+  const sql = await contentDatabase()
+  const rows = await sql`SELECT payload,status,staff_notes FROM bakery_cake_inquiries WHERE id=${id}`
+  if (!rows.length) return null
+  return {
+    ...(decode(rows[0].payload) as Details),
+    status: rows[0].status as InquiryStatus,
+    staffNotes: rows[0].staff_notes ? (decode(rows[0].staff_notes) as string) : '',
+  }
+}

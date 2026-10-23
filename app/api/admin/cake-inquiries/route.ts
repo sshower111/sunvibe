@@ -12,6 +12,9 @@ import {
 import { cakeCatalog } from '@/lib/cake-catalog'
 import { bakeryInbox } from '@/lib/email'
 import { sendBakeryEmail, sendCustomerCopy } from '@/lib/cake-inquiry-email'
+import { customOrderSchema } from '@/lib/cake-order'
+import { createOrderFromInquiry } from '@/lib/custom-cake-orders'
+import { listCakeOrders } from '@/lib/cake-orders-store'
 
 const updateSchema = z.union([
   z.object({ action: z.literal('status'), id: z.string().uuid(), status: z.enum(inquiryStatuses) }),
@@ -29,8 +32,27 @@ export async function POST(req: NextRequest) {
   if (!(await isAdminRequest(body?.password))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     if (body.action === 'test') return sendTestInquiry()
-    if (body.action === 'list')
-      return NextResponse.json({ inquiries: await listCakeInquiries() }, { headers: { 'Cache-Control': 'no-store' } })
+    if (body.action === 'list') {
+      // Each inquiry also gets the custom order made from it (number and status), if any.
+      const [inquiries, orders] = await Promise.all([listCakeInquiries(), listCakeOrders().catch(() => [])])
+      const orderFor = (id: string) => orders.find(o => o.inquiryId === id && o.status !== 'failed')
+      return NextResponse.json(
+        {
+          inquiries: inquiries.map(i => {
+            const o = orderFor(i.id)
+            return o ? { ...i, order: { ref: '#' + (o.orderNo ?? ''), status: o.status } } : i
+          }),
+        },
+        { headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
+    if (body.action === 'create_order') {
+      if (!process.env.RESEND_API_KEY)
+        return NextResponse.json({ error: 'Email is not set up (RESEND_API_KEY).' }, { status: 503 })
+      const parsed = customOrderSchema.safeParse(body.order)
+      if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+      return NextResponse.json(await createOrderFromInquiry(parsed.data))
+    }
     const parsed = updateSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid update' }, { status: 400 })
     const change = parsed.data

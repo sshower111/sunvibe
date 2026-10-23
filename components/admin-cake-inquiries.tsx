@@ -14,6 +14,8 @@ import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
+import { AdminCustomOrderForm } from './admin-custom-order-form'
+import { cakeOrderStatusLabels, type CakeOrderStatus } from '@/lib/cake-order'
 
 const filters = {
   open: { label: 'Open', statuses: ['new', 'waiting_customer', 'checking_owner'] },
@@ -221,6 +223,22 @@ export function AdminCakeInquiries() {
                   </Button>
                 )}
               </div>
+              {i.order ? (
+                <p className="rounded-md border bg-secondary p-2 text-sm">
+                  Order {i.order.ref}: {cakeOrderStatusLabels[i.order.status as CakeOrderStatus] ?? i.order.status}.
+                  Manage it in Cake orders (resend or copy the pay link there).
+                </p>
+              ) : (
+                !['completed', 'cancelled'].includes(i.status) && (
+                  <AdminCustomOrderForm
+                    inquiry={i}
+                    onCreated={message => {
+                      setNotice(message)
+                      void load()
+                    }}
+                  />
+                )
+              )}
               {i.test && (
                 <Button variant="outline" onClick={() => removeTest(i.id)} disabled={busy}>
                   Delete test inquiry

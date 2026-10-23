@@ -25,35 +25,8 @@ import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { FormAlert } from './ui/form-message'
 
-type SquareCard = {
-  attach: (selector: string) => Promise<void>
-  tokenize: (
-    verification?: Record<string, unknown>,
-  ) => Promise<{ status: string; token?: string; errors?: { message: string }[] }>
-  destroy: () => Promise<void>
-}
-type SquareWindow = Window & {
-  Square?: { payments: (appId: string, locationId: string) => { card: () => Promise<SquareCard> } }
-}
-export type SquareConfig = { applicationId: string; locationId: string; environment: 'production' | 'sandbox' }
-
-let loading: Promise<void> | undefined
-function loadSquare(environment: SquareConfig['environment']) {
-  return (loading ||= new Promise<void>((resolve, reject) => {
-    if ((window as SquareWindow).Square) return resolve()
-    const script = document.createElement('script')
-    script.src = `https://${environment === 'production' ? '' : 'sandbox.'}web.squarecdn.com/v1/square.js`
-    script.async = true
-    script.nonce = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce || ''
-    script.onload = () => resolve()
-    script.onerror = () => {
-      loading = undefined
-      script.remove()
-      reject(new Error('The card form could not load.'))
-    }
-    document.head.appendChild(script)
-  }))
-}
+import { SquareCard, type SquareCardHandle, type SquareConfig } from './square-card'
+export type { SquareConfig }
 
 const money = (n: number) => '$' + n.toFixed(2)
 const empty = {
@@ -76,7 +49,7 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ held: boolean; ref: string; approveBy?: string; receiptUrl?: string } | null>(null)
-  const card = useRef<SquareCard | null>(null)
+  const card = useRef<SquareCardHandle>(null)
   const captcha = useRef<CaptchaHandle>(null)
   const requestId = useRef('')
   const update = (key: keyof typeof empty, value: string) => setData(d => ({ ...d, [key]: value }))
@@ -86,24 +59,6 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
     const timer = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(timer)
   }, [])
-  useEffect(() => {
-    let active = true
-    loadSquare(square.environment)
-      .then(async () => {
-        const payments = (window as SquareWindow).Square!.payments(square.applicationId, square.locationId)
-        const created = await payments.card()
-        if (!active) return void created.destroy()
-        await created.attach('#cake-card')
-        card.current = created
-        setCardReady(true)
-      })
-      .catch(() => active && setError(`The card form could not load. Refresh the page or call ${SITE.phone}.`))
-    return () => {
-      active = false
-      void card.current?.destroy()
-      card.current = null
-    }
-  }, [square])
 
   const today = storeDate(now)
   const slots = useMemo(() => (data.pickupDate ? pickupSlots(data.pickupDate, now) : []), [data.pickupDate, now])
@@ -123,26 +78,16 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
     const checked = cakeOrderSchema.safeParse({ ...data, requestId: requestId.current })
     if (!checked.success) return setError(checked.error.issues[0].message)
     if (decision && !decision.ok) return setError(decision.error)
-    if (!card.current || price === null) return setError('Please wait for the card form to load.')
+    if (!card.current || !cardReady || price === null) return setError('Please wait for the card form to load.')
     setBusy(true)
     try {
-      const [first, ...rest] = data.name.trim().split(/\s+/)
-      const result = await card.current.tokenize({
-        amount: price.toFixed(2),
-        currencyCode: 'USD',
-        intent: 'CHARGE',
-        customerInitiated: true,
-        sellerKeyedIn: false,
-        billingContact: { givenName: first, familyName: rest.join(' '), email: data.email, phone: data.phone },
-      })
-      if (result.status !== 'OK' || !result.token)
-        throw new Error(result.errors?.[0]?.message || 'Please check your card details.')
+      const cardToken = await card.current.tokenize(price, data)
       const captchaToken = await captcha.current?.verify()
       if (!captchaToken) throw new Error('Please try verification again.')
       const response = await fetch('/api/cake-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...checked.data, cardToken: result.token, captchaToken }),
+        body: JSON.stringify({ ...checked.data, cardToken, captchaToken }),
       })
       const body = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(body.error || `Please try again or call ${SITE.phone}.`)
@@ -350,7 +295,12 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
 
       <fieldset className="space-y-4">
         <legend className="heading-3 mb-2">4. Payment</legend>
-        <div id="cake-card" className="min-h-24" />
+        <SquareCard
+          ref={card}
+          square={square}
+          onReady={() => setCardReady(true)}
+          onError={message => setError(`${message} Or call ${SITE.phone}.`)}
+        />
         {!cardReady && !error && <p className="text-sm text-muted-foreground">Loading secure card form…</p>}
         <ContactCaptcha ref={captcha} action="cake_order" />
         {error && <FormAlert type="error">{error}</FormAlert>}

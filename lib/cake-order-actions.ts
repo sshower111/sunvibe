@@ -14,6 +14,7 @@ import {
 import { cakePrice, decideOrder, orderRef, type StoredCakeOrder } from './cake-order'
 import { addDays, storeDate } from './occasion-dates'
 import { SITE } from './site-info'
+import { expirePayLinks } from './custom-cake-orders'
 
 // Approving, declining and expiring held orders. Used by admin and by the Square webhook.
 // Test orders made in production have a made-up payment ID (no card was used), so Square is skipped for them.
@@ -29,6 +30,7 @@ export async function markExpired(order: StoredCakeOrder) {
 /** Lists orders, first settling any held order whose approval time has passed. */
 export async function listCakeOrdersSettled() {
   const orders = await listCakeOrders()
+  await expirePayLinks(orders)
   const now = Date.now()
   for (const order of orders) {
     if (order.status !== 'awaiting_approval' || !order.approveBy || Date.parse(order.approveBy) > now) continue

@@ -37,6 +37,16 @@ If nobody approves in time, Square releases the hold, the order shows as "Not ap
 
 The order is saved just before the card is charged, so a charge always has an order. If the payment fails, the order is marked "Payment failed" (Declined / expired list in admin) and deleted after 2 days.
 
+## Custom cake orders (pay links)
+
+Made in admin → Cake inquiries → **Create order & send pay link** (`lib/custom-cake-orders.ts`, `components/admin-custom-order-form.tsx`).
+
+- The order stores the agreed cake, pickup or delivery (with address), design notes, total price and an optional deposit.
+- The customer is emailed a link to `/pay/<order id>` (the random ID is the link's secret; the page isn't indexed). It works for 3 days; after that the order shows "Pay link expired" until **Resend link** gives it 3 more days.
+- Paying charges the full price or the deposit straight away (Square Online API rate). Status: `awaiting_payment` → `paid` or `deposit_paid`; the inquiry becomes Confirmed & paid. Receipt to the customer, notice (with the Chinese text for Mom) to the bakery.
+- Test inquiries make test orders: emails go to the bakery inbox, and on the live site the pay page has a no-card test button.
+- Needs `db/005-custom-cake-orders.sql` (adds the two statuses).
+
 ## Emails
 
 - New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese text for Mom) and to the customer.
