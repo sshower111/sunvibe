@@ -28,13 +28,21 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 
 - Reservation requests from /pre-order. Call the customer, then update the status.
 
+## Cake inquiries
+
+- Every custom cake inquiry from /custom-cakes appears here (the inquiry email still arrives as before; reference photos are only in that email).
+- Set the status as it moves along: New → Waiting on customer / Checking with Mom → Confirmed & paid → Completed, or Cancelled. "Open" shows everything still in progress.
+- Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
+- A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
+- Customers get an email copy of their inquiry; their replies come to the bakery inbox.
+
 ## Settings
 
 - Maintenance mode is set in Vercel (`MAINTENANCE_MODE=true`, then redeploy). Admin keeps working while it is on.
 
 ## Changing the password
 
-In Vercel set a new `ADMIN_PASSWORD` (type Secret) and redeploy. Keep `CAMPAIGN_STORAGE_SECRET` unchanged: it decrypts saved pre-orders.
+In Vercel set a new `ADMIN_PASSWORD` (type Secret) and redeploy. Keep `CAMPAIGN_STORAGE_SECRET` unchanged: it decrypts saved pre-orders and cake inquiries.
 
 ## Google Analytics
 

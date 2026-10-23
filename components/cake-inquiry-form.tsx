@@ -201,10 +201,13 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
         className="rounded-lg border border-success/25 bg-success-tint card-pad"
       >
         <h2 className="heading-2">Your cake inquiry is on its way</h2>
-        <p className="mt-4">Thanks, {data.name}. We’ll contact you with availability and a quote.</p>
+        <p className="mt-4">
+          Thanks, {data.name}. We’ve emailed a copy to {data.email} and will contact you with availability and a quote.
+        </p>
+        <p className="mt-3">Need to add or change something? Reply to that email instead of sending another form.</p>
         <p className="mt-3 font-semibold">Your order and date are not confirmed yet.</p>
         <p className="mt-3">
-          Need to follow up? Call{' '}
+          Prefer to talk? Call{' '}
           <a href={SITE.phoneHref} className="text-primary underline">
             {SITE.phone}
           </a>

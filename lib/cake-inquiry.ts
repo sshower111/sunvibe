@@ -17,12 +17,13 @@ export const fillings = [
   'Please recommend',
   'Mixed Fresh Fruit',
   'Strawberry',
+  'Banana',
+  'Strawberry Banana',
   'Mango',
   'Taro',
   'Custard',
   'Coconut',
   'Durian',
-  'Banana',
   'Something else (e.g., passion fruit)',
 ] as const
 // The bakery accommodates fillings it doesn't list; the customer describes them in the notes.

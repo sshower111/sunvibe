@@ -89,6 +89,9 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal((await post({ size: 'tier-8-10-12-14' })).status, 400)
   assert.equal((await post({ size: 'tier-6-10-12-16-18' })).status, 400)
   assert.equal((await post({ acknowledged: '' })).status, 400)
+  assert.equal((await post({ filling: 'Strawberry Banana' })).status, 200)
+  mail.length = 0
+  saved.length = 0
   assert.equal((await post({ cakeMessage: 'x'.repeat(schema.MAX_CAKE_MESSAGE + 1) })).status, 400)
   assert.equal((await post({}, [new File(['fake'], 'fake.jpg', { type: 'image/jpeg' })])).status, 400)
   assert.equal(
@@ -111,6 +114,17 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal(mail.length, 0)
   verified = true
   assert.equal((await post({}, [png])).status, 200)
+  // The bakery email first, then a copy to the customer whose replies go back to the bakery.
+  assert.equal(mail.length, 2)
+  const copy = mail[1]
+  assert.equal(copy.body.to, valid.email)
+  assert.equal(copy.body.replyTo, process.env.NOTIFICATION_EMAIL || 'sunvillebakerylv@gmail.com')
+  assert.equal(copy.options.idempotencyKey, 'cake-copy-' + valid.requestId)
+  assert(copy.body.html.includes('Hi &lt;script&gt;test&lt;/script&gt;') && !copy.body.html.includes('<script>'))
+  assert(copy.body.html.includes('<strong>Writing on cake:</strong> Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  assert(copy.body.text.includes('Just reply to this email'))
+  assert(!copy.body.html.includes('allergy request'), 'customer notes are not echoed')
+  assert.equal(copy.body.attachments, undefined)
   assert(!mail[0].body.html.includes('<script>'))
   assert(mail[0].body.html.includes('&lt;script&gt;'))
   assert.equal(mail[0].body.attachments[0].filename, 'cake-reference-1.png')

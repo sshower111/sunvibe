@@ -67,6 +67,7 @@ const options: Record<string, string> = {
   // Fillings
   'Mixed Fresh Fruit': '雜錦鮮果',
   Strawberry: '草莓',
+  'Strawberry Banana': '草莓香蕉',
   Mango: '芒果',
   Taro: '芋頭',
   Custard: '吉士',

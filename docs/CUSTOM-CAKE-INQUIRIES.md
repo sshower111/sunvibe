@@ -44,7 +44,7 @@ The online guide and inquiry accept 2- and 3-tier combinations only. Four- and f
 
 - Optional "Writing on the cake" field (60 characters) in the cake step, shown on the review step and in both the English and Chinese email. It is customer text, so it is never translated.
 - The last filling option is "Something else (e.g., passion fruit)"; choosing it asks the customer to describe the filling in the notes.
-- Pricing: Strawberry and Banana are priced in the Mixed Fruit / Tiramisu group (owner, Oct 2026).
+- Strawberry, Banana and Strawberry Banana are separate filling choices, all priced in the Mixed Fruit / Strawberry / Banana / Tiramisu group (owner, Oct 2026).
 
 ## Inquiry tracker (admin → Cake inquiries)
 
@@ -53,4 +53,5 @@ Every inquiry that is emailed is also saved to `bakery_cake_inquiries` (schema: 
 - Statuses: New → Waiting on customer / Checking with Mom → Confirmed & paid → Completed, or Cancelled. Filters: Open, Confirmed & paid, Completed / cancelled, All.
 - Private notes per inquiry for the agreed design, final price and payment.
 - Inquiries from the same email or phone are flagged on each other, so a second "correction" form is easy to spot and cancel.
+- After a delivered inquiry the customer gets a copy (their choices only, no notes or address) with reply-to set to the bakery inbox, so corrections come as replies. A failed copy is logged and does not fail the inquiry.
 - Customer details and private notes are encrypted at rest like pre-orders; RLS has no browser policies. API: `POST /api/admin/cake-inquiries` (admin session required).

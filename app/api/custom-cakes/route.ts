@@ -142,8 +142,55 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Cake inquiry emailed but not saved to the tracker', requestId, error)
     }
+    // Copy for the customer. Replies go to the bakery, so changes arrive in one thread instead of a second form.
+    try {
+      const copy = await mailer().emails.send(
+        {
+          from: EMAIL_FROM,
+          to: values.email,
+          replyTo: bakeryInbox(),
+          subject: `We received your cake inquiry — ${SITE.name}`,
+          ...customerCopy(values),
+        },
+        { idempotencyKey: `cake-copy-${requestId}` },
+      )
+      if (copy.error) console.error('Cake inquiry copy not sent to customer', requestId, copy.error)
+    } catch (error) {
+      console.error('Cake inquiry copy not sent to customer', requestId, error)
+    }
     return NextResponse.json({ success: true })
   } catch {
     return fail('Your inquiry could not be sent. Please retry or call the bakery.', 500)
+  }
+}
+
+// Only the customer's own choices; free-text notes and addresses are left out of an email sent to a typed address.
+function customerCopy(values: Record<string, string>) {
+  const rows: [string, string][] = [
+    ['Event', [values.eventType, values.eventDate, values.eventTime].filter(Boolean).join(' · ')],
+    ['Cake', `${values.servings} servings · ${values.size}`],
+    ['Flavor / filling', `${values.flavor} / ${values.filling}`],
+    ['Writing on cake', values.cakeMessage || 'None'],
+    ['Budget', values.budget],
+    ['Pickup / delivery', values.fulfillment],
+  ]
+  const intro = `Hi ${values.name}, thanks for your custom cake inquiry. We'll get back to you with availability and a quote.`
+  const change = 'Need to add or change something? Just reply to this email. There is no need to send another form.'
+  const notConfirmed = 'Your order and date are not confirmed until we confirm the details and payment with you.'
+  return {
+    text: [
+      intro,
+      '',
+      ...rows.map(([label, value]) => `${label}: ${value}`),
+      '',
+      change,
+      notConfirmed,
+      '',
+      `${SITE.name} · ${SITE.phone}`,
+    ].join('\n'),
+    html:
+      `<p>${escapeHtml(intro)}</p>` +
+      rows.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`).join('') +
+      `<p><strong>${change}</strong></p><p>${notConfirmed}</p><p>${SITE.name} · ${SITE.phone}</p>`,
   }
 }
