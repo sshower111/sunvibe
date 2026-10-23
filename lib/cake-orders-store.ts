@@ -14,6 +14,8 @@ const toOrder = (r: Row): StoredCakeOrder => ({
 
 export async function listCakeOrders(): Promise<StoredCakeOrder[]> {
   const sql = await contentDatabase()
+  // Failed payment attempts are kept 2 days for reference (nothing was charged), then deleted.
+  await sql`DELETE FROM bakery_cake_orders WHERE status='failed' AND created_at < now() - interval '2 days'`
   const rows =
     await sql`SELECT payload,status,payment_id,approve_by FROM bakery_cake_orders WHERE status <> 'failed' OR created_at > now() - interval '2 days' ORDER BY created_at DESC LIMIT 500`
   return rows.map(r => toOrder(r as unknown as Row))

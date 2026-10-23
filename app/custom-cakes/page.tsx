@@ -37,14 +37,22 @@ export default function CustomCakesPage() {
         >
           <p>Chiffon cakes for birthdays, weddings, and everything worth celebrating.</p>
           <p className="mt-2 text-base font-semibold text-white">Please allow 3–5 days’ notice.</p>
-          <p className="mt-2 text-base text-white">
-            Need one of our everyday cakes sooner?{' '}
-            <Link href="/order-cake" className="font-semibold text-white underline">
-              Order online for pickup
-            </Link>
-            .
-          </p>
         </PageBand>
+        <section aria-labelledby="order-online-heading" className="site-container pt-[clamp(1.5rem,4vw,2.5rem)]">
+          <div className="flex flex-col gap-4 rounded-xl border-2 border-gold bg-card card-pad sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="order-online-heading" className="heading-3">
+                Need a cake sooner?
+              </h2>
+              <p className="mt-1 text-muted-foreground">
+                Our everyday chiffon cakes can be ordered and paid online for pickup — as soon as today.
+              </p>
+            </div>
+            <Link href="/order-cake" className={cn(buttonVariants(), 'w-full shrink-0 sm:w-auto')}>
+              Order a cake
+            </Link>
+          </div>
+        </section>
         <CakeServingGuide />
         <section id="cake-inquiry" className="site-container section-space" aria-labelledby="inquiry-heading">
           <div className="grid items-start gap-8 lg:grid-cols-[0.7fr_1.3fr]">

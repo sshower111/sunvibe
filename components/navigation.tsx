@@ -10,7 +10,8 @@ import { SITE } from '@/lib/site-info'
 const baseLinks = [
   { href: '/', label: 'Home' },
   { href: '/menu', label: 'Menu' },
-  { href: '/custom-cakes', label: 'Custom Cakes' },
+  { href: '/order-cake', label: 'Order a Cake' },
+  { href: '/custom-cakes', label: 'Custom Cake Inquiry' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/contact', label: 'Contact' },
 ]
@@ -21,7 +22,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
   // "Pre-order" only appears while a festival campaign is active, so it stays reachable after the banner is dismissed.
   const { preorderOpen } = useSite()
   const links = preorderOpen
-    ? [...baseLinks.slice(0, 3), { href: '/pre-order', label: 'Pre-order' }, ...baseLinks.slice(3)]
+    ? [...baseLinks.slice(0, 4), { href: '/pre-order', label: 'Pre-order' }, ...baseLinks.slice(4)]
     : baseLinks
   const pathname = usePathname()
   const toggle = useRef<HTMLButtonElement>(null)
@@ -98,7 +99,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                 className="h-9 w-full object-contain object-left md:h-12"
               />
             </Link>
-            <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 md:flex lg:gap-2">
+            <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 lg:flex lg:gap-2">
               {/* The logo already links home; drop "Home" on desktop when Pre-order needs the room. */}
               {links
                 .filter(link => !(preorderOpen && link.href === '/'))
@@ -108,7 +109,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                     href={link.href}
                     aria-current={pathname === link.href ? 'page' : undefined}
                     className={
-                      'inline-flex min-h-12 min-w-11 items-center justify-center rounded-sm px-2 text-[0.9375rem] font-medium decoration-[3px] underline-offset-[10px] transition-colors hover:text-brand ' +
+                      'inline-flex min-h-12 min-w-11 items-center justify-center whitespace-nowrap rounded-sm px-2 text-[0.9375rem] font-medium decoration-[3px] underline-offset-[10px] transition-colors hover:text-brand ' +
                       (pathname === link.href ? 'text-primary underline' : 'text-foreground')
                     }
                   >
@@ -119,7 +120,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             {/* Calling is how most orders start, so it stays in view on wide screens. */}
             <a
               href={SITE.phoneHref}
-              className="action-button hidden shrink-0 items-center gap-2 bg-brand text-white hover:bg-brand-deep active:bg-brand-deep lg:inline-flex"
+              className="action-button hidden shrink-0 items-center gap-2 bg-brand text-white hover:bg-brand-deep active:bg-brand-deep xl:inline-flex"
             >
               <Phone aria-hidden="true" className="size-4" />
               {SITE.phone}
@@ -131,7 +132,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
               aria-controls="mobile-navigation"
               aria-label={open ? 'Close navigation' : 'Open navigation'}
               onClick={() => setOpen(!open)}
-              className="-mr-2 ml-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-primary transition-colors hover:bg-secondary active:bg-muted md:hidden"
+              className="-mr-2 ml-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-md text-primary transition-colors hover:bg-secondary active:bg-muted lg:hidden"
             >
               {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
             </button>
@@ -140,7 +141,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             id="mobile-navigation"
             aria-label="Mobile navigation"
             hidden={!open}
-            className="max-h-[calc(100dvh-var(--header-height))] overflow-y-auto border-t pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 animate-in fade-in slide-in-from-top-2 duration-200 md:hidden"
+            className="max-h-[calc(100dvh-var(--header-height))] overflow-y-auto border-t pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 animate-in fade-in slide-in-from-top-2 duration-200 lg:hidden"
           >
             <ul className="divide-y">
               {links.map(link => (
@@ -194,7 +195,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
       {open && (
         <div
           aria-hidden="true"
-          className="fixed inset-x-0 bottom-0 top-0 z-[45] bg-ink/30 animate-in fade-in duration-200 md:hidden"
+          className="fixed inset-x-0 bottom-0 top-0 z-[45] bg-ink/30 animate-in fade-in duration-200 lg:hidden"
         />
       )}
     </>

@@ -290,6 +290,18 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal(list.orders.find(o => o.id === late.requestId).status, 'expired')
   assert.equal(square.calls.at(-1)[0], 'cancel')
 
+  // Failed attempts older than 2 days are deleted when admin lists orders.
+  await db.query("UPDATE bakery_cake_orders SET created_at = now() - interval '3 days' WHERE id = $1", [
+    retry.requestId,
+  ])
+  await db.query(
+    "INSERT INTO bakery_cake_orders(id,payload,status,pickup_at,created_at) VALUES($1,'x','failed',now(),now() - interval '3 days')",
+    ['99999999-9999-4999-8999-999999999999'],
+  )
+  await adminCall({ action: 'list' })
+  assert.equal(await store.getCakeOrder('99999999-9999-4999-8999-999999999999'), null)
+  assert.notEqual(await store.getCakeOrder(retry.requestId), null) // paid on retry, so kept
+
   // Picked up, and undo.
   assert.equal((await adminCall({ action: 'picked_up', id: paid.requestId })).status, 200)
   assert.equal((await store.getCakeOrder(paid.requestId)).status, 'picked_up')
