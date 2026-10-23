@@ -5,6 +5,7 @@ import { ExternalLink, LogOut, Search } from 'lucide-react'
 import { GalleryPhotoUpload } from '@/components/gallery-photo-upload'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { UnderlineTab } from '@/components/admin-underline-tab'
 import { adminPost, SignedOutError } from '@/lib/admin-api'
 import { Input } from '@/components/ui/input'
 import { AdminOccasions } from '@/components/admin-occasions'
@@ -315,15 +316,9 @@ export default function AdminPage() {
           className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 sm:gap-2 sm:px-8 [scrollbar-width:none]"
         >
           {TABS.map(tab => (
-            <button
+            <UnderlineTab
               key={tab.id}
-              type="button"
-              className={`relative shrink-0 px-3 py-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:origin-center after:rounded-full after:bg-primary after:transition-transform after:duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
-                activeTab === tab.id
-                  ? 'text-primary after:scale-x-100'
-                  : 'text-muted-foreground after:scale-x-0 after:opacity-40 hover:text-foreground hover:after:scale-x-100'
-              }`}
-              aria-pressed={activeTab === tab.id}
+              active={activeTab === tab.id}
               onClick={() => {
                 setActiveTab(tab.id)
                 // Keep the tab in the address so a reload (or a bookmark) opens the same tab.
@@ -331,7 +326,7 @@ export default function AdminPage() {
               }}
             >
               {tab.label}
-            </button>
+            </UnderlineTab>
           ))}
         </nav>
       </header>
@@ -369,17 +364,16 @@ export default function AdminPage() {
                   className="pl-11"
                 />
               </div>
-              <div role="group" aria-label="Show items" className="flex gap-2">
+              <div role="group" aria-label="Show items" className="flex gap-1">
                 {(['all', 'visible', 'hidden'] as const).map(value => (
-                  <Button
+                  <UnderlineTab
                     key={value}
-                    variant={menuFilter === value ? 'default' : 'outline'}
-                    aria-pressed={menuFilter === value}
-                    className="flex-1 sm:flex-none"
+                    size="sm"
+                    active={menuFilter === value}
                     onClick={() => setMenuFilter(value)}
                   >
                     {value[0].toUpperCase() + value.slice(1)}
-                  </Button>
+                  </UnderlineTab>
                 ))}
               </div>
             </div>

@@ -12,6 +12,7 @@ import {
 import { cakeLabel } from '@/lib/cake-catalog'
 import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
+import { UnderlineTab } from './admin-underline-tab'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { AdminCustomOrderForm } from './admin-custom-order-form'
@@ -108,17 +109,14 @@ export function AdminCakeInquiries() {
   return (
     <section className="space-y-4">
       <h2 className="heading-2">Cake inquiries</h2>
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(filters) as Filter[]).map(key => (
-          <Button
-            key={key}
-            variant={filter === key ? 'default' : 'outline'}
-            aria-pressed={filter === key}
-            onClick={() => setFilter(key)}
-          >
-            {filters[key].label} ({counts[key]})
-          </Button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Show inquiries" className="flex flex-wrap gap-1">
+          {(Object.keys(filters) as Filter[]).map(key => (
+            <UnderlineTab key={key} size="sm" active={filter === key} onClick={() => setFilter(key)}>
+              {filters[key].label} ({counts[key]})
+            </UnderlineTab>
+          ))}
+        </div>
         <Button variant="outline" onClick={sendTest} disabled={busy} className="ml-auto">
           Send test inquiry
         </Button>
