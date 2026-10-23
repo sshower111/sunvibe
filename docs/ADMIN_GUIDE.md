@@ -36,7 +36,7 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 - A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
 - "Draft reply" writes a starting reply that only covers what's still open (suggested size, starting price, questions). Fill in the [square brackets], edit as you like, then "Open in Gmail" or "Copy". Nothing is sent until you send it.
-- **Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. Test inquiries are not added to this list.
+- **Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try Draft reply on it; use "Delete test inquiry" to remove it.
 
 ## Settings
 

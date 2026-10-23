@@ -76,20 +76,27 @@ export function AdminCakeInquiries() {
       setDrafts(({ [id]: _, ...rest }) => rest)
     })
 
+  const removeTest = (id: string) =>
+    run(async () => {
+      await request({ action: 'delete', id })
+      setInquiries(current => current.filter(i => i.id !== id))
+    })
   const sendTest = () =>
     run(async () => {
       setNotice('')
       const { sentTo } = await request({ action: 'test' })
-      setNotice(`Test inquiry sent to ${sentTo}. Look for two emails starting with [TEST].`)
+      setInquiries((await request({ action: 'list' })).inquiries)
+      setFilter('open')
+      setNotice(`Test inquiry sent to ${sentTo} (two emails starting with [TEST]) and added below.`)
     })
 
   // Customers sometimes send a second form to add or correct details; link those together.
   const others = useMemo(() => {
     const byCustomer = new Map<string, StoredCakeInquiry[]>()
-    for (const i of inquiries)
+    for (const i of inquiries.filter(i => !i.test))
       for (const key of customerKeys(i)) if (key) byCustomer.set(key, [...(byCustomer.get(key) ?? []), i])
     return (i: StoredCakeInquiry) =>
-      [...new Set(customerKeys(i).flatMap(key => byCustomer.get(key) ?? []))].filter(o => o.id !== i.id)
+      i.test ? [] : [...new Set(customerKeys(i).flatMap(key => byCustomer.get(key) ?? []))].filter(o => o.id !== i.id)
   }, [inquiries])
 
   const counts = Object.fromEntries(
@@ -150,6 +157,11 @@ export function AdminCakeInquiries() {
               <div>
                 <h3 className="heading-3">
                   {i.name} <span className="text-sm font-normal text-muted-foreground">{inquiryRef(i.id)}</span>
+                  {i.test && (
+                    <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                      TEST
+                    </span>
+                  )}
                 </h3>
                 <p className="text-sm text-muted-foreground">Received {received(i.createdAt)} (Las Vegas)</p>
               </div>
@@ -213,6 +225,11 @@ export function AdminCakeInquiries() {
                   </Button>
                 )}
               </div>
+              {i.test && (
+                <Button variant="outline" onClick={() => removeTest(i.id)} disabled={busy}>
+                  Delete test inquiry
+                </Button>
+              )}
               <ReplyDraft
                 inquiry={i}
                 text={replies[i.id]}

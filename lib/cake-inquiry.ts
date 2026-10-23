@@ -131,4 +131,6 @@ export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged'> & {
   photoCount: number
   status: InquiryStatus
   staffNotes: string
+  /** Sample from admin "Send test inquiry"; can be deleted from admin. */
+  test?: boolean
 }
