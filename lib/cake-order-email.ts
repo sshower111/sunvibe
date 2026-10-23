@@ -4,6 +4,8 @@ import { SITE } from '@/lib/site-info'
 import { SITE_URL } from '@/lib/seo'
 import { escapeHtml } from '@/lib/security'
 import {
+  amountDueNow,
+  isDelivery,
   formatPickupDate,
   formatPickupTime,
   formatVegasTime,
@@ -20,9 +22,17 @@ const pickup = (o: StoredCakeOrder) => `${formatPickupDate(o.pickupDate)}, ${for
 const cakeRows = (o: StoredCakeOrder): [string, string][] => [
   ['Cake', `${sizeLabel(o.size)} · ${o.flavor} cake · ${o.filling} filling`],
   ['Writing on cake', o.cakeMessage || 'None'],
-  ['Pickup', `${pickup(o)} at ${SITE.address}`],
+  isDelivery(o)
+    ? ['Delivery', `${pickup(o)} to ${o.deliveryAddress} (${o.fulfillment})`]
+    : ['Pickup', `${pickup(o)} at ${SITE.address}`],
   ['Total', money(o.price)],
-  ...(o.notes ? ([['Notes', o.notes]] as [string, string][]) : []),
+  ...(o.deposit
+    ? ([
+        ['Deposit', money(o.deposit)],
+        ['Balance due at ' + (isDelivery(o) ? 'delivery' : 'pickup'), money(o.price - o.deposit)],
+      ] as [string, string][])
+    : []),
+  ...(o.notes ? ([[o.kind === 'custom' ? 'Design notes' : 'Notes', o.notes]] as [string, string][]) : []),
 ]
 const html = (paragraphs: string[], rows: [string, string][], after: string[] = []) =>
   paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('') +
@@ -130,3 +140,46 @@ export const sendNotAcceptedEmail = (o: StoredCakeOrder) =>
     ],
     rows: cakeRows(o).filter(([label]) => label !== 'Total'),
   })
+
+// Custom cake orders (made in admin from an inquiry, paid through a link).
+
+export const payLink = (o: Pick<StoredCakeOrder, 'id'>) => `${SITE_URL}/pay/${o.id}`
+
+/** "Your cake is confirmed — pay here": sent when the order is created, and again when the link is resent. */
+export const sendPaymentRequestEmail = (o: StoredCakeOrder) =>
+  send(`cake-order-pay-request-${o.id}-${o.payBy}`, {
+    to: customerEmail(o),
+    replyTo: bakeryInbox(),
+    subject: tag(o, `Your custom cake ${orderRef(o)} is confirmed — payment link inside`),
+    paragraphs: [
+      `Hi ${o.name}, thank you for choosing Sunville Bakery! Here are the final details of your cake.`,
+      `To reserve it, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time):`,
+      payLink(o),
+    ],
+    rows: cakeRows(o),
+    after: [`If anything above needs changing, just reply to this email or call ${SITE.phone} before paying.`],
+  })
+
+/** Custom order paid: receipt to the customer, notice to the bakery. */
+export async function sendCustomPaidEmails(o: StoredCakeOrder) {
+  const paid = amountDueNow(o)
+  const what = o.deposit ? `deposit of ${money(paid)}` : `payment of ${money(paid)}`
+  return Promise.all([
+    send(`cake-order-custom-paid-${o.id}`, {
+      to: customerEmail(o),
+      replyTo: bakeryInbox(),
+      subject: tag(o, `Payment received for your custom cake ${orderRef(o)} — Sunville Bakery`),
+      paragraphs: [`Hi ${o.name}, we've received your ${what}. Your cake is booked!`],
+      rows: cakeRows(o),
+      after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
+    }),
+    send(`cake-order-custom-paid-bakery-${o.id}`, {
+      to: bakeryInbox(),
+      replyTo: o.email,
+      subject: tag(o, `Paid: custom cake ${orderRef(o)} · ${o.name} · ${pickup(o)}`),
+      paragraphs: [`${o.name} paid the ${what} online. Admin → Cake orders: ${SITE_URL}/admin?tab=cake-orders`],
+      rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
+      after: ['— For Mom —', momText(o)],
+    }),
+  ])
+}

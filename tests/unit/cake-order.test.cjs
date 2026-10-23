@@ -389,3 +389,143 @@ test('order numbers: existing orders numbered by date, re-running keeps them, ne
     await fresh.close()
   }
 })
+
+test('custom cake orders: create from inquiry, pay link, deposit, expiry and resend', async () => {
+  await db.exec(fs.readFileSync(path.join(root, 'db/002-cake-inquiries.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/005-custom-cake-orders.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/005-custom-cake-orders.sql'), 'utf8')) // re-runnable
+  const inquiries = load('lib/cake-inquiries-store.ts')
+  const store = load('lib/cake-orders-store.ts')
+  const custom = load('lib/custom-cake-orders.ts')
+  const inquiryRoute = load('app/api/admin/cake-inquiries/route.ts')
+  const ordersRoute = load('app/api/admin/cake-orders/route.ts')
+  const payRoute = load('app/api/pay/[id]/route.ts')
+  const inquiryId = '55555555-5555-4555-8555-555555555555'
+  await inquiries.saveCakeInquiry({
+    id: inquiryId,
+    createdAt: new Date().toISOString(),
+    name: 'Bea Wong',
+    email: 'bea@example.test',
+    phone: '(702) 555-0199',
+    eventDate: addDays(today, 10),
+    eventTime: '15:00',
+    eventType: 'Wedding',
+    servings: '50',
+    size: 'tier-8-12',
+    flavor: 'Vanilla',
+    filling: 'Mango',
+    cakeMessage: 'Bea & Tom',
+    budget: '$200–$350',
+    fulfillment: 'Casino / Hotel delivery — $50',
+    deliveryAddress: 'Bellagio, Las Vegas',
+    notes: '',
+    photoCount: 0,
+  })
+  const pay = (id, body) =>
+    payRoute.POST(new Request('http://test.invalid/api', { method: 'POST', body: JSON.stringify(body) }), {
+      params: Promise.resolve({ id }),
+    })
+  const base = {
+    inquiryId,
+    size: 'tier-8-12',
+    flavor: 'Vanilla',
+    filling: 'Mango',
+    cakeMessage: 'Bea & Tom',
+    pickupDate: addDays(today, 10),
+    pickupTime: '15:00',
+    fulfillment: 'Casino / Hotel delivery — $50',
+    deliveryAddress: 'Bellagio, Las Vegas',
+    notes: 'White with gold leaf',
+  }
+
+  // Validation: a deposit can't be the whole price; delivery needs an address.
+  let r = await post(inquiryRoute, {
+    password: 'test-only',
+    action: 'create_order',
+    order: { ...base, price: 288, deposit: 288 },
+  })
+  assert.equal(r.status, 400)
+  r = await post(inquiryRoute, {
+    password: 'test-only',
+    action: 'create_order',
+    order: { ...base, deliveryAddress: '', price: 288 },
+  })
+  assert.equal(r.status, 400)
+
+  // Create with a deposit: order saved as awaiting payment, inquiry moves on, customer emailed the link.
+  const before = emails.length
+  r = await post(inquiryRoute, {
+    password: 'test-only',
+    action: 'create_order',
+    order: { ...base, price: '288', deposit: '100' },
+  })
+  assert.equal(r.status, 200)
+  const created = await r.json()
+  assert.equal(created.emailed, true)
+  const order = (await store.listCakeOrders()).find(o => o.inquiryId === inquiryId)
+  assert.equal(order.status, 'awaiting_payment')
+  assert.equal(order.kind, 'custom')
+  assert.equal(order.deposit, 100)
+  assert.equal(created.ref, '#' + order.orderNo)
+  assert.equal((await inquiries.getCakeInquiry(inquiryId)).status, 'waiting_customer')
+  const linkEmail = emails.slice(before).find(e => e.to === 'bea@example.test')
+  assert(linkEmail.text.includes('/pay/' + order.id))
+  assert(linkEmail.text.includes('Balance due at delivery: $188.00'))
+  const list = await (await post(inquiryRoute, { password: 'test-only', action: 'list' })).json()
+  assert.equal(list.inquiries.find(i => i.id === inquiryId).order.status, 'awaiting_payment')
+
+  // Pay the deposit: Square charges $100, order is "Deposit paid", inquiry "Confirmed & paid".
+  assert.equal((await pay('not-a-real-id', { cardToken: 'cnon:x' })).status, 404)
+  r = await pay(order.id, { cardToken: 'cnon:card' })
+  assert.equal(r.status, 200)
+  assert.equal(square.calls.at(-1)[1].amountCents, 10000)
+  assert.equal(square.calls.at(-1)[1].autocomplete, true)
+  assert(square.calls.at(-1)[1].idempotencyKey.length <= 45)
+  assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
+  assert.equal((await inquiries.getCakeInquiry(inquiryId)).status, 'confirmed_paid')
+  assert(emails.some(e => e.subject.startsWith('Payment received for your custom cake')))
+  const bakery = emails.find(e => e.subject.startsWith('Paid: custom cake'))
+  assert(bakery.text.includes('方式：賭場／酒店送貨 — $50'))
+  assert(bakery.text.includes('地址：Bellagio, Las Vegas'))
+  // Can't pay twice.
+  assert.equal((await pay(order.id, { cardToken: 'cnon:card' })).status, 409)
+  // Deposit orders can be marked picked up, and undo returns to deposit paid.
+  const adminCall = body => post(ordersRoute, { password: 'test-only', ...body })
+  assert.equal((await adminCall({ action: 'picked_up', id: order.id })).status, 200)
+  assert.equal((await adminCall({ action: 'not_picked_up', id: order.id })).status, 200)
+  assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
+
+  // Full payment, declined card: back to awaiting payment so the customer can retry.
+  const fullId = '66666666-6666-4666-8666-666666666666'
+  await inquiries.saveCakeInquiry({ ...(await inquiries.getCakeInquiry(inquiryId)), id: fullId })
+  r = await post(inquiryRoute, {
+    password: 'test-only',
+    action: 'create_order',
+    order: { ...base, inquiryId: fullId, fulfillment: 'Pickup', price: 168 },
+  })
+  const full = (await store.listCakeOrders()).find(o => o.inquiryId === fullId)
+  assert.equal(full.deliveryAddress, '')
+  square.decline = true
+  assert.equal((await pay(full.id, { cardToken: 'cnon:bad' })).status, 402)
+  square.decline = false
+  assert.equal((await store.getCakeOrder(full.id)).status, 'awaiting_payment')
+
+  // Link runs out after 3 days: listing marks it expired, the page can't pay; resend reopens it for 3 more days.
+  await store.saveCakeOrderDetails({ ...full, payBy: new Date(Date.now() - 1000).toISOString() })
+  await adminCall({ action: 'list' })
+  assert.equal((await store.getCakeOrder(full.id)).status, 'expired')
+  assert.equal((await pay(full.id, { cardToken: 'cnon:card' })).status, 409)
+  const sent = emails.length
+  assert.equal((await adminCall({ action: 'resend_link', id: full.id })).status, 200)
+  assert.equal(emails.length, sent + 1)
+  const reopened = await store.getCakeOrder(full.id)
+  assert.equal(reopened.status, 'awaiting_payment')
+  assert(Date.parse(reopened.payBy) > Date.now() + 2.9 * 86400000)
+  r = await pay(full.id, { cardToken: 'cnon:card' })
+  assert.equal(r.status, 200)
+  assert.equal(square.calls.at(-1)[1].amountCents, 16800)
+  assert.equal((await store.getCakeOrder(full.id)).status, 'paid')
+  // Resend is only for unpaid custom orders.
+  assert.equal((await adminCall({ action: 'resend_link', id: full.id })).status, 409)
+  assert.equal(custom.canPay(await store.getCakeOrder(full.id)), false)
+})

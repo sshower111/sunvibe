@@ -87,3 +87,25 @@ export async function moveCakeOrder(id: string, from: CakeOrderStatus, to: CakeO
     await sql`UPDATE bakery_cake_orders SET status=${to},updated_at=now() WHERE id=${id} AND status=${from} RETURNING id`
   return rows.length > 0
 }
+
+/** Saves a custom cake order made in admin; it waits for the customer to pay through the link. Returns its number. */
+export async function createCustomOrder(order: StoredCakeOrder) {
+  const sql = await contentDatabase()
+  const pickupAt = vegasInstant(order.pickupDate, order.pickupTime).toISOString()
+  const rows = await sql`INSERT INTO bakery_cake_orders(id,payload,status,pickup_at,created_at)
+    VALUES(${order.id},${encode(order)},'awaiting_payment',${pickupAt},${order.createdAt}) RETURNING order_no`
+  return Number(rows[0].order_no)
+}
+
+/** Replaces the stored details of an order (e.g. a new pay-by time when the link is sent again). */
+export async function saveCakeOrderDetails(order: StoredCakeOrder) {
+  const sql = await contentDatabase()
+  const { status: _status, paymentId: _paymentId, approveBy: _approveBy, orderNo: _orderNo, ...details } = order
+  await sql`UPDATE bakery_cake_orders SET payload=${encode(details)},updated_at=now() WHERE id=${order.id}`
+}
+
+/** Finds the custom order made from an inquiry, if any (newest first). */
+export async function findOrderForInquiry(inquiryId: string) {
+  const orders = await listCakeOrders()
+  return orders.find(o => o.inquiryId === inquiryId && o.status !== 'failed') ?? null
+}

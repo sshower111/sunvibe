@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { cakeCatalog } from './cake-catalog'
+import { cakeCatalog, deliveryOptions } from './cake-catalog'
 import { flavors, fillings, MAX_CAKE_MESSAGE } from './cake-inquiry'
 import { addDays, storeDate } from './occasion-dates'
 import { zhOption } from './email-zh'
@@ -150,6 +150,8 @@ export const cakeOrderStatuses = [
   'declined',
   'expired',
   'failed',
+  'awaiting_payment',
+  'deposit_paid',
 ] as const
 export type CakeOrderStatus = (typeof cakeOrderStatuses)[number]
 export const cakeOrderStatusLabels: Record<CakeOrderStatus, string> = {
@@ -160,9 +162,13 @@ export const cakeOrderStatusLabels: Record<CakeOrderStatus, string> = {
   declined: 'Declined',
   expired: 'Not approved in time',
   failed: 'Payment failed',
+  awaiting_payment: 'Awaiting payment',
+  deposit_paid: 'Deposit paid',
 }
 
-export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId'> & {
+export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId' | 'size'> & {
+  /** A listed size value (e.g. '8-inch'); custom orders may use any catalog size or a typed description. */
+  size: string
   id: string
   createdAt: string
   price: number
@@ -175,7 +181,48 @@ export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId'> & {
   test?: boolean
   /** Sequential order number (#1001, ...), assigned by the database when the order is saved. */
   orderNo?: number
+  /** 'custom' = made in admin from a custom cake inquiry; the customer pays through a link (/pay/<id>). */
+  kind?: 'custom'
+  inquiryId?: string
+  /** Custom orders: 'Pickup' or one of the delivery options, and the address for delivery. */
+  fulfillment?: string
+  deliveryAddress?: string
+  /** Custom orders paid with a deposit: the amount due now (the rest is due at pickup/delivery). */
+  deposit?: number
+  /** Custom orders: the pay link works until this time. */
+  payBy?: string
 }
+
+/** Amount the customer pays online now. */
+export const amountDueNow = (o: Pick<StoredCakeOrder, 'price' | 'deposit'>) => o.deposit ?? o.price
+export const isDelivery = (o: Pick<StoredCakeOrder, 'fulfillment'>) => !!o.fulfillment && o.fulfillment !== 'Pickup'
+export const PAY_LINK_DAYS = 3
+
+/** Admin form that turns a confirmed custom cake inquiry into an order with a pay link. */
+export const customOrderSchema = z
+  .object({
+    inquiryId: z.string().uuid(),
+    size: z.string().trim().min(1, 'Enter the cake size.').max(100),
+    flavor: z.string().trim().min(1, 'Enter the flavor.').max(100),
+    filling: z.string().trim().min(1, 'Enter the filling.').max(100),
+    cakeMessage: z.string().trim().max(MAX_CAKE_MESSAGE).default(''),
+    pickupDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose the pickup or delivery date.'),
+    pickupTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Choose the pickup or delivery time.'),
+    fulfillment: z.enum(deliveryOptions),
+    deliveryAddress: z.string().trim().max(500).default(''),
+    notes: z.string().trim().max(1000, 'Please keep the design notes under 1,000 characters.').default(''),
+    price: z.coerce.number().min(1, 'Enter the total price.').max(10000),
+    deposit: z.coerce.number().min(0).max(10000).optional(),
+  })
+  .refine(v => v.fulfillment === 'Pickup' || v.deliveryAddress.length > 0, {
+    message: 'Enter the delivery address.',
+    path: ['deliveryAddress'],
+  })
+  .refine(v => !v.deposit || v.deposit < v.price, {
+    message: 'The deposit must be less than the total.',
+    path: ['deposit'],
+  })
+export type CustomOrderInput = z.infer<typeof customOrderSchema>
 
 /** Order code shown to customers, in emails and in Square: #1001. Orders saved before numbering show their old 4-character code. */
 export const orderRef = (o: Pick<StoredCakeOrder, 'id' | 'orderNo'>) =>
@@ -219,15 +266,17 @@ export function momText(
   order: Pick<
     StoredCakeOrder,
     'phone' | 'size' | 'flavor' | 'filling' | 'pickupDate' | 'pickupTime' | 'cakeMessage' | 'notes'
-  >,
+  > &
+    Partial<Pick<StoredCakeOrder, 'fulfillment' | 'deliveryAddress'>>,
 ) {
   return [
     `電話：${order.phone}`,
     `尺寸：${zhOption(sizeLabel(order.size))}`,
     `口味：${zhOption(order.flavor)}`,
     `餡料：${zhOption(order.filling)}`,
-    `取貨：${zhPickup(order.pickupDate, order.pickupTime)}`,
-    '方式：自取',
+    `${isDelivery(order) ? '送貨' : '取貨'}：${zhPickup(order.pickupDate, order.pickupTime)}`,
+    `方式：${isDelivery(order) ? zhOption(order.fulfillment!) : '自取'}`,
+    ...(isDelivery(order) && order.deliveryAddress ? [`地址：${order.deliveryAddress}`] : []),
     ...(order.cakeMessage ? [`蛋糕上的字：${order.cakeMessage}`] : []),
     ...(order.notes ? [`備註：${order.notes}`] : []),
   ].join('\n')

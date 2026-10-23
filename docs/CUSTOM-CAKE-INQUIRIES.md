@@ -50,7 +50,7 @@ The online guide and inquiry accept 2- and 3-tier combinations only. Four- and f
 
 Every inquiry that is emailed is also saved to `bakery_cake_inquiries` (schema: `db/002-cake-inquiries.sql`; run it once in Supabase before deploying). The email stays the primary record: if saving fails, the customer still sees success and the error is logged. Photos stay in the email only.
 
-- Statuses: New → Waiting on customer / Checking with Mom → Confirmed & paid → Completed, or Cancelled. Filters: Open, Confirmed & paid, Completed / cancelled, All.
+- Statuses: New → Awaiting customer / Under bakery review → Confirmed & paid → Completed, or Cancelled. Filters: Open, Confirmed & paid, Completed / cancelled, All.
 - Private notes per inquiry for the agreed design, final price and payment.
 - Inquiries from the same email or phone are flagged on each other, so a second "correction" form is easy to spot and cancel.
 - After a delivered inquiry the customer gets a copy (their choices only, no notes or address) with reply-to set to the bakery inbox, so corrections come as replies. A failed copy is logged and does not fail the inquiry.
