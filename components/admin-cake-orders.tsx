@@ -29,6 +29,7 @@ export function AdminCakeOrders() {
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
+  const [notice, setNotice] = useState('')
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-orders', body)
 
   async function run(task: () => Promise<void>) {
@@ -53,7 +54,22 @@ export function AdminCakeOrders() {
     void load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const act = (id: string, action: 'approve' | 'decline' | 'picked_up' | 'not_picked_up', confirmText?: string) => {
+  const sendTest = (scenario: 'paid' | 'approval') =>
+    run(async () => {
+      setNotice('')
+      const r = await request({ action: 'test', scenario })
+      setOrders((await request({ action: 'list' })).orders)
+      setFilter(r.held ? 'approval' : 'upcoming')
+      setNotice(
+        `Test order ${r.ref} added below. Emails went to ${r.sentTo} with [TEST] subjects. ` +
+          (r.viaSquare ? 'The payment is in the Square sandbox dashboard.' : 'No card was charged.'),
+      )
+    })
+  const act = (
+    id: string,
+    action: 'approve' | 'decline' | 'picked_up' | 'not_picked_up' | 'delete',
+    confirmText?: string,
+  ) => {
     if (confirmText && !window.confirm(confirmText)) return
     void run(async () => {
       try {
@@ -102,10 +118,19 @@ export function AdminCakeOrders() {
             {filters[key].label} ({counts[key]})
           </Button>
         ))}
-        <Button variant="outline" onClick={load} disabled={busy} className="ml-auto">
+        <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy} className="ml-auto">
+          Test order (paid)
+        </Button>
+        <Button variant="outline" onClick={() => sendTest('approval')} disabled={busy}>
+          Test order (needs approval)
+        </Button>
+        <Button variant="outline" onClick={load} disabled={busy}>
           Refresh
         </Button>
       </div>
+      <p role="status" className="text-sm text-success empty:hidden">
+        {notice}
+      </p>
       <p role="alert" className="text-sm text-danger empty:hidden">
         {error}
       </p>
@@ -116,6 +141,11 @@ export function AdminCakeOrders() {
             <div>
               <h3 className="heading-3">
                 {o.name} <span className="text-sm font-normal text-muted-foreground">{orderRef(o.id)}</span>
+                {o.test && (
+                  <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                    TEST
+                  </span>
+                )}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {cakeOrderStatusLabels[o.status]} · ${o.price.toFixed(2)} · ordered {formatVegasTime(o.createdAt)}
@@ -190,6 +220,11 @@ export function AdminCakeOrders() {
               {o.status === 'picked_up' && (
                 <Button variant="outline" disabled={busy} onClick={() => act(o.id, 'not_picked_up')}>
                   Undo picked up
+                </Button>
+              )}
+              {o.test && (
+                <Button variant="outline" disabled={busy} onClick={() => act(o.id, 'delete')}>
+                  Delete test order
                 </Button>
               )}
             </div>

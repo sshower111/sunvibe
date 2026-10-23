@@ -163,6 +163,8 @@ export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId'> & {
   /** Set when the card is only held: approve before this time or the hold is released. */
   approveBy?: string
   approvalReason?: string
+  /** Made with admin "Test order": emails go to the bakery inbox only and no real card is charged. */
+  test?: boolean
 }
 
 export const orderRef = (id: string) => '#' + id.slice(0, 4).toUpperCase()

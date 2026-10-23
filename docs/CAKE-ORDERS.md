@@ -46,4 +46,6 @@ If nobody approves in time, Square releases the hold, the order shows as "Not ap
 
 Until the first four variables are set, `/order-cake` shows "coming soon" with the phone number.
 
+Admin → Cake orders also has **Test order** buttons that run an order through the same steps without the public form (see `docs/ADMIN_GUIDE.md`).
+
 Sandbox test card: 4111 1111 1111 1111, any future date, any CVV, ZIP 94103.

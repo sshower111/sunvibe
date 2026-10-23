@@ -56,6 +56,14 @@ export async function finishCakeOrder(
     approve_by=${change.approveBy ?? null},updated_at=now() WHERE id=${id}`
 }
 
+/** Deletes an order made with admin "Test order". Real orders can't be deleted. */
+export async function deleteTestOrder(id: string) {
+  const order = await getCakeOrder(id)
+  if (!order?.test) throw new Error('Only test orders can be deleted.')
+  const sql = await contentDatabase()
+  await sql`DELETE FROM bakery_cake_orders WHERE id=${id}`
+}
+
 /** Moves an order on only if it is still in the expected status; returns whether it changed. */
 export async function moveCakeOrder(id: string, from: CakeOrderStatus, to: CakeOrderStatus) {
   const sql = await contentDatabase()
