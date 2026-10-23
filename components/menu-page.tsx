@@ -355,9 +355,14 @@ export default function MenuPage({
               <p className="mt-3 max-w-2xl text-muted-foreground">
                 Choose a size, explore flavors, and request a quote.
               </p>
-              <Button asChild className="mt-5 w-full sm:w-auto">
-                <a href="/custom-cakes">Explore Custom Cakes & Inquire</a>
-              </Button>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <Button asChild className="w-full sm:w-auto">
+                  <a href="/order-cake">Order an everyday cake</a>
+                </Button>
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                  <a href="/custom-cakes">Custom cake inquiry</a>
+                </Button>
+              </div>
               <p className="mt-3 text-sm text-muted-foreground">
                 Availability and your final design are confirmed by the bakery.
               </p>

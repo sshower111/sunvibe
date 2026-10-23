@@ -26,6 +26,17 @@ Pickup slots are every 30 minutes until 30 minutes before closing (7:30 PM; Wedn
 
 If nobody approves in time, Square releases the hold, the order shows as "Not approved in time", and the customer is emailed. This happens through the Square webhook, and also whenever admin → Cake orders is opened.
 
+## Where customers find it
+
+- Top menu and footer: **Order a Cake** (next to **Custom Cake Inquiry**).
+- Home page hero: **Order a cake** is the main button.
+- Custom cakes page: a "Need a cake sooner?" box under the red band.
+- Menu page, Custom Cakes category: **Order an everyday cake** button.
+
+## Failed payments
+
+The order is saved just before the card is charged, so a charge always has an order. If the payment fails, the order is marked "Payment failed" (Declined / expired list in admin) and deleted after 2 days.
+
 ## Emails
 
 - New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese text for Mom) and to the customer.
