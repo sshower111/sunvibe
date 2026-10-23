@@ -7,11 +7,19 @@ import { zhOption } from './email-zh'
 // Standard menu cakes ordered and paid for online (/order-cake). Custom designs stay on /custom-cakes.
 // Lead times and approval rules come from the bakery (Oct 2026):
 // - 8" round and 1/4 sheet: fine from the day before.
-// - 6", 10", 12" round and 1/2 sheet: fine 2+ days ahead; the day before needs approval.
+// - 6", 10", 12" round, 1/2 and full sheet: fine 2+ days ahead; the day before needs approval.
 // - Same-day (any size): at least 3 hours' notice, from 10:00 AM, and always needs approval.
 // - Next-day pickups start at 9:30 AM.
 
-export const ORDER_SIZES = ['6-inch', '8-inch', '10-inch', '12-inch', 'quarter-sheet', 'half-sheet'] as const
+export const ORDER_SIZES = [
+  '6-inch',
+  '8-inch',
+  '10-inch',
+  '12-inch',
+  'quarter-sheet',
+  'half-sheet',
+  'full-sheet',
+] as const
 export type OrderSize = (typeof ORDER_SIZES)[number]
 /** Sizes the bakery can make from the day before without checking. */
 const EASY_SIZES: readonly OrderSize[] = ['8-inch', 'quarter-sheet']
