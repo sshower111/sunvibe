@@ -62,7 +62,7 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('menu')
-  // Emails link straight to a tab, e.g. /admin?tab=cake-orders.
+  // The open tab is kept in the address (/admin?tab=cake-orders), so emails, bookmarks and reloads open it.
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab')
     if (TABS.some(t => t.id === tab)) setActiveTab(tab as Tab)
@@ -320,7 +320,11 @@ export default function AdminPage() {
               className="shrink-0"
               variant={activeTab === tab.id ? 'default' : 'outline'}
               aria-pressed={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id)
+                // Keep the tab in the address so a reload (or a bookmark) opens the same tab.
+                window.history.replaceState(null, '', tab.id === 'menu' ? '/admin' : `/admin?tab=${tab.id}`)
+              }}
             >
               {tab.label}
             </Button>
