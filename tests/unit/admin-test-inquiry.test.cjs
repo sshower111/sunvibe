@@ -54,7 +54,7 @@ test('admin can send a test cake inquiry to the bakery inbox', async () => {
   assert.match(mail[0].body.subject, /^\[TEST\] Custom cake inquiry: Test Customer · Birthday · /)
   assert(mail[0].body.text.startsWith('TEST INQUIRY'))
   assert(mail[0].body.html.includes('<strong>Writing on cake:</strong> Happy Birthday, Test!'))
-  assert.equal(saved.length, 1, 'added to the list so Draft reply can be tried')
+  assert.equal(saved.length, 1, 'added to the list, marked as a test')
   assert.equal(saved[0].test, true)
   assert(!('acknowledged' in saved[0]))
   const id = saved[0].id
