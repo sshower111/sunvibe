@@ -38,6 +38,7 @@ export function AdminCakeInquiries() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [notice, setNotice] = useState('')
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-inquiries', body)
 
   async function run(task: () => Promise<void>) {
@@ -75,6 +76,13 @@ export function AdminCakeInquiries() {
       setDrafts(({ [id]: _, ...rest }) => rest)
     })
 
+  const sendTest = () =>
+    run(async () => {
+      setNotice('')
+      const { sentTo } = await request({ action: 'test' })
+      setNotice(`Test inquiry sent to ${sentTo}. Look for two emails starting with [TEST].`)
+    })
+
   // Customers sometimes send a second form to add or correct details; link those together.
   const others = useMemo(() => {
     const byCustomer = new Map<string, StoredCakeInquiry[]>()
@@ -106,10 +114,16 @@ export function AdminCakeInquiries() {
             {filters[key].label} ({counts[key]})
           </Button>
         ))}
-        <Button variant="outline" onClick={load} disabled={busy} className="ml-auto">
+        <Button variant="outline" onClick={sendTest} disabled={busy} className="ml-auto">
+          Send test inquiry
+        </Button>
+        <Button variant="outline" onClick={load} disabled={busy}>
           Refresh
         </Button>
       </div>
+      <p role="status" className="text-sm text-success empty:hidden">
+        {notice}
+      </p>
       <p role="alert" className="text-sm text-danger empty:hidden">
         {error}
       </p>

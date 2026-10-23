@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
-import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
-import { cakeInquirySchema, inquiryRef, formatEventTime, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
-import { cakeLabel } from '@/lib/cake-catalog'
+import { cakeInquirySchema, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { saveCakeInquiry } from '@/lib/cake-inquiries-store'
-import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
+import { sendBakeryEmail, sendCustomerCopy } from '@/lib/cake-inquiry-email'
 import { verifyTurnstile } from '@/lib/turnstile'
-import { escapeHtml, getClientIp, rateLimiter } from '@/lib/security'
+import { getClientIp, rateLimiter } from '@/lib/security'
 
 export const runtime = 'nodejs'
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status })
@@ -60,75 +58,8 @@ export async function POST(request: NextRequest) {
       return fail(`Online inquiries are temporarily unavailable. Please call ${SITE.phone}.`, 503)
     if (!(await verifyTurnstile(form.get('captchaToken'), 'custom_cake')))
       return fail('Please complete verification and try again.', 403)
-    const values = {
-      ...parsed.data,
-      size: cakeLabel(parsed.data.size),
-      eventTime: formatEventTime(parsed.data.eventTime) || 'Not decided yet',
-      deliveryAddress: parsed.data.fulfillment === 'Pickup' ? 'Bakery pickup' : parsed.data.deliveryAddress,
-    }
-    const labels: Record<string, string> = {
-      name: 'Name',
-      email: 'Email',
-      phone: 'Phone',
-      eventDate: 'Event date',
-      eventTime: 'Event time',
-      eventType: 'Event',
-      servings: 'Servings requested',
-      size: 'Cake size',
-      flavor: 'Flavor preference',
-      filling: 'Filling preference',
-      cakeMessage: 'Writing on cake',
-      budget: 'Budget',
-      fulfillment: 'Pickup / delivery request',
-      deliveryAddress: 'Delivery address / hotel',
-      notes: 'Notes / dietary requests',
-    }
-    // Chinese copy: option values are translated, typed values (name, notes, address…) stay as written.
-    const translated = new Set(['eventType', 'size', 'flavor', 'filling', 'budget', 'fulfillment'])
-    const zhRows = Object.keys(labels).map(key => {
-      const value = values[key as keyof typeof values]
-      const zh =
-        key === 'deliveryAddress' && parsed.data.fulfillment === 'Pickup'
-          ? ZH.bakeryPickup
-          : key === 'eventTime' && !parsed.data.eventTime
-            ? ZH.notDecided
-            : !value
-              ? ZH.none
-              : translated.has(key)
-                ? zhOption(value)
-                : value
-      return [ZH[key as keyof typeof ZH], zh] as [string, string]
-    })
-    const text = Object.entries(labels)
-      .map(([key, label]) => `${label}: ${values[key as keyof typeof values] || 'None'}`)
-      .join('\n')
-      .concat('\n', zhText(ZH.cakeHeading, zhRows, ZH.cakeNotConfirmed))
-    const html =
-      '<h2>Custom cake inquiry — quote requested</h2><p>This is not a confirmed order.</p>' +
-      Object.entries(labels)
-        .map(
-          ([key, label]) =>
-            `<p><strong>${label}:</strong> ${escapeHtml(values[key as keyof typeof values] || 'None').replace(/\n/g, '<br>')}</p>`,
-        )
-        .join('') +
-      zhHtml(
-        ZH.cakeHeading,
-        zhRows.map(([label, value]) => [label, escapeHtml(value).replace(/\n/g, '<br>')]),
-        ZH.cakeNotConfirmed,
-      )
-    const result = await mailer().emails.send(
-      {
-        from: EMAIL_FROM,
-        to: bakeryInbox(),
-        replyTo: values.email,
-        subject: `Custom cake inquiry: ${[values.name, values.eventType, values.eventDate, formatEventTime(parsed.data.eventTime), inquiryRef(requestId)].filter(Boolean).join(' · ')}`,
-        text,
-        html,
-        attachments,
-      },
-      { idempotencyKey: `cake-${requestId}` },
-    )
-    if (result.error)
+    const sent = await sendBakeryEmail(parsed.data, { requestId, attachments })
+    if (!sent)
       return fail('Your inquiry could not be sent. Your details are still here; please retry or call the bakery.', 502)
     // The email is the primary record; a tracker outage must not fail an inquiry that was delivered.
     try {
@@ -143,54 +74,9 @@ export async function POST(request: NextRequest) {
       console.error('Cake inquiry emailed but not saved to the tracker', requestId, error)
     }
     // Copy for the customer. Replies go to the bakery, so changes arrive in one thread instead of a second form.
-    try {
-      const copy = await mailer().emails.send(
-        {
-          from: EMAIL_FROM,
-          to: values.email,
-          replyTo: bakeryInbox(),
-          subject: `We received your cake inquiry ${inquiryRef(requestId)} — ${SITE.name}`,
-          ...customerCopy(values),
-        },
-        { idempotencyKey: `cake-copy-${requestId}` },
-      )
-      if (copy.error) console.error('Cake inquiry copy not sent to customer', requestId, copy.error)
-    } catch (error) {
-      console.error('Cake inquiry copy not sent to customer', requestId, error)
-    }
+    await sendCustomerCopy(parsed.data, { requestId })
     return NextResponse.json({ success: true })
   } catch {
     return fail('Your inquiry could not be sent. Please retry or call the bakery.', 500)
-  }
-}
-
-// Only the customer's own choices; free-text notes and addresses are left out of an email sent to a typed address.
-function customerCopy(values: Record<string, string>) {
-  const rows: [string, string][] = [
-    ['Event', [values.eventType, values.eventDate, values.eventTime].filter(Boolean).join(' · ')],
-    ['Cake', `${values.servings} servings · ${values.size}`],
-    ['Flavor / filling', `${values.flavor} / ${values.filling}`],
-    ['Writing on cake', values.cakeMessage || 'None'],
-    ['Budget', values.budget],
-    ['Pickup / delivery', values.fulfillment],
-  ]
-  const intro = `Hi ${values.name}, thanks for your custom cake inquiry. We'll get back to you with availability and a quote.`
-  const change = 'Need to add or change something? Just reply to this email. There is no need to send another form.'
-  const notConfirmed = 'Your order and date are not confirmed until we confirm the details and payment with you.'
-  return {
-    text: [
-      intro,
-      '',
-      ...rows.map(([label, value]) => `${label}: ${value}`),
-      '',
-      change,
-      notConfirmed,
-      '',
-      `${SITE.name} · ${SITE.phone}`,
-    ].join('\n'),
-    html:
-      `<p>${escapeHtml(intro)}</p>` +
-      rows.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`).join('') +
-      `<p><strong>${change}</strong></p><p>${notConfirmed}</p><p>${SITE.name} · ${SITE.phone}</p>`,
   }
 }
