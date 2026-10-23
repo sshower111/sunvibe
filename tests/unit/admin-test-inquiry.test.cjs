@@ -1,5 +1,5 @@
 'use strict'
-// Admin "Send test inquiry": admin only, both emails go to the bakery inbox marked [TEST], nothing saved.
+// Admin "Send test inquiry": admin only, both emails go to the bakery inbox marked [TEST], saved as a test.
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { createLoader } = require('../helpers/load-ts.cjs')
@@ -9,6 +9,7 @@ process.env.NOTIFICATION_EMAIL = 'inbox@example.com'
 let admin = true
 const mail = []
 const saved = []
+const deleted = []
 const { load } = createLoader({
   mocks: {
     '@/lib/admin-auth': { isAdminRequest: async () => admin },
@@ -17,7 +18,11 @@ const { load } = createLoader({
       escapeHtml: value =>
         value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]),
     },
-    '@/lib/cake-inquiries-store': { saveCakeInquiry: async i => saved.push(i), listCakeInquiries: async () => [] },
+    '@/lib/cake-inquiries-store': {
+      saveCakeInquiry: async i => saved.push(i),
+      listCakeInquiries: async () => [],
+      deleteTestInquiry: async id => deleted.push(id),
+    },
     resend: {
       Resend: class {
         emails = {
@@ -49,5 +54,11 @@ test('admin can send a test cake inquiry to the bakery inbox', async () => {
   assert.match(mail[0].body.subject, /^\[TEST\] Custom cake inquiry: Test Customer · Birthday · /)
   assert(mail[0].body.text.startsWith('TEST INQUIRY'))
   assert(mail[0].body.html.includes('<strong>Writing on cake:</strong> Happy Birthday, Test!'))
-  assert.equal(saved.length, 0, 'test inquiries are not added to the tracker')
+  assert.equal(saved.length, 1, 'added to the list so Draft reply can be tried')
+  assert.equal(saved[0].test, true)
+  assert(!('acknowledged' in saved[0]))
+  const id = saved[0].id
+  assert.equal((await post({ action: 'delete', id })).status, 200)
+  assert.deepEqual(deleted, [id])
+  assert.equal((await post({ action: 'delete', id: 'not-a-uuid' })).status, 400)
 })
