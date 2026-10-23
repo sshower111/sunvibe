@@ -37,6 +37,13 @@ export default function CustomCakesPage() {
         >
           <p>Chiffon cakes for birthdays, weddings, and everything worth celebrating.</p>
           <p className="mt-2 text-base font-semibold text-white">Please allow 3–5 days’ notice.</p>
+          <p className="mt-2 text-base text-white">
+            Need one of our everyday cakes sooner?{' '}
+            <Link href="/order-cake" className="font-semibold text-white underline">
+              Order online for pickup
+            </Link>
+            .
+          </p>
         </PageBand>
         <CakeServingGuide />
         <section id="cake-inquiry" className="site-container section-space" aria-labelledby="inquiry-heading">
