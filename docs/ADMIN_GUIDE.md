@@ -32,7 +32,7 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 
 Online orders from `/order-cake` (paid by card through Square). Details and setup: `docs/CAKE-ORDERS.md`.
 
-Orders show as a table (ordered, pickup, cake, customer, status, phone, email). Use the **Status** dropdown to filter (or **All**), and click **Ordered** or **Pickup** to sort; click again to reverse. Cake writing and notes show under the cake when there are any.
+Orders show as a table (ordered, pickup, cake, customer, status, phone, email). The list starts on **All**; use the **Status** dropdown to filter, and click **Ordered** or **Pickup** to sort; click again to reverse. Cake writing and notes show under the cake when there are any.
 
 
 - **Needs approval**: same-day orders, and next-day orders for 6", 10", 12", 1/2 sheet and full sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.

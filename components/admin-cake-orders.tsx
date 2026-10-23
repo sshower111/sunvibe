@@ -26,7 +26,7 @@ type SortKey = 'created' | 'pickup'
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
-  const [filter, setFilter] = useState<Filter | 'all'>('approval')
+  const [filter, setFilter] = useState<Filter | 'all'>('all')
   const [sort, setSort] = useState<{ by: SortKey; asc: boolean }>({ by: 'pickup', asc: true })
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -50,7 +50,6 @@ export function AdminCakeOrders() {
     run(async () => {
       const list: StoredCakeOrder[] = (await request({ action: 'list' })).orders
       setOrders(list)
-      if (!loaded && !list.some(o => o.status === 'awaiting_approval')) setFilter('upcoming')
       setLoaded(true)
     })
   useEffect(() => {
@@ -62,7 +61,7 @@ export function AdminCakeOrders() {
       setNotice('')
       const r = await request({ action: 'test', scenario })
       setOrders((await request({ action: 'list' })).orders)
-      setFilter(r.held ? 'approval' : 'upcoming')
+      setFilter('all')
       setNotice(
         `Test order ${r.ref} added below. Emails went to ${r.sentTo} with [TEST] subjects. ` +
           (r.viaSquare ? 'The payment is in the Square sandbox dashboard.' : 'No card was charged.'),
