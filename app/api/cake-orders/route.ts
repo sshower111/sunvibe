@@ -61,7 +61,10 @@ export async function POST(request: NextRequest) {
     payment = await createPayment({
       sourceId: cardToken,
       // A new card token (e.g. after a decline) is a new attempt; resending the same one is not.
-      idempotencyKey: requestId + ':' + createHash('sha256').update(cardToken).digest('hex').slice(0, 12),
+      // Square allows at most 45 characters: 43-character hash of the order ID and card token.
+      idempotencyKey: createHash('sha256')
+        .update(requestId + ':' + cardToken)
+        .digest('base64url'),
       amountCents: Math.round(price * 100),
       autocomplete: !held,
       holdMinutes: held ? Math.max(1, Math.ceil((decision.approveBy.getTime() - now.getTime()) / 60_000)) : undefined,
