@@ -294,3 +294,49 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal((await adminCall({ action: 'not_picked_up', id: paid.requestId })).status, 200)
   assert.equal((await adminCall({ action: 'picked_up', id: held.requestId })).status, 200)
 })
+
+test('admin test orders: inbox-only emails, approval, no card in production, deletable', async () => {
+  const admin = load('app/api/admin/cake-orders/route.ts')
+  const store = load('lib/cake-orders-store.ts')
+  const adminCall = body => post(admin, { password: 'test-only', ...body })
+  const inbox = load('lib/email.ts').bakeryInbox()
+
+  // Sandbox: goes through Square with the test card.
+  let before = emails.length
+  let r = await (await adminCall({ action: 'test', scenario: 'paid' })).json()
+  assert.equal(r.held, false)
+  assert.equal(r.viaSquare, true)
+  assert.equal(square.calls.at(-1)[1].sourceId, 'cnon:card-nonce-ok')
+  const fresh = emails.slice(before)
+  assert.equal(fresh.length, 2)
+  assert(fresh.every(e => e.to === inbox && e.subject.startsWith('[TEST]')))
+
+  // Production: no Square call at all; approve and decline still work.
+  process.env.SQUARE_ENVIRONMENT = 'production'
+  try {
+    const calls = square.calls.length
+    r = await (await adminCall({ action: 'test', scenario: 'approval' })).json()
+    assert.equal(r.held, true)
+    assert.equal(r.viaSquare, false)
+    const list = (await (await adminCall({ action: 'list' })).json()).orders
+    const test = list.find(o => o.test && o.status === 'awaiting_approval')
+    assert.equal((await adminCall({ action: 'approve', id: test.id })).status, 200)
+    assert.equal((await store.getCakeOrder(test.id)).status, 'paid')
+    r = await (await adminCall({ action: 'test', scenario: 'approval' })).json()
+    const second = (await (await adminCall({ action: 'list' })).json()).orders.find(
+      o => o.test && o.status === 'awaiting_approval',
+    )
+    assert.equal((await adminCall({ action: 'decline', id: second.id })).status, 200)
+    assert.equal(square.calls.length, calls)
+    assert(emails.at(-1).subject.startsWith("[TEST] We can't make"))
+    assert.equal(emails.at(-1).to, inbox)
+
+    // Only test orders can be deleted.
+    assert.equal((await adminCall({ action: 'delete', id: test.id })).status, 200)
+    assert.equal(await store.getCakeOrder(test.id), null)
+    const real = (await (await adminCall({ action: 'list' })).json()).orders.find(o => !o.test)
+    assert.equal((await adminCall({ action: 'delete', id: real.id })).status, 409)
+  } finally {
+    delete process.env.SQUARE_ENVIRONMENT
+  }
+})

@@ -31,6 +31,10 @@ const html = (paragraphs: string[], rows: [string, string][], after: string[] = 
 const text = (paragraphs: string[], rows: [string, string][], after: string[] = []) =>
   [...paragraphs, '', ...rows.map(([l, v]) => `${l}: ${v}`), '', ...after].join('\n')
 
+/** Customer emails for a test order go to the bakery inbox instead. */
+const customerEmail = (o: StoredCakeOrder) => (o.test ? bakeryInbox() : o.email)
+const tag = (o: StoredCakeOrder, subject: string) => (o.test ? '[TEST] ' + subject : subject)
+
 async function send(
   key: string,
   message: {
@@ -68,7 +72,10 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
   const bakery = send(`cake-order-new-${o.id}`, {
     to: bakeryInbox(),
     replyTo: o.email,
-    subject: `${held ? 'APPROVE BY ' + formatVegasTime(o.approveBy!) + ' — ' : ''}Cake order ${ref}: ${o.name} · ${sizeLabel(o.size)} · ${pickup(o)}`,
+    subject: tag(
+      o,
+      `${held ? 'APPROVE BY ' + formatVegasTime(o.approveBy!) + ' — ' : ''}Cake order ${ref}: ${o.name} · ${sizeLabel(o.size)} · ${pickup(o)}`,
+    ),
     paragraphs: held
       ? [
           `${o.approvalReason}. The card is held for ${money(o.price)}, not charged.`,
@@ -80,11 +87,14 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
     after: ['— For Mom —', momText(o)],
   })
   const customer = send(`cake-order-customer-${o.id}`, {
-    to: o.email,
+    to: customerEmail(o),
     replyTo: bakeryInbox(),
-    subject: held
-      ? `We received your cake order ${ref} — Sunville Bakery`
-      : `Your cake order ${ref} is confirmed — Sunville Bakery`,
+    subject: tag(
+      o,
+      held
+        ? `We received your cake order ${ref} — Sunville Bakery`
+        : `Your cake order ${ref} is confirmed — Sunville Bakery`,
+    ),
     paragraphs: held
       ? [
           `Hi ${o.name}, thanks for your order! Because of the timing, we need to check that we can make it.`,
@@ -99,9 +109,9 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
 
 export const sendApprovedEmail = (o: StoredCakeOrder) =>
   send(`cake-order-approved-${o.id}`, {
-    to: o.email,
+    to: customerEmail(o),
     replyTo: bakeryInbox(),
-    subject: `Your cake order ${orderRef(o.id)} is confirmed — Sunville Bakery`,
+    subject: tag(o, `Your cake order ${orderRef(o.id)} is confirmed — Sunville Bakery`),
     paragraphs: [`Hi ${o.name}, good news: we can make your cake. Your card has now been charged ${money(o.price)}.`],
     rows: cakeRows(o),
     after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
@@ -110,9 +120,9 @@ export const sendApprovedEmail = (o: StoredCakeOrder) =>
 /** Declined by the bakery, or not approved in time. The hold has been released either way. */
 export const sendNotAcceptedEmail = (o: StoredCakeOrder) =>
   send(`cake-order-not-accepted-${o.id}`, {
-    to: o.email,
+    to: customerEmail(o),
     replyTo: bakeryInbox(),
-    subject: `We can't make your cake order ${orderRef(o.id)} — Sunville Bakery`,
+    subject: tag(o, `We can't make your cake order ${orderRef(o.id)} — Sunville Bakery`),
     paragraphs: [
       `Hi ${o.name}, we're sorry, but we can't make this cake for ${pickup(o)}.`,
       `The hold on your card has been released and you have not been charged. Your bank may take a few days to remove it from your statement.`,
