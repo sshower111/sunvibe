@@ -13,6 +13,7 @@ import {
 } from '@/lib/cake-order'
 import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
+import { NativeSelect } from './ui/select'
 
 const filters = {
   approval: { label: 'Needs approval', statuses: ['awaiting_approval'] },
@@ -21,10 +22,12 @@ const filters = {
   closed: { label: 'Declined / expired', statuses: ['declined', 'expired', 'failed'] },
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
 type Filter = keyof typeof filters
+type SortKey = 'created' | 'pickup'
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
-  const [filter, setFilter] = useState<Filter>('approval')
+  const [filter, setFilter] = useState<Filter | 'all'>('approval')
+  const [sort, setSort] = useState<{ by: SortKey; asc: boolean }>({ by: 'pickup', asc: true })
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
@@ -95,37 +98,46 @@ export function AdminCakeOrders() {
       orders.filter(o => (f.statuses as readonly string[]).includes(o.status)).length,
     ]),
   )
-  // Upcoming pickups first; other lists newest first.
+  const pickupKey = (o: StoredCakeOrder) => o.pickupDate + o.pickupTime
   const shown = orders
-    .filter(o => (filters[filter].statuses as readonly string[]).includes(o.status))
-    .sort((a, b) =>
-      filter === 'upcoming' || filter === 'approval'
-        ? (a.pickupDate + a.pickupTime).localeCompare(b.pickupDate + b.pickupTime)
-        : b.createdAt.localeCompare(a.createdAt),
-    )
+    .filter(o => filter === 'all' || (filters[filter].statuses as readonly string[]).includes(o.status))
+    .sort((a, b) => {
+      const diff =
+        sort.by === 'pickup' ? pickupKey(a).localeCompare(pickupKey(b)) : a.createdAt.localeCompare(b.createdAt)
+      return sort.asc ? diff : -diff
+    })
+  const sortBy = (by: SortKey) => setSort(s => (s.by === by ? { by, asc: !s.asc } : { by, asc: by === 'pickup' }))
+  const sortHeader = (by: SortKey, label: string) => (
+    <th scope="col" className="px-3 py-2" aria-sort={sort.by === by ? (sort.asc ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" className="font-semibold underline-offset-2 hover:underline" onClick={() => sortBy(by)}>
+        {label} {sort.by === by ? (sort.asc ? '▲' : '▼') : ''}
+      </button>
+    </th>
+  )
 
   return (
     <section className="space-y-4">
       <h2 className="heading-2">Cake orders</h2>
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(filters) as Filter[]).map(key => (
-          <Button
-            key={key}
-            variant={filter === key ? 'default' : 'outline'}
-            aria-pressed={filter === key}
-            onClick={() => setFilter(key)}
-          >
-            {filters[key].label} ({counts[key]})
-          </Button>
-        ))}
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="grid gap-1 text-sm font-semibold">
+          Status
+          <NativeSelect value={filter} onChange={e => setFilter(e.target.value as Filter | 'all')} className="w-56">
+            <option value="all">All ({orders.length})</option>
+            {(Object.keys(filters) as Filter[]).map(key => (
+              <option key={key} value={key}>
+                {filters[key].label} ({counts[key]})
+              </option>
+            ))}
+          </NativeSelect>
+        </label>
+        <Button variant="outline" onClick={load} disabled={busy}>
+          Refresh
+        </Button>
         <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy} className="ml-auto">
           Test order (paid)
         </Button>
         <Button variant="outline" onClick={() => sendTest('approval')} disabled={busy}>
           Test order (needs approval)
-        </Button>
-        <Button variant="outline" onClick={load} disabled={busy}>
-          Refresh
         </Button>
       </div>
       <p role="status" className="text-sm text-success empty:hidden">
@@ -135,104 +147,130 @@ export function AdminCakeOrders() {
         {error}
       </p>
       {loaded && !shown.length && !error && <p>No orders here.</p>}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {shown.map(o => (
-          <article key={o.id} className="min-w-0 space-y-3 rounded-xl border bg-card p-4">
-            <div>
-              <h3 className="heading-3">
-                {o.name} <span className="text-sm font-normal text-muted-foreground">{orderRef(o.id)}</span>
-                {o.test && (
-                  <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                    TEST
-                  </span>
-                )}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {cakeOrderStatusLabels[o.status]} · ${o.price.toFixed(2)} · ordered {formatVegasTime(o.createdAt)}
-              </p>
-            </div>
-            {o.status === 'awaiting_approval' && o.approveBy && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">
-                {o.approvalReason}. Card held, not charged. Approve by <strong>{formatVegasTime(o.approveBy)}</strong>{' '}
-                (Las Vegas) or the hold is released automatically.
-              </p>
-            )}
-            <dl className="space-y-1 break-words text-sm">
-              {(
-                [
-                  ['Pickup', `${formatPickupDate(o.pickupDate)}, ${formatPickupTime(o.pickupTime)}`],
-                  ['Cake', `${sizeLabel(o.size)} · ${o.flavor} · ${o.filling}`],
-                  ['Writing', o.cakeMessage || 'None'],
-                  ['Notes', o.notes || 'None'],
-                ] as const
-              ).map(([label, value]) => (
-                <div key={label} className="grid gap-1 sm:grid-cols-[6rem_1fr]">
-                  <dt className="font-semibold">{label}</dt>
-                  <dd className="whitespace-pre-wrap">{value}</dd>
-                </div>
+      {shown.length > 0 && (
+        <div className="overflow-x-auto rounded-xl border bg-card">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b bg-secondary">
+              <tr className="whitespace-nowrap">
+                {sortHeader('created', 'Ordered')}
+                {sortHeader('pickup', 'Pickup')}
+                <th scope="col" className="px-3 py-2">
+                  Cake
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Customer
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Status
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Phone
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  Email
+                </th>
+                <th scope="col" className="px-3 py-2">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map(o => (
+                <tr key={o.id} className="border-b align-top last:border-0">
+                  <td className="whitespace-nowrap px-3 py-2">{formatVegasTime(o.createdAt)}</td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
+                  </td>
+                  <td className="min-w-48 px-3 py-2">
+                    {sizeLabel(o.size)} · {o.flavor} · {o.filling}
+                    {o.cakeMessage && <div className="text-muted-foreground">Writing: {o.cakeMessage}</div>}
+                    {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
+                  </td>
+                  <td className="px-3 py-2">
+                    {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o.id)}</span>
+                    {o.test && (
+                      <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
+                        TEST
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="whitespace-nowrap">{cakeOrderStatusLabels[o.status]}</span>
+                    {o.status === 'awaiting_approval' && o.approveBy && (
+                      <div className="min-w-40 text-xs text-amber-900">
+                        {o.approvalReason}. Approve by {formatVegasTime(o.approveBy)}
+                      </div>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <a className="underline" href={'tel:' + o.phone.replace(/[^+0-9]/g, '')}>
+                      {o.phone}
+                    </a>
+                  </td>
+                  <td className="px-3 py-2">
+                    <a className="break-all underline" href={`mailto:${o.email}`}>
+                      {o.email}
+                    </a>
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => copy(o)}>
+                        {copied === o.id ? 'Copied!' : 'Copy for Mom'}
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="sm:hidden">
+                        <a href={'sms:?&body=' + encodeURIComponent(momText(o))}>Text Mom</a>
+                      </Button>
+                      {o.status === 'awaiting_approval' && (
+                        <>
+                          <Button
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => act(o.id, 'approve', `Approve and charge $${o.price.toFixed(2)}?`)}
+                          >
+                            Approve &amp; charge
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() =>
+                              act(
+                                o.id,
+                                'decline',
+                                'Decline this order? The hold is released and the customer is emailed.',
+                              )
+                            }
+                          >
+                            Decline
+                          </Button>
+                        </>
+                      )}
+                      {o.status === 'paid' && (
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'picked_up')}>
+                          Mark picked up
+                        </Button>
+                      )}
+                      {o.status === 'picked_up' && (
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'not_picked_up')}>
+                          Undo picked up
+                        </Button>
+                      )}
+                      {o.test && (
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'delete')}>
+                          Delete test
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </dl>
-            <p className="flex flex-wrap gap-x-4 text-sm">
-              <a
-                className="inline-flex min-h-12 items-center underline"
-                href={'tel:' + o.phone.replace(/[^+0-9]/g, '')}
-              >
-                {o.phone}
-              </a>
-              <a className="inline-flex min-h-12 items-center underline" href={`mailto:${o.email}`}>
-                {o.email}
-              </a>
-            </p>
-            <pre lang="zh-Hant" className="whitespace-pre-wrap rounded-md bg-secondary p-3 font-sans text-sm">
-              {momText(o)}
-            </pre>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => copy(o)}>
-                {copied === o.id ? 'Copied!' : 'Copy for Mom'}
-              </Button>
-              <Button asChild variant="outline" className="sm:hidden">
-                <a href={'sms:?&body=' + encodeURIComponent(momText(o))}>Text Mom</a>
-              </Button>
-              {o.status === 'awaiting_approval' && (
-                <>
-                  <Button
-                    disabled={busy}
-                    onClick={() => act(o.id, 'approve', `Approve and charge $${o.price.toFixed(2)}?`)}
-                  >
-                    Approve &amp; charge
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={busy}
-                    onClick={() =>
-                      act(o.id, 'decline', 'Decline this order? The hold is released and the customer is emailed.')
-                    }
-                  >
-                    Decline
-                  </Button>
-                </>
-              )}
-              {o.status === 'paid' && (
-                <Button variant="outline" disabled={busy} onClick={() => act(o.id, 'picked_up')}>
-                  Mark picked up
-                </Button>
-              )}
-              {o.status === 'picked_up' && (
-                <Button variant="outline" disabled={busy} onClick={() => act(o.id, 'not_picked_up')}>
-                  Undo picked up
-                </Button>
-              )}
-              {o.test && (
-                <Button variant="outline" disabled={busy} onClick={() => act(o.id, 'delete')}>
-                  Delete test order
-                </Button>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
       <p className="text-sm text-muted-foreground">
-        Refunds and changes to paid orders are done in the Square Dashboard (Transactions), using the order code above.
+        Refunds and changes to paid orders are done in the Square Dashboard (Transactions), using the order code next to
+        the customer's name.
       </p>
     </section>
   )
