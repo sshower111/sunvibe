@@ -4,7 +4,7 @@ Customers order one of the everyday chiffon cakes, pay by card through Square, a
 
 ## What customers can order
 
-- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet.
+- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet. The form links to Sizes & prices on `/custom-cakes` for servings.
 - Any listed flavor and filling. The price comes from the pricing sheet column for the filling (`lib/cake-catalog.ts`): Custard; Mixed Fruit / Strawberry / Banana / Strawberry Banana; Mango / Taro; Coconut / Durian.
 - Optional writing on the cake (60 characters) and notes.
 - Pickup only. No tax is added.
@@ -13,7 +13,7 @@ Customers order one of the everyday chiffon cakes, pay by card through Square, a
 
 Pickup slots are every 30 minutes until 30 minutes before closing (7:30 PM; Wednesday 2:30 PM), up to 60 days ahead, Las Vegas time.
 
-| Pickup | 8" round, 1/4 sheet | 6", 10", 12" round, 1/2 sheet |
+| Pickup | 8" round, 1/4 sheet | 6", 10", 12" round, 1/2 sheet, full sheet |
 |---|---|---|
 | 2+ days ahead | Charged now | Charged now |
 | Next day (from 9:30 AM) | Charged now | Card held, needs approval |

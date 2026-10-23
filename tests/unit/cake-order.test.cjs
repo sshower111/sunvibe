@@ -99,7 +99,7 @@ test('pickup times: same day from 10 AM with 3 hours notice, next day from 9:30,
 test('approval: same day always; next day only for 6", 10", 12" and 1/2 sheet', () => {
   assert.deepEqual(rules.decideOrder('8-inch', '2026-10-24', '09:30', now), { ok: true, needsApproval: false })
   assert.deepEqual(rules.decideOrder('quarter-sheet', '2026-10-24', '09:30', now), { ok: true, needsApproval: false })
-  for (const size of ['6-inch', '10-inch', '12-inch', 'half-sheet']) {
+  for (const size of ['6-inch', '10-inch', '12-inch', 'half-sheet', 'full-sheet']) {
     const next = rules.decideOrder(size, '2026-10-24', '12:00', now)
     assert.equal(next.needsApproval, true, size)
     assert.equal(next.approveBy.toISOString(), '2026-10-24T03:00:00.000Z') // 8 PM tonight
@@ -121,6 +121,7 @@ test('prices follow the pricing sheet column for the filling', () => {
   assert.equal(rules.cakePrice('8-inch', 'Strawberry Banana'), 40)
   assert.equal(rules.cakePrice('10-inch', 'Mango'), 78)
   assert.equal(rules.cakePrice('half-sheet', 'Durian'), 158)
+  assert.equal(rules.cakePrice('full-sheet', 'Custard'), 188)
   assert.equal(rules.cakePrice('14-inch', 'Mango'), null)
   assert.equal(rules.cakePrice('8-inch', 'Something else (e.g., passion fruit)'), null)
   for (const filling of rules.ORDER_FILLINGS) assert.notEqual(rules.cakePrice('6-inch', filling), null)

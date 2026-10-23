@@ -15,6 +15,8 @@ import {
   pickupSlots,
   sizeLabel,
 } from '@/lib/cake-order'
+import { formatPhone } from '@/lib/form-helpers'
+import { EmailInput } from './email-input'
 import { ContactCaptcha, type CaptchaHandle } from './contact-captcha'
 import { EventDatePicker } from './event-date-picker'
 import { Button } from './ui/button'
@@ -198,6 +200,13 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
               </option>
             ))}
           </NativeSelect>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Not sure which size? See how many people each size serves in{' '}
+            <a href="/custom-cakes#serving-guide" target="_blank" className="font-semibold text-primary underline">
+              Sizes &amp; prices
+            </a>
+            .
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -219,7 +228,7 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
               <option value="">Choose…</option>
               {ORDER_FILLINGS.map(f => (
                 <option key={f} value={f}>
-                  {f} — {money(cakePrice(data.size, f)!)}
+                  {f}
                 </option>
               ))}
             </NativeSelect>
@@ -302,19 +311,24 @@ export function CakeOrderForm({ square }: { square: SquareConfig }) {
             <Input
               id="order-phone"
               type="tel"
-              autoComplete="tel"
+              inputMode="numeric"
+              autoComplete="tel-national"
+              maxLength={14}
+              placeholder="(702) 555-0123"
               value={data.phone}
-              onChange={e => update('phone', e.target.value)}
+              onChange={e => update('phone', formatPhone(e.target.value))}
             />
           </div>
           <div>
             <label htmlFor="order-email" className={field}>
               Email
             </label>
-            <Input
+            <EmailInput
               id="order-email"
               type="email"
               autoComplete="email"
+              maxLength={100}
+              placeholder="you@example.com"
               value={data.email}
               onChange={e => update('email', e.target.value)}
             />
