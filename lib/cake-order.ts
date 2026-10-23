@@ -173,9 +173,13 @@ export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId'> & {
   approvalReason?: string
   /** Made with admin "Test order": emails go to the bakery inbox only and no real card is charged. */
   test?: boolean
+  /** Sequential order number (#1001, ...), assigned by the database when the order is saved. */
+  orderNo?: number
 }
 
-export const orderRef = (id: string) => '#' + id.slice(0, 4).toUpperCase()
+/** Order code shown to customers, in emails and in Square: #1001. Orders saved before numbering show their old 4-character code. */
+export const orderRef = (o: Pick<StoredCakeOrder, 'id' | 'orderNo'>) =>
+  '#' + (o.orderNo ?? o.id.slice(0, 4).toUpperCase())
 export const sizeLabel = (size: string) => cakeCatalog.find(c => c.value === size)?.label || size
 
 export function formatPickupTime(time: string) {

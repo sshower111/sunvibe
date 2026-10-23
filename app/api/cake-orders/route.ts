@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   const price = cakePrice(input.size, input.filling)
   if (price === null) return fail('Choose a listed cake and filling.', 400)
   const held = decision.needsApproval
-  const order: StoredCakeOrder = {
+  let order: StoredCakeOrder = {
     ...input,
     id: requestId,
     createdAt: now.toISOString(),
@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (!(await startCakeOrder(order))) return fail('This order was already placed. Check your email.', 409)
+    const orderNo = await startCakeOrder(order)
+    if (orderNo === null) return fail('This order was already placed. Check your email.', 409)
+    order = { ...order, orderNo }
   } catch {
     return fail(`Your order could not be saved. Nothing was charged. Please retry or call ${SITE.phone}.`, 503)
   }
@@ -68,8 +70,8 @@ export async function POST(request: NextRequest) {
       amountCents: Math.round(price * 100),
       autocomplete: !held,
       holdMinutes: held ? Math.max(1, Math.ceil((decision.approveBy.getTime() - now.getTime()) / 60_000)) : undefined,
-      referenceId: orderRef(requestId),
-      note: `Cake ${orderRef(requestId)}: ${sizeLabel(input.size)} ${input.flavor}/${input.filling}, pickup ${input.pickupDate} ${input.pickupTime}`,
+      referenceId: orderRef(order),
+      note: `Cake ${orderRef(order)}: ${sizeLabel(input.size)} ${input.flavor}/${input.filling}, pickup ${input.pickupDate} ${input.pickupTime}`,
       email: input.email,
     })
   } catch (error) {
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Shows in Vercel → Logs. No card details are ever in here (only Square's error code and message).
     const code = error instanceof SquareError ? error.code : 'UNKNOWN'
     console.error('Square payment failed', {
-      ref: orderRef(requestId),
+      ref: orderRef(order),
       code,
       status: error instanceof SquareError ? error.status : undefined,
       detail: (error as Error).message,
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     success: true,
     held,
-    ref: orderRef(requestId),
+    ref: orderRef(order),
     approveBy: order.approveBy,
     receiptUrl: payment.receipt_url,
   })

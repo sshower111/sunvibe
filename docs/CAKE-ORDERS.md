@@ -53,7 +53,7 @@ The order is saved just before the card is charged, so a charge always has an or
 3. Webhooks → add a subscription for `payment.updated` with URL `https://sunvillebakerylv.com/api/square/webhook`. Set:
    - `SQUARE_WEBHOOK_URL` — exactly that URL
    - `SQUARE_WEBHOOK_SIGNATURE_KEY` — the subscription's signature key
-4. Run `db/003-cake-orders.sql` once in Supabase (SQL editor).
+4. Run `db/003-cake-orders.sql`, then `db/004-cake-order-numbers.sql`, once in Supabase (SQL editor). 004 gives orders sequential numbers (#1001, #1002, ...); run it before deploying code that uses them.
 
 Until the first four variables are set, `/order-cake` shows "coming soon" with the phone number.
 

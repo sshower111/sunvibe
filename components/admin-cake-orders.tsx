@@ -186,7 +186,7 @@ export function AdminCakeOrders() {
                     {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
                   </td>
                   <td className="px-3 py-2">
-                    {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o.id)}</span>
+                    {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
                     {o.test && (
                       <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
                         TEST

@@ -186,6 +186,8 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   await db.exec(fs.readFileSync(path.join(root, 'db/001-bakery.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/003-cake-orders.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/003-cake-orders.sql'), 'utf8')) // re-runnable
+  await db.exec(fs.readFileSync(path.join(root, 'db/004-cake-order-numbers.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/004-cake-order-numbers.sql'), 'utf8')) // re-runnable
   await db.exec(
     "INSERT INTO bakery_migrations(scope,record_count) VALUES('menu',0),('content',0) ON CONFLICT DO NOTHING",
   )
@@ -204,6 +206,10 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal(square.calls.at(-1)[1].amountCents, 4200)
   assert(square.calls.at(-1)[1].idempotencyKey.length <= 45) // Square's limit
   assert.equal((await store.getCakeOrder(paid.requestId)).status, 'paid')
+  // Order numbers are sequential from #1001 and used in Square and the emails.
+  assert.equal((await store.getCakeOrder(paid.requestId)).orderNo, 1001)
+  assert.equal(square.calls.at(-1)[1].referenceId, '#1001')
+  assert(emails.some(e => e.subject.includes('#1001')))
   assert(!(await db.query('SELECT payload FROM bakery_cake_orders')).rows[0].payload.includes('Amy'))
   assert.equal(emails.length, 2)
   assert(emails.some(e => e.text.includes('餡料：芒果')))
@@ -223,6 +229,8 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal((await store.getCakeOrder(retry.requestId)).status, 'failed')
   square.decline = false
   assert.equal((await post(route, { ...retry, cardToken: 'cnon:other' })).status, 200)
+  // The retry keeps the failed attempt's number.
+  assert.equal((await store.getCakeOrder(retry.requestId)).orderNo, 1002)
 
   // 10" tomorrow: card only held, bakery must approve.
   const held = order({ size: '10-inch', pickupDate: addDays(today, 1) })
@@ -352,5 +360,32 @@ test('admin test orders: inbox-only emails, approval, no card in production, del
     assert.equal((await adminCall({ action: 'delete', id: real.id })).status, 409)
   } finally {
     delete process.env.SQUARE_ENVIRONMENT
+  }
+})
+
+test('order numbers: existing orders numbered by date, re-running keeps them, new orders continue', async () => {
+  const fresh = new PGlite()
+  try {
+    await fresh.exec(fs.readFileSync(path.join(root, 'db/003-cake-orders.sql'), 'utf8'))
+    const add = (id, created) =>
+      fresh.query(
+        "INSERT INTO bakery_cake_orders(id,payload,status,pickup_at,created_at) VALUES($1,'x','paid',now(),$2)",
+        [id, created],
+      )
+    await add('00000000-0000-4000-8000-000000000002', '2026-10-23T12:00:00Z')
+    await add('00000000-0000-4000-8000-000000000001', '2026-10-22T12:00:00Z')
+    const migrate = fs.readFileSync(path.join(root, 'db/004-cake-order-numbers.sql'), 'utf8')
+    await fresh.exec(migrate)
+    await fresh.exec(migrate)
+    const numbers = async () =>
+      (await fresh.query('SELECT order_no FROM bakery_cake_orders ORDER BY created_at')).rows.map(r =>
+        Number(r.order_no),
+      )
+    assert.deepEqual(await numbers(), [1001, 1002])
+    await add('00000000-0000-4000-8000-000000000003', '2026-10-24T12:00:00Z')
+    await fresh.exec(migrate)
+    assert.deepEqual(await numbers(), [1001, 1002, 1003])
+  } finally {
+    await fresh.close()
   }
 })

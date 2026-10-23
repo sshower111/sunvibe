@@ -96,7 +96,7 @@ export async function createTestOrder(scenario: 'paid' | 'approval', now = new D
   if (!decision.ok) throw new Error(decision.error)
   const held = decision.needsApproval
   const id = randomUUID()
-  const order: StoredCakeOrder = {
+  let order: StoredCakeOrder = {
     id,
     createdAt: now.toISOString(),
     name: 'Test Customer',
@@ -114,7 +114,7 @@ export async function createTestOrder(scenario: 'paid' | 'approval', now = new D
     test: true,
     ...(held ? { approveBy: decision.approveBy.toISOString(), approvalReason: decision.reason } : {}),
   }
-  await startCakeOrder(order)
+  order = { ...order, orderNo: (await startCakeOrder(order)) ?? undefined }
   let paymentId = FAKE_PAYMENT_PREFIX + id
   if (squareClientConfig() && squareEnvironment() === 'sandbox') {
     try {
@@ -124,8 +124,8 @@ export async function createTestOrder(scenario: 'paid' | 'approval', now = new D
         amountCents: Math.round(order.price * 100),
         autocomplete: !held,
         holdMinutes: held ? Math.max(1, Math.ceil((decision.approveBy.getTime() - now.getTime()) / 60_000)) : undefined,
-        referenceId: orderRef(id),
-        note: `TEST cake order ${orderRef(id)}`,
+        referenceId: orderRef(order),
+        note: `TEST cake order ${orderRef(order)}`,
         email: order.email,
       })
       paymentId = payment.id
@@ -137,5 +137,5 @@ export async function createTestOrder(scenario: 'paid' | 'approval', now = new D
   const status = held ? 'awaiting_approval' : 'paid'
   await finishCakeOrder(id, { status, paymentId, approveBy: order.approveBy })
   await sendNewOrderEmails({ ...order, status, paymentId })
-  return { ref: orderRef(id), held, viaSquare: !paymentId.startsWith(FAKE_PAYMENT_PREFIX) }
+  return { ref: orderRef(order), held, viaSquare: !paymentId.startsWith(FAKE_PAYMENT_PREFIX) }
 }
