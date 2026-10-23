@@ -261,8 +261,8 @@ export function zhPickup(date: string, time: string) {
   return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日（星期${ZH_WEEKDAYS[d.getUTCDay()]}）${period}${clock}`
 }
 
-/** Text Keith copies and sends to the bakery (Traditional Chinese, Hong Kong wording). */
-export function momText(
+/** Order text copied from admin and sent to the kitchen (Traditional Chinese, Hong Kong wording). */
+export function kitchenText(
   order: Pick<
     StoredCakeOrder,
     'phone' | 'size' | 'flavor' | 'filling' | 'pickupDate' | 'pickupTime' | 'cakeMessage' | 'notes'

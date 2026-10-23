@@ -84,7 +84,7 @@ export async function declineOrder(id: string) {
 }
 
 /**
- * Admin "Test order": a sample order that goes through the same saving, emails, approval and Mom text as a real one.
+ * Admin "Test order": a sample order that goes through the same saving, emails, approval and Chinese kitchen text as a real one.
  * - paid: 8" round 3 days ahead, charged straight away.
  * - approval: 10" round tomorrow, card only held, so Approve & charge / Decline can be tried.
  * In Square sandbox it uses Square's test card, so the payment shows in the sandbox dashboard. In production no card

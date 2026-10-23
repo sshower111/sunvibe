@@ -1,5 +1,5 @@
 'use strict'
-// Online cake orders: pickup times, approval rules, prices, the Chinese text for Mom, and the order/payment flow
+// Online cake orders: pickup times, approval rules, prices, the Chinese kitchen text, and the order/payment flow
 // (public route, admin approve/decline, Square webhook) against an in-memory database with Square and email faked.
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
@@ -127,8 +127,8 @@ test('prices follow the pricing sheet column for the filling', () => {
   for (const filling of rules.ORDER_FILLINGS) assert.notEqual(rules.cakePrice('6-inch', filling), null)
 })
 
-test('text for Mom is Hong Kong Chinese in the agreed order', () => {
-  const text = rules.momText({
+test('kitchen text is Hong Kong Chinese in the agreed order', () => {
+  const text = rules.kitchenText({
     phone: '(702) 555-0123',
     size: '8-inch',
     flavor: 'Chocolate',
