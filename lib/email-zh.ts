@@ -16,6 +16,7 @@ export const ZH = {
   size: '蛋糕尺寸',
   flavor: '口味偏好',
   filling: '餡料偏好',
+  cakeMessage: '蛋糕上的字',
   budget: '預算',
   fulfillment: '自取／送貨要求',
   deliveryAddress: '送貨地址／酒店',
@@ -72,7 +73,7 @@ const options: Record<string, string> = {
   Coconut: '椰子',
   Durian: '榴槤',
   Banana: '香蕉',
-  'Custom filling / describe in notes': '自訂餡料（詳見備註）',
+  'Something else (e.g., passion fruit)': '其他餡料（詳見備註）',
   // Pickup and delivery
   Pickup: '自取',
   'Local delivery (within 10 miles) — $30': '本地送貨（10 英里內）— $30',

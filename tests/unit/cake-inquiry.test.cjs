@@ -15,6 +15,8 @@ let verified = true
 let emailError = false
 let limited = false
 const mail = []
+const saved = []
+let storeDown = false
 
 const { load } = createLoader({
   mocks: {
@@ -29,6 +31,12 @@ const { load } = createLoader({
       getClientIp: () => 'test',
       escapeHtml: value =>
         value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c]),
+    },
+    '@/lib/cake-inquiries-store': {
+      saveCakeInquiry: async inquiry => {
+        if (storeDown) throw new Error('mock database outage')
+        saved.push(inquiry)
+      },
     },
     resend: {
       Resend: class {
@@ -55,6 +63,7 @@ const valid = {
   size: '8-inch',
   flavor: 'Please recommend',
   filling: 'Please recommend',
+  cakeMessage: 'Happy 30th, <b>Amy</b>!',
   budget: 'Not sure — please advise',
   fulfillment: 'Pickup',
   deliveryAddress: '',
@@ -80,6 +89,7 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal((await post({ size: 'tier-8-10-12-14' })).status, 400)
   assert.equal((await post({ size: 'tier-6-10-12-16-18' })).status, 400)
   assert.equal((await post({ acknowledged: '' })).status, 400)
+  assert.equal((await post({ cakeMessage: 'x'.repeat(schema.MAX_CAKE_MESSAGE + 1) })).status, 400)
   assert.equal((await post({}, [new File(['fake'], 'fake.jpg', { type: 'image/jpeg' })])).status, 400)
   assert.equal(
     (await post({}, [new File([new Uint8Array(schema.MAX_PHOTO_BYTES + 1)], 'big.png', { type: 'image/png' })])).status,
@@ -115,8 +125,24 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert(zh.includes('&lt;img src=x&gt; allergy request') && !zh.includes('<img'))
   assert(mail[0].body.text.includes('\n— 中文 —\n訂製蛋糕查詢（需報價）'))
   assert.equal(mail[0].options.idempotencyKey, 'cake-' + valid.requestId)
+  // Writing on the cake: escaped in both languages, never translated.
+  assert(mail[0].body.html.includes('<strong>Writing on cake:</strong> Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  assert(zh.includes('<strong>蛋糕上的字：</strong>Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  // Delivered inquiries are saved to the tracker, without the acknowledgement checkbox.
+  assert.equal(saved.length, 1)
+  assert.equal(saved[0].id, valid.requestId)
+  assert.equal(saved[0].photoCount, 1)
+  assert.equal(saved[0].cakeMessage, 'Happy 30th, <b>Amy</b>!')
+  assert(!('acknowledged' in saved[0]))
+  // A tracker outage does not fail an inquiry that was emailed.
+  storeDown = true
+  assert.equal((await post({ cakeMessage: '' })).status, 200)
+  assert(mail.at(-1).body.html.includes('<strong>Writing on cake:</strong> None'))
+  storeDown = false
   emailError = true
+  const savedBefore = saved.length
   assert.equal((await post()).status, 502)
+  assert.equal(saved.length, savedBefore, 'failed emails are not saved')
   limited = true
   assert.equal((await post()).status, 429)
   limited = false

@@ -124,3 +124,47 @@ test('database-backed menu, orders, campaigns and gallery', async () => {
   )
   await db.exec('RESET ROLE')
 })
+
+test('cake inquiries are stored encrypted, with status and private notes', async () => {
+  await db.exec(fs.readFileSync(path.join(root, 'db/002-cake-inquiries.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/002-cake-inquiries.sql'), 'utf8')) // re-runnable
+  const store = load('lib/cake-inquiries-store.ts')
+  const inquiry = {
+    id: '44444444-4444-4444-8444-444444444444',
+    createdAt: '2026-10-22T20:00:00.000Z',
+    name: 'Amy',
+    email: 'amy@example.test',
+    phone: '7025550100',
+    eventDate: '2099-01-20',
+    eventTime: '',
+    eventType: 'Birthday',
+    servings: '12',
+    size: '8-inch',
+    flavor: 'Vanilla',
+    filling: 'Mango',
+    cakeMessage: "Happy 30th'); DROP TABLE bakery_cake_inquiries;--",
+    budget: 'Under $100',
+    fulfillment: 'Pickup',
+    deliveryAddress: '',
+    notes: '',
+    photoCount: 2,
+  }
+  await store.saveCakeInquiry(inquiry)
+  await store.saveCakeInquiry({ ...inquiry, name: 'Retry' }) // same id: ignored
+  const raw = (await db.query('SELECT payload,status FROM bakery_cake_inquiries')).rows
+  assert.equal(raw.length, 1)
+  assert.equal(raw[0].status, 'new')
+  assert(!raw[0].payload.includes(inquiry.email))
+  let [stored] = await store.listCakeInquiries()
+  assert.deepEqual(stored, { ...inquiry, status: 'new', staffNotes: '' })
+  await store.updateCakeInquiry(inquiry.id, { status: 'checking_owner' })
+  await store.updateCakeInquiry(inquiry.id, { staffNotes: 'Final $85, paid by Zelle' })
+  assert(!(await db.query('SELECT staff_notes FROM bakery_cake_inquiries')).rows[0].staff_notes.includes('Zelle'))
+  ;[stored] = await store.listCakeInquiries()
+  assert.equal(stored.status, 'checking_owner')
+  assert.equal(stored.staffNotes, 'Final $85, paid by Zelle')
+  await store.updateCakeInquiry(inquiry.id, { staffNotes: '' })
+  assert.equal((await store.listCakeInquiries())[0].staffNotes, '')
+  await assert.rejects(db.query("UPDATE bakery_cake_inquiries SET status='paid'"))
+  await assert.rejects(store.updateCakeInquiry('55555555-5555-4555-8555-555555555555', { status: 'new' }))
+})

@@ -13,6 +13,8 @@ import {
   budgets,
   flavors,
   fillings,
+  CUSTOM_FILLING,
+  MAX_CAKE_MESSAGE,
   formatEventTime,
   MAX_PHOTO_BYTES,
   MAX_PHOTOS,
@@ -29,7 +31,7 @@ import { ImagePlus } from 'lucide-react'
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [
   ['eventDate', 'eventTime', 'eventType', 'fulfillment', 'deliveryAddress'],
-  ['servings', 'size', 'flavor', 'filling', 'budget'],
+  ['servings', 'size', 'flavor', 'filling', 'cakeMessage', 'budget'],
   ['name', 'email', 'phone', 'notes'],
   ['acknowledged'],
 ]
@@ -44,6 +46,7 @@ const initial = {
   size: 'Not sure',
   flavor: 'Please recommend',
   filling: 'Please recommend',
+  cakeMessage: '',
   budget: 'Not sure — please advise',
   fulfillment: 'Pickup',
   deliveryAddress: '',
@@ -90,6 +93,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       data.fulfillment === 'Pickup'
         ? `Pickup: ${SITE.street}, Las Vegas.`
         : 'Delivery availability and destination are confirmed with your quote.',
+    cakeMessage: 'Exactly as it should appear. Leave blank for no writing.',
     budget: 'Your budget helps us plan; it isn’t a price quote.',
   }
   const navigate = (value: number) => {
@@ -345,8 +349,20 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
               </a>
               .
             </p>
-            {data.filling === 'Custom filling / describe in notes' && (
-              <p className="text-sm text-muted-foreground">Describe your preferred filling in the notes.</p>
+            {data.filling === CUSTOM_FILLING && (
+              <p className="text-sm text-muted-foreground">
+                Tell us the filling you’d like in the notes (next step). We’ll let you know if we can make it.
+              </p>
+            )}
+            {field(
+              'cakeMessage',
+              'Writing on the cake (optional)',
+              <Input
+                {...control('cakeMessage')}
+                maxLength={MAX_CAKE_MESSAGE}
+                autoComplete="off"
+                placeholder="e.g., Happy 30th Birthday, Amy!"
+              />,
             )}
             {field(
               'budget',
@@ -487,7 +503,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                 {...control('notes')}
                 rows={5}
                 maxLength={3000}
-                placeholder="Colors, theme, message on the cake, allergies, or anything else we should know…"
+                placeholder="Colors, theme, allergies, or anything else we should know…"
               />,
             )}
             <details className="text-sm">
@@ -509,6 +525,7 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
                   ],
                   ['Cake', `${data.servings} servings · ${cakeLabel(data.size)}`],
                   ['Preferences', `${data.flavor} / ${data.filling}`],
+                  ['Writing on cake', data.cakeMessage || 'None'],
                   ['Budget', data.budget],
                   ['Pickup / delivery', data.fulfillment],
                   [

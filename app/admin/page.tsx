@@ -9,6 +9,7 @@ import { adminPost, SignedOutError } from '@/lib/admin-api'
 import { Input } from '@/components/ui/input'
 import { AdminOccasions } from '@/components/admin-occasions'
 import { AdminPreOrders } from '@/components/admin-pre-orders'
+import { AdminCakeInquiries } from '@/components/admin-cake-inquiries'
 import { AdminProductCreate } from '@/components/admin-product-create'
 import { AdminProductEditor } from '@/components/admin-product-editor'
 import { MenuPhotoThumb } from '@/components/menu-photo-field'
@@ -24,12 +25,13 @@ interface Product {
   active: boolean
 }
 
-type Tab = 'menu' | 'gallery' | 'occasions' | 'pre-orders' | 'settings'
+type Tab = 'menu' | 'gallery' | 'occasions' | 'pre-orders' | 'cake-inquiries' | 'settings'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'menu', label: 'Menu' },
   { id: 'gallery', label: 'Gallery' },
   { id: 'occasions', label: 'Occasions' },
   { id: 'pre-orders', label: 'Pre-orders' },
+  { id: 'cake-inquiries', label: 'Cake inquiries' },
   { id: 'settings', label: 'Settings' },
 ]
 type Notice = { type: 'success' | 'error'; text: string } | null
@@ -322,6 +324,7 @@ export default function AdminPage() {
       <main className="mx-auto max-w-6xl space-y-4 px-4 py-5 sm:px-8 sm:py-8">
         {activeTab === 'occasions' && <AdminOccasions />}
         {activeTab === 'pre-orders' && <AdminPreOrders />}
+        {activeTab === 'cake-inquiries' && <AdminCakeInquiries />}
 
         {activeTab === 'menu' && (
           <section aria-labelledby="menu-admin-heading" className="space-y-4">

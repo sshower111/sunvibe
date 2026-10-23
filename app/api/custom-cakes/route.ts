@@ -4,6 +4,7 @@ import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
 import { cakeInquirySchema, formatEventTime, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
+import { saveCakeInquiry } from '@/lib/cake-inquiries-store'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { escapeHtml, getClientIp, rateLimiter } from '@/lib/security'
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
       size: 'Cake size',
       flavor: 'Flavor preference',
       filling: 'Filling preference',
+      cakeMessage: 'Writing on cake',
       budget: 'Budget',
       fulfillment: 'Pickup / delivery request',
       deliveryAddress: 'Delivery address / hotel',
@@ -128,6 +130,18 @@ export async function POST(request: NextRequest) {
     )
     if (result.error)
       return fail('Your inquiry could not be sent. Your details are still here; please retry or call the bakery.', 502)
+    // The email is the primary record; a tracker outage must not fail an inquiry that was delivered.
+    try {
+      const { acknowledged: _, ...details } = parsed.data
+      await saveCakeInquiry({
+        ...details,
+        id: requestId,
+        createdAt: new Date().toISOString(),
+        photoCount: attachments.length,
+      })
+    } catch (error) {
+      console.error('Cake inquiry emailed but not saved to the tracker', requestId, error)
+    }
     return NextResponse.json({ success: true })
   } catch {
     return fail('Your inquiry could not be sent. Please retry or call the bakery.', 500)

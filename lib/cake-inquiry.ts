@@ -23,8 +23,11 @@ export const fillings = [
   'Coconut',
   'Durian',
   'Banana',
-  'Custom filling / describe in notes',
+  'Something else (e.g., passion fruit)',
 ] as const
+// The bakery accommodates fillings it doesn't list; the customer describes them in the notes.
+export const CUSTOM_FILLING = fillings[fillings.length - 1]
+export const MAX_CAKE_MESSAGE = 60
 // 5 × 800 KB keeps the whole upload under Vercel's 4.5 MB request limit.
 export const MAX_PHOTO_BYTES = 800 * 1024
 export const MAX_PHOTOS = 5
@@ -85,6 +88,11 @@ export const cakeInquirySchema = z.object({
     ),
   flavor: z.enum(flavors),
   filling: z.enum(fillings),
+  cakeMessage: z
+    .string()
+    .trim()
+    .max(MAX_CAKE_MESSAGE, `Please keep the cake message under ${MAX_CAKE_MESSAGE} characters.`)
+    .default(''),
   budget: z.enum(budgets),
   fulfillment: z.enum(deliveryOptions),
   deliveryAddress: z.string().trim().max(500, 'Please keep the delivery address under 500 characters.'),
@@ -94,3 +102,30 @@ export const cakeInquirySchema = z.object({
   }),
 })
 export type CakeInquiry = z.infer<typeof cakeInquirySchema>
+
+// Tracking in admin. Each open status says whose turn it is.
+export const inquiryStatuses = [
+  'new',
+  'waiting_customer',
+  'checking_owner',
+  'confirmed_paid',
+  'completed',
+  'cancelled',
+] as const
+export type InquiryStatus = (typeof inquiryStatuses)[number]
+export const inquiryStatusLabels: Record<InquiryStatus, string> = {
+  new: 'New',
+  waiting_customer: 'Waiting on customer',
+  checking_owner: 'Checking with Mom',
+  confirmed_paid: 'Confirmed & paid',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+}
+export const MAX_STAFF_NOTES = 3000
+export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged'> & {
+  id: string
+  createdAt: string
+  photoCount: number
+  status: InquiryStatus
+  staffNotes: string
+}

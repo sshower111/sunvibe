@@ -1,4 +1,5 @@
 // Source: Bakery Cake Pricing & Specs.pdf, supplied by the bakery owner.
+// Strawberry and Banana fillings are priced in the Mixed Fruit / Tiramisu group (owner, Oct 2026).
 export const priceGroups = [
   'Coffee / Chocolate Mousse / Custard',
   'Mixed Fruit / Tiramisu',

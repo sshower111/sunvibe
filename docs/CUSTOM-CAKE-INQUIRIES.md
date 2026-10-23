@@ -39,3 +39,18 @@ PDF update validation: every catalog price and serving figure matched the source
 ## Larger tier cakes
 
 The online guide and inquiry accept 2- and 3-tier combinations only. Four- and five-tier options from the PDF are intentionally excluded at the owner’s request. Customers are directed to call 702-889-9887 for 4+ tiers. The public catalog now has 23 entries (8 round, 3 sheet, 12 tiered); server validation also rejects the removed sizes.
+
+## Writing on the cake and custom fillings
+
+- Optional "Writing on the cake" field (60 characters) in the cake step, shown on the review step and in both the English and Chinese email. It is customer text, so it is never translated.
+- The last filling option is "Something else (e.g., passion fruit)"; choosing it asks the customer to describe the filling in the notes.
+- Pricing: Strawberry and Banana are priced in the Mixed Fruit / Tiramisu group (owner, Oct 2026).
+
+## Inquiry tracker (admin → Cake inquiries)
+
+Every inquiry that is emailed is also saved to `bakery_cake_inquiries` (schema: `db/002-cake-inquiries.sql`; run it once in Supabase before deploying). The email stays the primary record: if saving fails, the customer still sees success and the error is logged. Photos stay in the email only.
+
+- Statuses: New → Waiting on customer / Checking with Mom → Confirmed & paid → Completed, or Cancelled. Filters: Open, Confirmed & paid, Completed / cancelled, All.
+- Private notes per inquiry for the agreed design, final price and payment.
+- Inquiries from the same email or phone are flagged on each other, so a second "correction" form is easy to spot and cancel.
+- Customer details and private notes are encrypted at rest like pre-orders; RLS has no browser policies. API: `POST /api/admin/cake-inquiries` (admin session required).
