@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-23
+
+- **Draft reply for cake inquiries**: each inquiry in admin → Cake inquiries has a "Draft reply" button. The draft skips what the customer already told us and only covers what's open: a size suggestion for their guest count, the starting price from the pricing sheet (plus delivery), a note if that's over their budget, flavor/filling choices when they asked for a recommendation, and questions for anything missing (delivery address, time, design). Parts that need the bakery's judgment (availability, design price, custom fillings) are left in [square brackets]. Edit it on the page, then "Open in Gmail" or "Copy". Nothing is saved or sent automatically. (`lib/inquiry-reply.ts`, `components/admin-cake-inquiries.tsx`, `tests/unit/inquiry-reply.test.cjs`, `docs/ADMIN_GUIDE.md`)
+
 ## 2026-10-22
 
 - **Each cake inquiry gets its own email thread**: subjects now include the customer's name and a short code (e.g. `#4F2A`), so Gmail no longer merges different inquiries with the same event and date. The code also shows next to the name in admin → Cake inquiries. (`lib/cake-inquiry.ts`, `app/api/custom-cakes/route.ts`, `components/admin-cake-inquiries.tsx`)

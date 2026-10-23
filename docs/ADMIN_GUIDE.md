@@ -35,6 +35,7 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 - Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
 - A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
+- "Draft reply" writes a starting reply that only covers what's still open (suggested size, starting price, questions). Fill in the [square brackets], edit as you like, then "Open in Gmail" or "Copy". Nothing is sent until you send it.
 
 ## Settings
 
