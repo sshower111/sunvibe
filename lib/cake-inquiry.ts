@@ -123,6 +123,8 @@ export const inquiryStatusLabels: Record<InquiryStatus, string> = {
   cancelled: 'Cancelled',
 }
 export const MAX_STAFF_NOTES = 3000
+/** Short code shown in email subjects and admin so each inquiry gets its own email thread. */
+export const inquiryRef = (id: string) => '#' + id.slice(0, 4).toUpperCase()
 export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged'> & {
   id: string
   createdAt: string

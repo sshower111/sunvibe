@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
-import { cakeInquirySchema, formatEventTime, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
+import { cakeInquirySchema, inquiryRef, formatEventTime, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
 import { saveCakeInquiry } from '@/lib/cake-inquiries-store'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         from: EMAIL_FROM,
         to: bakeryInbox(),
         replyTo: values.email,
-        subject: `Custom cake inquiry: ${[values.eventType, values.eventDate, formatEventTime(parsed.data.eventTime)].filter(Boolean).join(' · ')}`,
+        subject: `Custom cake inquiry: ${[values.name, values.eventType, values.eventDate, formatEventTime(parsed.data.eventTime), inquiryRef(requestId)].filter(Boolean).join(' · ')}`,
         text,
         html,
         attachments,
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
           from: EMAIL_FROM,
           to: values.email,
           replyTo: bakeryInbox(),
-          subject: `We received your cake inquiry — ${SITE.name}`,
+          subject: `We received your cake inquiry ${inquiryRef(requestId)} — ${SITE.name}`,
           ...customerCopy(values),
         },
         { idempotencyKey: `cake-copy-${requestId}` },

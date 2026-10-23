@@ -119,6 +119,8 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   const copy = mail[1]
   assert.equal(copy.body.to, valid.email)
   assert.equal(copy.body.replyTo, process.env.NOTIFICATION_EMAIL || 'sunvillebakerylv@gmail.com')
+  assert.equal(mail[0].body.subject, 'Custom cake inquiry: <script>test</script> · Birthday · 2099-01-20 · #1111')
+  assert.equal(copy.body.subject, 'We received your cake inquiry #1111 — Sunville Bakery')
   assert.equal(copy.options.idempotencyKey, 'cake-copy-' + valid.requestId)
   assert(copy.body.html.includes('Hi &lt;script&gt;test&lt;/script&gt;') && !copy.body.html.includes('<script>'))
   assert(copy.body.html.includes('<strong>Writing on cake:</strong> Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))

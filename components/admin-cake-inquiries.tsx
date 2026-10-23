@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   formatEventTime,
+  inquiryRef,
   inquiryStatuses,
   inquiryStatusLabels,
   MAX_STAFF_NOTES,
@@ -129,7 +130,9 @@ export function AdminCakeInquiries() {
           return (
             <article key={i.id} className="min-w-0 space-y-3 rounded-xl border bg-card p-4">
               <div>
-                <h3 className="heading-3">{i.name}</h3>
+                <h3 className="heading-3">
+                  {i.name} <span className="text-sm font-normal text-muted-foreground">{inquiryRef(i.id)}</span>
+                </h3>
                 <p className="text-sm text-muted-foreground">Received {received(i.createdAt)} (Las Vegas)</p>
               </div>
               {related.length > 0 && (
