@@ -28,6 +28,15 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 
 - Reservation requests from /pre-order. Call the customer, then update the status.
 
+## Cake orders
+
+Online orders from `/order-cake` (paid by card through Square). Details and setup: `docs/CAKE-ORDERS.md`.
+
+- **Needs approval**: same-day orders, and next-day orders for 6", 10", 12" and 1/2 sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.
+- **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.
+- **Copy for Mom** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text Mom** opens Messages with it filled in.
+- Refunds and changes to paid orders: Square Dashboard → Transactions, search by the order code (e.g. `#4F2A`).
+
 ## Cake inquiries
 
 - Every custom cake inquiry from /custom-cakes appears here (the inquiry email still arrives as before; reference photos are only in that email).

@@ -3,19 +3,25 @@ import { NextRequest, NextResponse } from 'next/server'
 // Pages with forms, CAPTCHA or admin tools keep a strict per-request nonce policy (rendered on every request).
 // Read-only pages (home, menu, gallery, privacy) use a fixed policy so they can be cached and served
 // from Vercel's CDN instead of being rebuilt by a server function on every visit.
-const STRICT_PREFIXES = ['/admin', '/contact', '/custom-cakes', '/pre-order']
+const STRICT_PREFIXES = ['/admin', '/contact', '/custom-cakes', '/pre-order', '/order-cake']
 const isStrict = (pathname: string) =>
   STRICT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'))
+
+// Square's card field (Web Payments SDK) on /order-cake: production and sandbox hosts.
+const SQUARE_WEB = 'https://web.squarecdn.com https://sandbox.web.squarecdn.com'
+const SQUARE_CONNECT =
+  'https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://o160250.ingest.sentry.io'
+const SQUARE_FONTS = 'https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net'
 
 function policy(scriptSources: string, development: boolean) {
   return [
     "default-src 'self'",
-    `script-src 'self' ${scriptSources} https://challenges.cloudflare.com https://va.vercel-scripts.com https://www.googletagmanager.com ${development ? "'unsafe-eval'" : ''}`,
-    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self' ${scriptSources} https://challenges.cloudflare.com https://va.vercel-scripts.com https://www.googletagmanager.com ${SQUARE_WEB} ${development ? "'unsafe-eval'" : ''}`,
+    `style-src 'self' 'unsafe-inline' ${SQUARE_WEB}`,
     "img-src 'self' https: data: blob:",
-    "font-src 'self' data:",
-    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
-    'frame-src https://challenges.cloudflare.com',
+    `font-src 'self' data: ${SQUARE_FONTS}`,
+    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com ${SQUARE_CONNECT} ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
+    `frame-src https://challenges.cloudflare.com ${SQUARE_WEB}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

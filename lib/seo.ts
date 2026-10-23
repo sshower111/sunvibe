@@ -26,6 +26,11 @@ export const publicPages = {
     description:
       'Explore chiffon cake sizes, flavors, and prices at Sunville Bakery in Las Vegas. Request a birthday, wedding, or anniversary cake with 3–5 days’ notice.',
   },
+  '/order-cake': {
+    title: 'Order a Cake Online in Las Vegas',
+    description:
+      'Order Sunville Bakery’s chiffon cakes online for pickup in Las Vegas. Choose size, flavor and filling, pay securely, and pick up as soon as today.',
+  },
   '/gallery': {
     title: 'Las Vegas Bakery Photo Gallery',
     description:
