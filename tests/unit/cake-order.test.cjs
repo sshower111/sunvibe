@@ -202,6 +202,7 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal((await r.json()).held, false)
   assert.equal(square.calls.at(-1)[1].autocomplete, true)
   assert.equal(square.calls.at(-1)[1].amountCents, 4200)
+  assert(square.calls.at(-1)[1].idempotencyKey.length <= 45) // Square's limit
   assert.equal((await store.getCakeOrder(paid.requestId)).status, 'paid')
   assert(!(await db.query('SELECT payload FROM bakery_cake_orders')).rows[0].payload.includes('Amy'))
   assert.equal(emails.length, 2)
