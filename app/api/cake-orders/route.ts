@@ -5,7 +5,7 @@ import { SITE } from '@/lib/site-info'
 import { cakeOrderSchema, cakePrice, decideOrder, orderRef, sizeLabel, type StoredCakeOrder } from '@/lib/cake-order'
 import { finishCakeOrder, startCakeOrder } from '@/lib/cake-orders-store'
 import { sendNewOrderEmails } from '@/lib/cake-order-email'
-import { cardErrorMessage, createPayment, squareClientConfig } from '@/lib/square'
+import { cardErrorMessage, createPayment, squareClientConfig, SquareError } from '@/lib/square'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { getClientIp, rateLimiter } from '@/lib/security'
 
@@ -71,8 +71,16 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     await finishCakeOrder(requestId, { status: 'failed' }).catch(() => {})
+    // Shows in Vercel → Logs. No card details are ever in here (only Square's error code and message).
+    const code = error instanceof SquareError ? error.code : 'UNKNOWN'
+    console.error('Square payment failed', {
+      ref: orderRef(requestId),
+      code,
+      status: error instanceof SquareError ? error.status : undefined,
+      detail: (error as Error).message,
+    })
     return fail(
-      cardErrorMessage(error) || `The payment didn't go through. Please try again or call ${SITE.phone}.`,
+      cardErrorMessage(error) || `The payment didn't go through (${code}). Please try again or call ${SITE.phone}.`,
       402,
     )
   }
