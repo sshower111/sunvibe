@@ -68,6 +68,10 @@ export function cardErrorMessage(error: unknown) {
     GENERIC_DECLINE: 'Your card was declined. Please try another card.',
     CARD_DECLINED_VERIFICATION_REQUIRED: 'Your bank needs to verify this payment. Please try again.',
     INVALID_CARD: 'The card number is not valid. Please check it and try again.',
+    INVALID_CARD_DATA: 'The card details are not valid. Please check them and try again.',
+    PAN_FAILURE: 'The card number is not valid. Please check it and try again.',
+    CARD_EXPIRED: 'This card has expired. Please use another card.',
+    TRANSACTION_LIMIT: 'Your card was declined (over its limit). Please try another card.',
   }
   return messages[code] || ''
 }
