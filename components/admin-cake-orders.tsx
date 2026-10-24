@@ -25,8 +25,10 @@ const filters = {
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
 type Filter = keyof typeof filters
 type SortKey = 'created' | 'pickup'
-// Small buttons so the table fits on a laptop screen.
-const compact = 'w-full !min-h-8 !px-2 !py-1 !text-xs'
+// Small buttons so the table fits on a laptop screen; full tap size on phones.
+const compact = 'justify-start md:w-full md:!min-h-8 md:!py-1 md:!text-xs'
+// Phones: each row is a card and each cell shows its column name above it.
+const cell = 'block px-3 py-1.5 md:table-cell md:py-2 before:block before:text-xs before:font-semibold before:text-muted-foreground before:content-[attr(data-label)] md:before:content-none'
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
@@ -131,9 +133,9 @@ export function AdminCakeOrders() {
     <section className="space-y-4">
       <h2 className="heading-2">Cake orders</h2>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="grid gap-1 text-sm font-semibold">
+        <label className="grid w-full gap-1 text-sm font-semibold sm:w-auto">
           Status
-          <NativeSelect value={filter} onChange={e => setFilter(e.target.value as Filter | 'all')} className="w-56">
+          <NativeSelect value={filter} onChange={e => setFilter(e.target.value as Filter | 'all')} className="w-full sm:w-56">
             <option value="all">All ({orders.length})</option>
             {(Object.keys(filters) as Filter[]).map(key => (
               <option key={key} value={key}>
@@ -145,7 +147,7 @@ export function AdminCakeOrders() {
         <Button variant="outline" onClick={load} disabled={busy}>
           Refresh
         </Button>
-        <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy} className="ml-auto">
+        <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy} className="sm:ml-auto">
           Test order (paid)
         </Button>
         <Button variant="outline" onClick={() => sendTest('approval')} disabled={busy}>
@@ -160,9 +162,9 @@ export function AdminCakeOrders() {
       </p>
       {loaded && !shown.length && !error && <p>No orders here.</p>}
       {shown.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b bg-secondary">
+        <div className="md:overflow-x-auto md:rounded-xl md:border md:bg-card">
+          <table className="block w-full text-left text-sm md:table">
+            <thead className="sr-only border-b bg-secondary md:not-sr-only md:table-header-group">
               <tr className="whitespace-nowrap">
                 {sortHeader('created', 'Ordered')}
                 {sortHeader('pickup', 'Pickup')}
@@ -180,14 +182,16 @@ export function AdminCakeOrders() {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="block space-y-3 md:table-row-group md:space-y-0">
               {shown.map(o => (
-                <tr key={o.id} className="border-b align-top last:border-0">
-                  <td className="whitespace-nowrap px-3 py-2">{formatVegasTime(o.createdAt)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">
+                <tr key={o.id} className="block rounded-xl border bg-card py-2 align-top md:table-row md:rounded-none md:border-0 md:border-b md:bg-transparent md:py-0 md:last:border-0">
+                  <td data-label="Ordered" className={cell + ' md:whitespace-nowrap'}>
+                    {formatVegasTime(o.createdAt)}
+                  </td>
+                  <td data-label="Pickup" className={cell + ' md:whitespace-nowrap'}>
                     {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
                   </td>
-                  <td className="min-w-48 px-3 py-2">
+                  <td data-label="Cake" className={cell + ' md:min-w-48'}>
                     {sizeLabel(o.size)} · {o.flavor} · {o.filling}
                     {o.cakeMessage && <div className="text-muted-foreground">Writing: {o.cakeMessage}</div>}
                     {isDelivery(o) && (
@@ -203,7 +207,7 @@ export function AdminCakeOrders() {
                     </div>
                     {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
                   </td>
-                  <td className="min-w-44 px-3 py-2">
+                  <td data-label="Customer" className={cell + ' md:min-w-44'}>
                     {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
                     {o.test && (
                       <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
@@ -224,30 +228,30 @@ export function AdminCakeOrders() {
                       </a>
                     </div>
                   </td>
-                  <td className="px-3 py-2">
+                  <td data-label="Status" className={cell}>
                     <span className="whitespace-nowrap">
                       {o.kind === 'custom' && o.status === 'expired'
                         ? 'Pay link expired'
                         : cakeOrderStatusLabels[o.status]}
                     </span>
                     {o.status === 'awaiting_approval' && o.approveBy && (
-                      <div className="min-w-40 text-xs text-amber-900">
+                      <div className="text-xs text-amber-900 md:min-w-40">
                         {o.approvalReason}. Approve by {formatVegasTime(o.approveBy)}
                       </div>
                     )}
                     {o.status === 'awaiting_payment' && o.payBy && (
-                      <div className="min-w-40 text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground md:min-w-40">
                         Link valid until {formatVegasTime(o.payBy)}
                       </div>
                     )}
                     {o.status === 'deposit_paid' && o.deposit && (
-                      <div className="min-w-40 text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground md:min-w-40">
                         Collect ${(o.price - o.deposit).toFixed(2)} at {isDelivery(o) ? 'delivery' : 'pickup'}
                       </div>
                     )}
                   </td>
-                  <td className="px-3 py-2">
-                    <div className="flex w-32 flex-col gap-1.5">
+                  <td className="block px-1 pt-1 md:table-cell md:px-3 md:py-2">
+                    <div className="flex flex-wrap gap-x-1 md:w-32 md:flex-col md:gap-0">
                       <Button size="sm" variant="outline" className={compact} onClick={() => copy(o)}>
                         {copied === o.id ? 'Copied!' : 'Copy for kitchen'}
                       </Button>

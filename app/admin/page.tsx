@@ -63,6 +63,12 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('menu')
+  // Phones: keep the open tab visible in the sideways-scrolling tab bar.
+  useEffect(() => {
+    document
+      .querySelector('nav[aria-label="Admin sections"] [aria-pressed="true"]')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [activeTab, session])
   // The open tab is kept in the address (/admin?tab=cake-orders), so emails, bookmarks and reloads open it.
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab')

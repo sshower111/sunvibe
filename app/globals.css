@@ -550,3 +550,54 @@ input[type='search']::-webkit-search-cancel-button {
     display: none;
   }
 }
+
+/* Admin pages: buttons are flat text with an underline that grows in, like the admin tabs (no filled or outlined boxes).
+   Scoped with :has() so dialogs (rendered outside the admin wrapper) match too. Unlayered, so it wins over the
+   button utilities; the public site keeps its normal buttons. */
+body:has([data-admin-ui]) [data-variant] {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 0.5rem;
+  color: var(--foreground);
+}
+body:has([data-admin-ui]) [data-variant][data-variant='default'] {
+  color: var(--primary);
+}
+body:has([data-admin-ui]) [data-variant][data-variant='destructive'] {
+  color: var(--destructive);
+}
+body:has([data-admin-ui]) [data-variant]::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0.5rem;
+  bottom: 0.25rem;
+  height: 2px;
+  border-radius: 9999px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 200ms var(--ease-standard);
+}
+body:has([data-admin-ui]) [data-variant][data-size^='icon']::after {
+  content: none;
+}
+body:has([data-admin-ui]) [data-variant]:active:not(:disabled) {
+  background: transparent;
+  color: var(--primary);
+}
+body:has([data-admin-ui]) [data-variant]:active:not(:disabled)::after {
+  transform: scaleX(1);
+}
+@media (hover: hover) {
+  body:has([data-admin-ui]) [data-variant]:hover:not(:disabled) {
+    background: transparent;
+  }
+  body:has([data-admin-ui]) [data-variant]:not([data-variant='destructive']):hover:not(:disabled) {
+    color: var(--primary);
+  }
+  body:has([data-admin-ui]) [data-variant]:hover:not(:disabled)::after {
+    transform: scaleX(1);
+  }
+}

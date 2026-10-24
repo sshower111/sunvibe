@@ -3,5 +3,6 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { robots: { index: false, follow: false }, alternates: { canonical: null } }
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children
+  // data-admin-ui switches every button on the admin pages to the flat text style (app/globals.css).
+  return <div data-admin-ui>{children}</div>
 }
