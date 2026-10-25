@@ -1,4 +1,4 @@
-// Fallback gallery (original Yelp/ImgBB photos). Admin uploads live in Supabase.
+// Fallback gallery (original Yelp photos, and former ImgBB photos now in Supabase storage). Admin uploads live in Supabase.
 
 export const galleryImages = [
   // Yelp Images
@@ -12,12 +12,12 @@ export const galleryImages = [
   'https://s3-media0.fl.yelpcdn.com/bphoto/pKrji2xXs18M03ZOGLjldw/o.jpg',
   'https://s3-media0.fl.yelpcdn.com/bphoto/wultZwh4B4ry9Cc5yDjJYQ/o.jpg',
 
-  // ImgBB Images
-  'https://i.ibb.co/nNxVCjWz/AF1-Qip-Nj-Gs-jii-Bi-ERSMGk-WKvm-Vwdh-N3-U5-Mw-VRQ-r-If1-w400-h533-k-no.jpg',
-  'https://i.ibb.co/gbL5r6yk/AB8u6-Hb-Gaz-B9-Zjbg-Yv5ko-MHcj-ZBPh3vh6s-XVS-i-VP8-Wsk-Qsrcl-Ui-LGe-F1-Mh-CCY-o2xa1n-LZXFN6-Sv8t-U.jpg',
-  'https://i.ibb.co/7t8m8hj8/AB8u6-HYWMh-D4-Tn98ir-EVfwmq-Yk3-INRJNc-XO-q-Vm6-Ik-UOGWI5-Q4-Ss02-OFRb-JNLt82-J9jce-V4-Jlv-Mehv-Q9g.jpg',
-  'https://i.ibb.co/jvXCPLYX/AB8u6-Hb07-9-Gz-RZyf-Rr-Af-Zq-Ez-PEFcqgbn-FZZoin-kndtk-Os-Wo-Zz-Vr-Aqz-ALWa-WH0f-Hm-Pzu-DI9m3u-W4-E5.jpg',
-  'https://i.ibb.co/TDwChqZN/AB8u6-Hb4li-dhg-WGWo-DQUJ3-YMPYXBuw-i-RY1z-G95-Qe4-W8-YYEg-Z9rec-W6-Et5-Vih-AR3-Ah-ZCww-RAGug-BN1-Kz.jpg',
+  // Formerly on ImgBB; copied to Supabase storage (Oct 2026) with the same order, so captions still match.
+  'https://pbamlokgnomamommrofy.supabase.co/storage/v1/object/public/bakery-images/gallery/ibb-nNxVCjWz.jpg',
+  'https://pbamlokgnomamommrofy.supabase.co/storage/v1/object/public/bakery-images/gallery/ibb-gbL5r6yk.jpg',
+  'https://pbamlokgnomamommrofy.supabase.co/storage/v1/object/public/bakery-images/gallery/ibb-7t8m8hj8.jpg',
+  'https://pbamlokgnomamommrofy.supabase.co/storage/v1/object/public/bakery-images/gallery/ibb-jvXCPLYX.jpg',
+  'https://pbamlokgnomamommrofy.supabase.co/storage/v1/object/public/bakery-images/gallery/ibb-TDwChqZN.jpg',
 ]
 
 // New photos are added in Admin > Gallery (stored in Supabase). This list is only the
@@ -53,9 +53,7 @@ export function canOptimizeGalleryImage(src: string) {
   try {
     const url = new URL(src)
     return (
-      url.protocol === 'https:' &&
-      (url.hostname === 'i.ibb.co' ||
-        (url.hostname === 's3-media0.fl.yelpcdn.com' && url.pathname.startsWith('/bphoto/')))
+      url.protocol === 'https:' && url.hostname === 's3-media0.fl.yelpcdn.com' && url.pathname.startsWith('/bphoto/')
     )
   } catch {
     return false

@@ -43,7 +43,6 @@ const nextConfig = {
         ? [{ protocol: 'https', hostname: photoHost, pathname: `/storage/v1/object/public/${photoBucket}/**` }]
         : []),
       { protocol: 'https', hostname: 's3-media0.fl.yelpcdn.com', pathname: '/bphoto/**' },
-      { protocol: 'https', hostname: 'i.ibb.co', pathname: '/**' },
     ],
   },
 }
