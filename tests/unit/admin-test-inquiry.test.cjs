@@ -12,7 +12,7 @@ const saved = []
 const deleted = []
 const { load } = createLoader({
   mocks: {
-    '@/lib/admin-auth': { isAdminRequest: async () => admin },
+    '@/lib/admin-auth': { isAdminRequest: () => admin },
     // The real module starts a cleanup timer that keeps the test process alive.
     '@/lib/security': {
       escapeHtml: value =>

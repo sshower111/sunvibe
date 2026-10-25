@@ -32,7 +32,7 @@ export async function databaseProductRequest(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
   const action = String(body?.action || '')
-  if (!(await isAdminRequest(body?.password))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     if (action === 'list') return NextResponse.json({ products: await databaseMenu(true) })
     const sql = await verifiedDatabase('menu')

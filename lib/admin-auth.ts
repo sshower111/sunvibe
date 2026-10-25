@@ -45,9 +45,26 @@ function isValidAdminSession(token: string | undefined) {
 export async function hasAdminSession() {
   return isValidAdminSession((await cookies()).get(ADMIN_COOKIE)?.value)
 }
-/** Accepts the session cookie (normal case) or the password (scripts/tests). */
-export async function isAdminRequest(password?: unknown) {
-  return isAdminPassword(password) || (await hasAdminSession())
+/** Reads one cookie from a request's Cookie header. */
+function readCookie(request: Request, name: string) {
+  for (const part of (request.headers.get('cookie') || '').split(';')) {
+    const at = part.indexOf('=')
+    if (at > 0 && part.slice(0, at).trim() === name) {
+      try {
+        return decodeURIComponent(part.slice(at + 1).trim())
+      } catch {
+        return undefined
+      }
+    }
+  }
+  return undefined
+}
+/**
+ * True when the request carries a valid admin session cookie. The password is accepted only at sign-in
+ * (/api/admin/verify, which is rate limited), so other admin endpoints can't be used to guess it.
+ */
+export function isAdminRequest(request: Request) {
+  return isValidAdminSession(readCookie(request, ADMIN_COOKIE))
 }
 export const adminCookieOptions = (maxAge: number) => ({
   httpOnly: true,

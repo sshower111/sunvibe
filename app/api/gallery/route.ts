@@ -12,8 +12,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { action, url, password } = await req.json()
-    if (!(await isAdminRequest(password))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { action, url } = await req.json()
     if (!['add', 'remove'].includes(action) || typeof url !== 'string' || url.length > 2048 || !/^https:\/\//.test(url))
       return NextResponse.json({ error: 'Invalid gallery change' }, { status: 400 })
     await editGallery(action, url)

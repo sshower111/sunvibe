@@ -8,6 +8,7 @@ const { createHmac } = require('node:crypto')
 const { test, after } = require('node:test')
 const { PGlite } = require('@electric-sql/pglite')
 const { createLoader } = require('../helpers/load-ts.cjs')
+const { adminCookie } = require('../helpers/admin-session.cjs')
 
 const db = new PGlite()
 after(() => db.close())
@@ -170,17 +171,20 @@ const order = (fields = {}) => ({
   captchaToken: 'ok',
   ...fields,
 })
-const post = (route, body) =>
+const post = (route, body, cookie) =>
   route.POST(
     new Request('http://test.invalid/api', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-forwarded-for': '203.0.113.' + Math.floor(Math.random() * 250),
+        ...(cookie ? { Cookie: cookie } : {}),
       },
       body: JSON.stringify(body),
     }),
   )
+/** Same as post, signed in as admin (session cookie). */
+const adminPost = (route, body) => post(route, body, adminCookie(load))
 
 test('ordering: paid now, held for approval, declined card, approve, decline and expiry', async () => {
   await db.exec(fs.readFileSync(path.join(root, 'db/001-bakery.sql'), 'utf8'))
@@ -195,7 +199,7 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   const admin = load('app/api/admin/cake-orders/route.ts')
   const webhook = load('app/api/square/webhook/route.ts')
   const store = load('lib/cake-orders-store.ts')
-  const adminCall = body => post(admin, { password: 'test-only', ...body })
+  const adminCall = body => adminPost(admin, body)
 
   // 8" a week ahead: charged now.
   const paid = order()
@@ -320,7 +324,7 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
 test('admin test orders: inbox-only emails, approval, no card in production, deletable', async () => {
   const admin = load('app/api/admin/cake-orders/route.ts')
   const store = load('lib/cake-orders-store.ts')
-  const adminCall = body => post(admin, { password: 'test-only', ...body })
+  const adminCall = body => adminPost(admin, body)
   const inbox = load('lib/email.ts').bakeryInbox()
 
   // Sandbox: goes through Square with the test card.
@@ -439,14 +443,12 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   }
 
   // Validation: a deposit can't be the whole price; delivery needs an address.
-  let r = await post(inquiryRoute, {
-    password: 'test-only',
+  let r = await adminPost(inquiryRoute, {
     action: 'create_order',
     order: { ...base, price: 288, deposit: 288 },
   })
   assert.equal(r.status, 400)
-  r = await post(inquiryRoute, {
-    password: 'test-only',
+  r = await adminPost(inquiryRoute, {
     action: 'create_order',
     order: { ...base, deliveryAddress: '', price: 288 },
   })
@@ -454,8 +456,7 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
 
   // Create with a deposit: order saved as awaiting payment, inquiry moves on, customer emailed the link.
   const before = emails.length
-  r = await post(inquiryRoute, {
-    password: 'test-only',
+  r = await adminPost(inquiryRoute, {
     action: 'create_order',
     order: { ...base, price: '288', deposit: '100' },
   })
@@ -471,7 +472,7 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   const linkEmail = emails.slice(before).find(e => e.to === 'bea@example.test')
   assert(linkEmail.text.includes('/pay/' + order.id))
   assert(linkEmail.text.includes('Balance due at delivery: $188.00'))
-  const list = await (await post(inquiryRoute, { password: 'test-only', action: 'list' })).json()
+  const list = await (await adminPost(inquiryRoute, { action: 'list' })).json()
   assert.equal(list.inquiries.find(i => i.id === inquiryId).order.status, 'awaiting_payment')
 
   // Pay the deposit: Square charges $100, order is "Deposit paid", inquiry "Confirmed & paid".
@@ -490,7 +491,7 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   // Can't pay twice.
   assert.equal((await pay(order.id, { cardToken: 'cnon:card' })).status, 409)
   // Deposit orders can be marked picked up, and undo returns to deposit paid.
-  const adminCall = body => post(ordersRoute, { password: 'test-only', ...body })
+  const adminCall = body => adminPost(ordersRoute, body)
   assert.equal((await adminCall({ action: 'picked_up', id: order.id })).status, 200)
   assert.equal((await adminCall({ action: 'not_picked_up', id: order.id })).status, 200)
   assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
@@ -498,8 +499,7 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   // Full payment, declined card: back to awaiting payment so the customer can retry.
   const fullId = '66666666-6666-4666-8666-666666666666'
   await inquiries.saveCakeInquiry({ ...(await inquiries.getCakeInquiry(inquiryId)), id: fullId })
-  r = await post(inquiryRoute, {
-    password: 'test-only',
+  r = await adminPost(inquiryRoute, {
     action: 'create_order',
     order: { ...base, inquiryId: fullId, fulfillment: 'Pickup', price: 168 },
   })

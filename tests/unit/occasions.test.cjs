@@ -4,6 +4,7 @@
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { createLoader } = require('../helpers/load-ts.cjs')
+const { adminCookie } = require('../helpers/admin-session.cjs')
 
 const { load, mocks } = createLoader({
   mocks: { 'next/headers': { cookies: async () => ({ get: () => undefined }) } },
@@ -128,24 +129,20 @@ test('pre-order dates, campaigns, pricing, API and admin inbox', async () => {
     },
   }
   const inbox = load('app/api/admin/pre-orders/route.ts')
-  async function inboxCall(body) {
+  async function inboxCall(body, cookie = adminCookie(load)) {
     return inbox.POST(
       new Request('http://localhost/api/admin/pre-orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
         body: JSON.stringify(body),
       }),
     )
   }
-  assert.equal((await inboxCall({ password: 'wrong', action: 'list' })).status, 401)
-  assert.equal((await inboxCall({ password: 'test-admin', action: 'list' })).status, 200)
-  assert.equal(
-    (await inboxCall({ password: 'test-admin', action: 'status', id: input.requestId, status: 'called' })).status,
-    200,
-  )
+  assert.equal((await inboxCall({ action: 'list' }, '')).status, 401)
+  // The password is accepted only at sign-in, not on admin endpoints.
+  assert.equal((await inboxCall({ password: 'test-admin', action: 'list' }, '')).status, 401)
+  assert.equal((await inboxCall({ action: 'list' })).status, 200)
+  assert.equal((await inboxCall({ action: 'status', id: input.requestId, status: 'called' })).status, 200)
   assert.equal(status, 'called')
-  assert.equal(
-    (await inboxCall({ password: 'test-admin', action: 'status', id: input.requestId, status: 'paid' })).status,
-    400,
-  )
+  assert.equal((await inboxCall({ action: 'status', id: input.requestId, status: 'paid' })).status, 400)
 })

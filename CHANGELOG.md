@@ -4,6 +4,12 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-25
+
+- **Security: admin APIs accept only the sign-in cookie**: the admin password now works only on the sign-in form (`/api/admin/verify`, limited to 5 tries per 15 minutes). Other admin endpoints used to also accept the password in the request, with no limit, so they could be used to guess it. Nothing changes for signing in or using admin. (`lib/admin-auth.ts`, `app/api/admin/*/route.ts`, `app/api/gallery/route.ts`, `app/api/gallery/upload/route.ts`, `lib/database-product-api.ts`, `tests/helpers/admin-session.cjs`, `tests/unit/`)
+- **Security: photo uploads checked by their contents**: admin photo uploads must really be JPEG, PNG, WebP or GIF (read from the file's first bytes, not its name or the type the browser reports), and are saved with the matching type and extension. Signed-out uploads are refused before the file is read. (`app/api/gallery/upload/route.ts`, `lib/image-type.ts`, `lib/photo-storage.ts`, `tests/unit/gallery-upload.test.cjs`)
+- **Security: HTTPS enforced on subdomains too**: the HSTS header now includes `includeSubDomains`. (`next.config.mjs`)
+
 ## 2026-10-23
 
 - **Cake orders table fits the screen**: phone and email now sit under the customer's name (no separate columns), and the action buttons are smaller and stacked in a narrow column, so the whole row shows on a laptop without scrolling sideways. (`components/admin-cake-orders.tsx`)

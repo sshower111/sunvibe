@@ -10,9 +10,10 @@ function storage() {
   client ??= createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
   return client.storage.from(bucket())
 }
-export async function uploadPhoto(pathname: string, file: File) {
-  const { error } = await storage().upload(pathname, file, {
-    contentType: file.type,
+/** Uploads checked image bytes; contentType must come from the bytes (lib/image-type.ts), not the browser. */
+export async function uploadPhoto(pathname: string, data: Buffer, contentType: string) {
+  const { error } = await storage().upload(pathname, data, {
+    contentType,
     cacheControl: '31536000',
     upsert: false,
   })

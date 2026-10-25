@@ -8,6 +8,7 @@ const path = require('node:path')
 const { test, after } = require('node:test')
 const { PGlite } = require('@electric-sql/pglite')
 const { createLoader } = require('../helpers/load-ts.cjs')
+const { adminCookie } = require('../helpers/admin-session.cjs')
 
 const db = new PGlite()
 after(() => db.close())
@@ -43,15 +44,18 @@ test('database-backed menu, orders, campaigns and gallery', async () => {
   await assert.rejects(menu.databaseMenu())
   await assert.rejects(content.readCampaigns())
   await db.exec("INSERT INTO bakery_migrations(scope,record_count) VALUES('menu',0),('content',0)")
-  const call = (action, body) =>
+  const call = (action, body, cookie = adminCookie(load)) =>
     api.databaseProductRequest(
       new Request('http://test.invalid', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: 'test-only', action, ...body }),
+        headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
+        body: JSON.stringify({ action, ...body }),
       }),
     )
-  assert.equal((await call('list', { password: 'bad' })).status, 401)
+  // Signed out, a forged cookie, or the password in the body: all refused.
+  assert.equal((await call('list', {}, '')).status, 401)
+  assert.equal((await call('list', {}, 'sunville_admin=9999999999.forged')).status, 401)
+  assert.equal((await call('list', { password: 'test-only' }, '')).status, 401)
   const item = {
     name: "Chef's bun'); DROP TABLE bakery_menu;--",
     description: 'Fresh',
