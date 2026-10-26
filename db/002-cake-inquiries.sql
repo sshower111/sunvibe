@@ -1,5 +1,5 @@
 -- Custom cake inquiries submitted on /custom-cakes. Run once; safe to re-run.
--- payload and staff_notes are encrypted by the server (lib/storage-crypto.ts); photos stay in the email only.
+-- payload and staff_notes are encrypted by the server (lib/storage-crypto.ts); reference photos are stored encrypted in Storage (lib/inquiry-photos.ts).
 CREATE TABLE IF NOT EXISTS bakery_cake_inquiries (
  id uuid PRIMARY KEY,
  payload text NOT NULL,

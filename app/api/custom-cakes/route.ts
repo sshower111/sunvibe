@@ -3,6 +3,7 @@ import { readBody, parseForm } from '@/lib/request-body'
 import { SITE } from '@/lib/site-info'
 import { cakeInquirySchema, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { saveCakeInquiry } from '@/lib/cake-inquiries-store'
+import { saveInquiryPhotos } from '@/lib/inquiry-photos'
 import { sendBakeryEmail, sendCustomerCopy } from '@/lib/cake-inquiry-email'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { getClientIp, rateLimiter } from '@/lib/security'
@@ -64,11 +65,13 @@ export async function POST(request: NextRequest) {
     // The email is the primary record; a tracker outage must not fail an inquiry that was delivered.
     try {
       const { acknowledged: _, ...details } = parsed.data
+      const photos = attachments.length ? await saveInquiryPhotos(requestId, attachments) : []
       await saveCakeInquiry({
         ...details,
         id: requestId,
         createdAt: new Date().toISOString(),
         photoCount: attachments.length,
+        ...(photos.length ? { photos } : {}),
       })
     } catch (error) {
       console.error('Cake inquiry emailed but not saved to the tracker', requestId, error)

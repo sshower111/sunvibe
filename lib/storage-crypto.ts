@@ -22,3 +22,15 @@ export function decode(text: string) {
   cipher.setAuthTag(Buffer.from(value.tag, 'base64'))
   return JSON.parse(Buffer.concat([cipher.update(Buffer.from(value.data, 'base64')), cipher.final()]).toString())
 }
+/** Encrypts raw bytes (iv + tag + data) with the same key as encode(). */
+export function encryptBytes(data: Buffer) {
+  const iv = randomBytes(12)
+  const cipher = createCipheriv('aes-256-gcm', secret(), iv)
+  const body = Buffer.concat([cipher.update(data), cipher.final()])
+  return Buffer.concat([iv, cipher.getAuthTag(), body])
+}
+export function decryptBytes(data: Buffer) {
+  const cipher = createDecipheriv('aes-256-gcm', secret(), data.subarray(0, 12))
+  cipher.setAuthTag(data.subarray(12, 28))
+  return Buffer.concat([cipher.update(data.subarray(28)), cipher.final()])
+}

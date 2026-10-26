@@ -1,6 +1,7 @@
 import 'server-only'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { database } from './database'
+import { decryptBytes, encryptBytes } from './storage-crypto'
 const bucket = () => process.env.SUPABASE_STORAGE_BUCKET || 'bakery-images'
 let client: SupabaseClient | undefined
 function storage() {
@@ -46,4 +47,18 @@ export async function deletePhotoIfUnused(url: string) {
   } catch {
     return false
   }
+}
+/** Saves bytes that must not be public (customer photos). Stored encrypted, so the public bucket URL is useless. */
+export async function uploadPrivateFile(pathname: string, data: Buffer) {
+  const { error } = await storage().upload(pathname, encryptBytes(data), {
+    contentType: 'application/octet-stream',
+    upsert: true,
+  })
+  if (error) throw new Error('File upload unavailable')
+}
+/** Reads a file saved with uploadPrivateFile. */
+export async function downloadPrivateFile(pathname: string) {
+  const { data, error } = await storage().download(pathname)
+  if (error || !data) throw new Error('File unavailable')
+  return decryptBytes(Buffer.from(await data.arrayBuffer()))
 }

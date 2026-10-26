@@ -129,6 +129,8 @@ export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged'> & {
   id: string
   createdAt: string
   photoCount: number
+  /** Reference photos kept for admin preview, e.g. ["1.jpg", "2.png"]. Missing on inquiries from before photos were kept. */
+  photos?: string[]
   status: InquiryStatus
   staffNotes: string
   /** Sample from admin "Send test inquiry"; can be deleted from admin. */

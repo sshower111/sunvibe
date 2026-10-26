@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   formatEventTime,
   inquiryRef,
@@ -135,7 +135,7 @@ export function AdminCakeInquiries() {
         {shown.map(i => {
           const related = others(i)
           const draft = drafts[i.id] ?? i.staffNotes
-          const rows: [string, string][] = [
+          const rows: [string, ReactNode][] = [
             ['Event', [i.eventType, i.eventDate, formatEventTime(i.eventTime)].filter(Boolean).join(' · ')],
             ['Cake', `${i.servings} servings · ${cakeLabel(i.size)}`],
             ['Flavor / filling', `${i.flavor} / ${i.filling}`],
@@ -145,7 +145,7 @@ export function AdminCakeInquiries() {
               'Pickup / delivery',
               i.fulfillment === 'Pickup' ? 'Pickup' : `${i.fulfillment} · ${i.deliveryAddress || 'Address TBC'}`,
             ],
-            ['Photos', i.photoCount ? `${i.photoCount} (in the inquiry email)` : 'None'],
+            ['Photos', <InquiryPhotos key="photos" inquiry={i} />],
             ['Customer notes', i.notes || 'None'],
           ]
           return (
@@ -247,5 +247,41 @@ export function AdminCakeInquiries() {
         })}
       </div>
     </section>
+  )
+}
+
+const photoUrl = (id: string, file: string) =>
+  `/api/admin/cake-inquiries/photo?id=${encodeURIComponent(id)}&file=${encodeURIComponent(file)}`
+
+/** Small thumbnails; hovering (or focusing) one shows the whole photo in the middle of the screen; tapping opens it in a new tab. */
+function InquiryPhotos({ inquiry: i }: { inquiry: StoredCakeInquiry }) {
+  const photos = i.photos ?? []
+  if (!i.photoCount) return 'None'
+  if (!photos.length) return `${i.photoCount} (in the inquiry email)`
+  return (
+    <span className="flex flex-wrap items-center gap-2 whitespace-normal">
+      {photos.map((file, n) => (
+        <a
+          key={file}
+          href={photoUrl(i.id, file)}
+          target="_blank"
+          rel="noopener"
+          aria-label={`Reference photo ${n + 1} (opens full size)`}
+          className="group relative block focus-visible:outline-2"
+        >
+          <img src={photoUrl(i.id, file)} alt="" loading="lazy" className="size-12 rounded-md border object-cover" />
+          <span className="pointer-events-none fixed left-1/2 top-1/2 z-50 hidden w-[min(90vw,32rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-card p-1 shadow-2xl group-hover:block group-focus-visible:block">
+            <img
+              src={photoUrl(i.id, file)}
+              alt={`Reference photo ${n + 1}`}
+              className="max-h-[80vh] w-full rounded object-contain"
+            />
+          </span>
+        </a>
+      ))}
+      {photos.length < i.photoCount && (
+        <span className="text-muted-foreground">+{i.photoCount - photos.length} in the inquiry email</span>
+      )}
+    </span>
   )
 }

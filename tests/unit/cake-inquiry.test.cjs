@@ -38,6 +38,9 @@ const { load } = createLoader({
         saved.push(inquiry)
       },
     },
+    '@/lib/inquiry-photos': {
+      saveInquiryPhotos: async (_id, photos) => photos.map((p, i) => `${i + 1}.${p.filename.split('.').pop()}`),
+    },
     resend: {
       Resend: class {
         emails = {
@@ -148,6 +151,7 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal(saved.length, 1)
   assert.equal(saved[0].id, valid.requestId)
   assert.equal(saved[0].photoCount, 1)
+  assert.deepEqual(saved[0].photos, ['1.png'])
   assert.equal(saved[0].cakeMessage, 'Happy 30th, <b>Amy</b>!')
   assert(!('acknowledged' in saved[0]))
   // A tracker outage does not fail an inquiry that was emailed.
