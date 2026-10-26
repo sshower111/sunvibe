@@ -14,7 +14,8 @@ import {
 } from '@/lib/cake-order'
 import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
-import { NativeSelect } from './ui/select'
+import { AdminSegmented } from './admin-segmented'
+import { AdminStatusBadge, type BadgeTone } from './admin-status-badge'
 
 const filters = {
   approval: { label: 'Needs approval', statuses: ['awaiting_approval'] },
@@ -24,11 +25,23 @@ const filters = {
   closed: { label: 'Declined / expired', statuses: ['declined', 'expired', 'failed'] },
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
 type Filter = keyof typeof filters
+const statusTone: Record<CakeOrderStatus, BadgeTone> = {
+  awaiting_approval: 'amber',
+  processing: 'blue',
+  awaiting_payment: 'blue',
+  paid: 'green',
+  deposit_paid: 'green',
+  picked_up: 'gray',
+  declined: 'red',
+  expired: 'red',
+  failed: 'red',
+}
 type SortKey = 'created' | 'pickup'
-// Small buttons so the table fits on a laptop screen; full tap size on phones.
-const compact = 'justify-start md:w-full md:!min-h-8 md:!py-1 md:!text-xs'
-// Phones: each row is a card and each cell shows its column name above it.
-const cell = 'block px-3 py-1.5 md:table-cell md:py-2 before:block before:text-xs before:font-semibold before:text-muted-foreground before:content-[attr(data-label)] md:before:content-none'
+// Small buttons in the wide-screen table; full tap size on the cards.
+const compact = 'xl:w-full xl:!min-h-8 xl:!px-2 xl:!py-1 xl:!text-xs'
+// Below 1280px wide each row is a card and each cell shows its column name above it.
+const cell =
+  'block px-3 py-1.5 xl:table-cell xl:py-2 before:block before:text-xs before:font-semibold before:text-muted-foreground before:content-[attr(data-label)] xl:before:content-none'
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
@@ -131,29 +144,33 @@ export function AdminCakeOrders() {
 
   return (
     <section className="space-y-4">
-      <h2 className="heading-2">Cake orders</h2>
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="grid w-full gap-1 text-sm font-semibold sm:w-auto">
-          Status
-          <NativeSelect value={filter} onChange={e => setFilter(e.target.value as Filter | 'all')} className="w-full sm:w-56">
-            <option value="all">All ({orders.length})</option>
-            {(Object.keys(filters) as Filter[]).map(key => (
-              <option key={key} value={key}>
-                {filters[key].label} ({counts[key]})
-              </option>
-            ))}
-          </NativeSelect>
-        </label>
-        <Button variant="outline" onClick={load} disabled={busy}>
-          Refresh
-        </Button>
-        <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy} className="sm:ml-auto">
-          Test order (paid)
-        </Button>
-        <Button variant="outline" onClick={() => sendTest('approval')} disabled={busy}>
-          Test order (needs approval)
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="heading-2">Cake orders</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={load} disabled={busy}>
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy}>
+            Test order (paid)
+          </Button>
+          <Button variant="outline" onClick={() => sendTest('approval')} disabled={busy}>
+            Test order (needs approval)
+          </Button>
+        </div>
       </div>
+      <AdminSegmented
+        label="Show orders"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { id: 'all' as const, label: 'All', count: orders.length },
+          ...(Object.keys(filters) as Filter[]).map(key => ({
+            id: key,
+            label: filters[key].label,
+            count: counts[key],
+          })),
+        ]}
+      />
       <p role="status" className="text-sm text-success empty:hidden">
         {notice}
       </p>
@@ -162,9 +179,9 @@ export function AdminCakeOrders() {
       </p>
       {loaded && !shown.length && !error && <p>No orders here.</p>}
       {shown.length > 0 && (
-        <div className="md:overflow-x-auto md:rounded-xl md:border md:bg-card">
-          <table className="block w-full text-left text-sm md:table">
-            <thead className="sr-only border-b bg-secondary md:not-sr-only md:table-header-group">
+        <div className="xl:overflow-x-auto xl:rounded-xl xl:border xl:bg-card">
+          <table className="block w-full text-left text-sm xl:table">
+            <thead className="sr-only border-b bg-secondary xl:not-sr-only xl:table-header-group">
               <tr className="whitespace-nowrap">
                 {sortHeader('created', 'Ordered')}
                 {sortHeader('pickup', 'Pickup')}
@@ -182,16 +199,19 @@ export function AdminCakeOrders() {
                 </th>
               </tr>
             </thead>
-            <tbody className="block space-y-3 md:table-row-group md:space-y-0">
+            <tbody className="grid gap-3 md:grid-cols-2 xl:table-row-group">
               {shown.map(o => (
-                <tr key={o.id} className="block rounded-xl border bg-card py-2 align-top md:table-row md:rounded-none md:border-0 md:border-b md:bg-transparent md:py-0 md:last:border-0">
-                  <td data-label="Ordered" className={cell + ' md:whitespace-nowrap'}>
+                <tr
+                  key={o.id}
+                  className="block rounded-xl border bg-card py-2 align-top xl:table-row xl:rounded-none xl:border-0 xl:border-b xl:bg-transparent xl:py-0 xl:last:border-0"
+                >
+                  <td data-label="Ordered" className={cell}>
                     {formatVegasTime(o.createdAt)}
                   </td>
-                  <td data-label="Pickup" className={cell + ' md:whitespace-nowrap'}>
+                  <td data-label="Pickup" className={cell}>
                     {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
                   </td>
-                  <td data-label="Cake" className={cell + ' md:min-w-48'}>
+                  <td data-label="Cake" className={cell + ' xl:min-w-40'}>
                     {sizeLabel(o.size)} · {o.flavor} · {o.filling}
                     {o.cakeMessage && <div className="text-muted-foreground">Writing: {o.cakeMessage}</div>}
                     {isDelivery(o) && (
@@ -207,7 +227,7 @@ export function AdminCakeOrders() {
                     </div>
                     {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
                   </td>
-                  <td data-label="Customer" className={cell + ' md:min-w-44'}>
+                  <td data-label="Customer" className={cell + ' xl:min-w-40'}>
                     {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
                     {o.test && (
                       <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
@@ -229,29 +249,29 @@ export function AdminCakeOrders() {
                     </div>
                   </td>
                   <td data-label="Status" className={cell}>
-                    <span className="whitespace-nowrap">
+                    <AdminStatusBadge tone={statusTone[o.status]}>
                       {o.kind === 'custom' && o.status === 'expired'
                         ? 'Pay link expired'
                         : cakeOrderStatusLabels[o.status]}
-                    </span>
+                    </AdminStatusBadge>
                     {o.status === 'awaiting_approval' && o.approveBy && (
-                      <div className="text-xs text-amber-900 md:min-w-40">
+                      <div className="text-xs text-amber-900 xl:min-w-32">
                         {o.approvalReason}. Approve by {formatVegasTime(o.approveBy)}
                       </div>
                     )}
                     {o.status === 'awaiting_payment' && o.payBy && (
-                      <div className="text-xs text-muted-foreground md:min-w-40">
+                      <div className="text-xs text-muted-foreground xl:min-w-32">
                         Link valid until {formatVegasTime(o.payBy)}
                       </div>
                     )}
                     {o.status === 'deposit_paid' && o.deposit && (
-                      <div className="text-xs text-muted-foreground md:min-w-40">
+                      <div className="text-xs text-muted-foreground xl:min-w-32">
                         Collect ${(o.price - o.deposit).toFixed(2)} at {isDelivery(o) ? 'delivery' : 'pickup'}
                       </div>
                     )}
                   </td>
-                  <td className="block px-1 pt-1 md:table-cell md:px-3 md:py-2">
-                    <div className="flex flex-wrap gap-x-1 md:w-32 md:flex-col md:gap-0">
+                  <td className="block px-3 pt-2 xl:table-cell xl:px-3 xl:py-2">
+                    <div className="flex flex-wrap gap-2 xl:w-32 xl:flex-col xl:gap-1.5">
                       <Button size="sm" variant="outline" className={compact} onClick={() => copy(o)}>
                         {copied === o.id ? 'Copied!' : 'Copy for kitchen'}
                       </Button>
