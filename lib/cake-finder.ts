@@ -5,11 +5,11 @@ import { FILLING_PRICE_GROUP } from './cake-order'
 // and we suggest the smallest cake that serves everyone, with a starting price.
 
 export type FinderShape = CakeSpec['category'] | 'Any'
-export const finderShapes: { value: FinderShape; label: string; hint: string }[] = [
-  { value: 'Round', label: 'Round', hint: 'Classic, 6" to 20"' },
-  { value: 'Sheet', label: 'Sheet (rectangle)', hint: 'Best value for big groups' },
-  { value: 'Multi-tier', label: 'Tiered', hint: '2 or 3 tiers, for 33+ guests' },
-  { value: 'Any', label: 'Not sure', hint: 'We’ll pick the best fit' },
+export const finderShapes: { value: FinderShape; label: string; hint?: string }[] = [
+  { value: 'Round', label: 'Round' },
+  { value: 'Sheet', label: 'Sheet (rectangle)' },
+  { value: 'Multi-tier', label: 'Tiered', hint: '33+ guests' },
+  { value: 'Any', label: 'Not sure' },
 ]
 export const MAX_GUESTS = 999
 

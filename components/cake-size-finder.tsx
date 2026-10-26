@@ -5,7 +5,7 @@ import { SITE } from '@/lib/site-info'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormAlert } from '@/components/ui/form-message'
-import { cakeCatalog, deliveryOptions, priceGroups, type CakeSpec } from '@/lib/cake-catalog'
+import { deliveryOptions, type CakeSpec } from '@/lib/cake-catalog'
 import { eventTypes, fillings, flavors } from '@/lib/cake-inquiry'
 import {
   deliveryFee,
@@ -178,10 +178,7 @@ export function CakeSizeFinder() {
           <h2 id="size-heading" className="heading-2">
             Find your cake size
           </h2>
-          <p className="mt-2 text-pretty-body">
-            Answer five quick questions and we’ll suggest the right size and a starting price. You can send it straight
-            to your inquiry.
-          </p>
+          <p className="mt-2 text-pretty-body">Answer a few questions to get your size and price.</p>
         </div>
 
         <div className="mt-6 max-w-3xl rounded-xl border bg-background card-pad">
@@ -246,15 +243,11 @@ export function CakeSizeFinder() {
                       placeholder="e.g., 24"
                       value={answers.guests}
                       aria-invalid={!!guestError}
-                      aria-describedby="finder-guests-hint"
                       onChange={event => {
                         set('guests', event.target.value)
                         setGuestError('')
                       }}
                     />
-                    <p id="finder-guests-hint" className="mt-2 text-sm text-muted-foreground">
-                      Count everyone who’ll have a slice, kids included.
-                    </p>
                   </div>
                   {guestError && <FormAlert type="error">{guestError}</FormAlert>}
                   <div className="flex flex-wrap justify-between gap-3 border-t pt-5">
@@ -270,9 +263,6 @@ export function CakeSizeFinder() {
 
               {step === 2 && (
                 <>
-                  {answers.eventType === 'Wedding' && (
-                    <p className="mb-4 text-sm text-muted-foreground">Most weddings choose a tiered cake.</p>
-                  )}
                   <div className="grid gap-3 sm:grid-cols-2">
                     {finderShapes.map(shape => (
                       <Choice
@@ -298,14 +288,11 @@ export function CakeSizeFinder() {
                   />
                   <Pills
                     name="finder-filling"
-                    legend="Filling (this sets the price)"
+                    legend="Filling"
                     options={fillings}
                     value={answers.filling}
                     onChange={value => set('filling', value)}
                   />
-                  {answers.shape === 'Multi-tier' && (
-                    <p className="text-sm text-muted-foreground">Tiered cakes are the same price for any filling.</p>
-                  )}
                   <div className="flex flex-wrap justify-between gap-3 border-t pt-5">
                     <Button type="button" variant="outline" onClick={() => go(step - 1)}>
                       Back
@@ -325,7 +312,7 @@ export function CakeSizeFinder() {
                       <Choice
                         key={value}
                         title={title}
-                        hint={value === 'Pickup' ? SITE.street : cost}
+                        hint={cost}
                         selected={answers.fulfillment === value}
                         onClick={() => set('fulfillment', value, true)}
                       />
@@ -470,60 +457,6 @@ export function CakeSizeFinder() {
             </div>
           )}
         </div>
-
-        <details className="mt-6 max-w-3xl rounded-xl border bg-background">
-          <summary className="min-h-12 cursor-pointer px-5 py-4 font-semibold text-primary">
-            See every size and price
-          </summary>
-          <div className="overflow-x-auto border-t px-5 pb-5">
-            <table className="mt-3 w-full min-w-[36rem] text-sm">
-              <caption className="sr-only">Cake sizes, servings and prices by filling</caption>
-              <thead>
-                <tr className="border-b text-left align-bottom">
-                  <th scope="col" className="py-2 pr-3">
-                    Size
-                  </th>
-                  <th scope="col" className="py-2 pr-3">
-                    Serves
-                  </th>
-                  {priceGroups.map(group => (
-                    <th key={group} scope="col" className="py-2 pr-3 font-normal text-muted-foreground">
-                      {group}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {cakeCatalog.map(item => (
-                  <tr key={item.value}>
-                    <th scope="row" className="py-2 pr-3 text-left font-semibold">
-                      {item.label}
-                    </th>
-                    <td className="price py-2 pr-3">{item.servings}</td>
-                    {item.category === 'Multi-tier' ? (
-                      <td colSpan={priceGroups.length} className="price py-2 pr-3 font-semibold text-primary">
-                        {money(item.prices[0])} (any filling)
-                      </td>
-                    ) : (
-                      item.prices.map((value, index) => (
-                        <td key={index} className="price py-2 pr-3 font-semibold text-primary">
-                          {money(value)}
-                        </td>
-                      ))
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Delivery: $30 within 10 miles, $50 to a casino or hotel. Need 4+ tiers? Call{' '}
-              <a href={SITE.phoneHref} className="font-semibold text-primary underline underline-offset-4">
-                {SITE.phone}
-              </a>
-              .
-            </p>
-          </div>
-        </details>
       </div>
     </section>
   )
