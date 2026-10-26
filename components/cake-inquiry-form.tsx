@@ -27,6 +27,7 @@ import { EmailInput } from '@/components/email-input'
 import { EventDatePicker } from '@/components/event-date-picker'
 import { FieldError, FormAlert } from '@/components/ui/form-message'
 import { ImagePlus } from 'lucide-react'
+import { useCakePlan } from '@/components/cake-plan'
 
 const steps = ['Your event', 'Your cake', 'Contact & photos', 'Review & send']
 const fieldsByStep = [
@@ -81,6 +82,8 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
   const sending = useRef(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const feedback = useRef<HTMLDivElement>(null)
+  const plan = useCakePlan()?.plan
+  const [prefilled, setPrefilled] = useState(false)
   const update = (key: Field, value: string) => {
     setData(current => ({ ...current, [key]: value }))
     setErrors(current => ({ ...current, [key]: '' }))
@@ -104,6 +107,21 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
       heading.current?.scrollIntoView({ block: 'start', behavior: 'instant' })
     })
   }
+  // "Use this for my inquiry" in the size finder: copy its answers in, then show the cake step
+  // (or the event step first if the date isn't filled in yet). Everything stays editable.
+  const dateRef = useRef('')
+  dateRef.current = data.eventDate
+  useEffect(() => {
+    if (!plan) return
+    const { id: _id, ...fields } = plan
+    setData(current => ({ ...current, ...fields }))
+    setErrors({})
+    setSent(false)
+    setPrefilled(true)
+    requestId.current = ''
+    navigate(dateRef.current ? 1 : 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan?.id])
   const control = (key: Field) => ({
     id: `cake-${key}`,
     name: key,
@@ -235,6 +253,11 @@ export function CakeInquiryForm({ minDate }: { minDate: string }) {
           </li>
         ))}
       </ol>
+      {prefilled && step < 2 && (
+        <p role="status" className="mb-6 rounded-md bg-surface px-4 py-3 text-sm">
+          We filled in your cake from the size finder. Change anything you like.
+        </p>
+      )}
       <p className="eyebrow mb-1">Step {step + 1} of 4</p>
       <h3 ref={heading} tabIndex={-1} className="heading-3 mb-6 scroll-mt-32 focus:outline-none">
         {steps[step]}

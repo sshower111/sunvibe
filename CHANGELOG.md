@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-26
+
+- **Cake size finder replaces Sizes & prices**: on `/custom-cakes`, customers now answer five quick questions (occasion, number of guests, shape, flavor and filling, pickup or delivery) and get the smallest cake that serves everyone, with a starting price (cake by filling, plus delivery). "Not sure" on shape picks the best value of round or sheet; if the chosen shape doesn't go that big, the closest other shape is suggested; past 144 guests it asks them to inquire or call. Other sizes that fit (other shapes and one size up) can be picked instead. "Use this for my inquiry" fills in the inquiry form (occasion, servings, size, flavor, filling, pickup/delivery), which stays editable. The full price table is under "See every size and price". The `#serving-guide` link still points to this section. (`lib/cake-finder.ts`, `components/cake-size-finder.tsx`, `components/cake-plan.tsx`, `components/cake-inquiry-form.tsx`, `app/custom-cakes/page.tsx`, removed `components/cake-serving-guide.tsx`, `tests/unit/cake-finder.test.cjs`, `docs/CUSTOM-CAKE-INQUIRIES.md`)
+
 ## 2026-10-25
 
 - **Security: admin APIs accept only the sign-in cookie**: the admin password now works only on the sign-in form (`/api/admin/verify`, limited to 5 tries per 15 minutes). Other admin endpoints used to also accept the password in the request, with no limit, so they could be used to guess it. Nothing changes for signing in or using admin. (`lib/admin-auth.ts`, `app/api/admin/*/route.ts`, `app/api/gallery/route.ts`, `app/api/gallery/upload/route.ts`, `lib/database-product-api.ts`, `tests/helpers/admin-session.cjs`, `tests/unit/`)
