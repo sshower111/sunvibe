@@ -159,6 +159,8 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   const [step, setStep] = useState(0)
   const [error, setError] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
+  // Step 1: show every size instead of only the suggestions.
+  const [showAll, setShowAll] = useState(false)
   const [preparing, setPreparing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [cardReady, setCardReady] = useState(false)
@@ -203,9 +205,9 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
       (c, index, list): c is CakeSpec => !!c && list.indexOf(c) === index,
     )
   }, [result])
-  const size = sizeOptions.some(c => c.value === data.size)
-    ? data.size
-    : (result?.best?.value ?? (guests > 0 ? 'Not sure' : ''))
+  // A size the customer picked (from suggestions or all sizes) wins; otherwise the best fit.
+  const picked = cakeCatalog.find(c => c.value === data.size)
+  const size = picked ? data.size : (result?.best?.value ?? (guests > 0 ? 'Not sure' : ''))
   const cake = cakeCatalog.find(c => c.value === size) ?? null
 
   // Pay now only for an everyday cake picked up at a time we offer; everything else is quoted.
@@ -239,7 +241,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
 
   function check(): string {
     if (step === 0) {
-      if (!guests) return 'Enter how many guests, from 1 to 999.'
+      if (!guests && !picked) return 'Enter how many guests, or pick a size.'
     }
     if (step === 1) {
       if (!data.flavor) return 'Choose a flavor.'
@@ -310,7 +312,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           eventDate: data.date,
           eventTime: data.time,
           eventType: 'Other',
-          servings: String(guests),
+          servings: String(guests || cake?.servings || 1),
           size,
           flavor: data.flavor,
           filling: data.filling,
@@ -393,7 +395,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   const label = 'mb-2 block text-sm font-semibold'
   // [label, value, the step that asks it]
   const summary: [string, string, number][] = [
-    ['Guests', data.guests, 0],
+    ['Guests', data.guests || (cake ? 'Not sure yet' : ''), 0],
     ['Cake', cake?.label ?? (size === 'Not sure' ? 'We’ll suggest' : ''), 0],
     ['Flavor', data.flavor && showOption(data.flavor), 1],
     ['Filling', data.filling && showOption(data.filling), 1],
@@ -474,7 +476,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     key={value}
                     title={value === 100 ? '100+' : String(value)}
                     selected={data.guests === String(value)}
-                    onClick={() => set('guests', String(value))}
+                    onClick={() => {
+                      setData(d => ({ ...d, guests: String(value), size: '' }))
+                      setShowAll(false)
+                    }}
                   />
                 ))}
               </div>
@@ -490,10 +495,14 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                   max={999}
                   placeholder="e.g., 24"
                   value={data.guests}
-                  onChange={e => set('guests', e.target.value)}
+                  onChange={e => {
+                    setData(d => ({ ...d, guests: e.target.value, size: '' }))
+                    setShowAll(false)
+                  }}
                 />
               </div>
               {result &&
+                !showAll &&
                 (result.best ? (
                   <fieldset>
                     <legend className="mb-5 w-full text-center text-sm text-muted-foreground">We suggest</legend>
@@ -517,6 +526,49 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     plan it with you.
                   </p>
                 ))}
+              {!showAll ? (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(true)}
+                    className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-primary underline underline-offset-4"
+                  >
+                    {guests ? 'See all sizes' : 'Not sure yet? Pick a size instead'}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {(['Round', 'Sheet', 'Multi-tier'] as const).map(category => (
+                    <fieldset key={category}>
+                      <legend className="mb-3 text-sm font-semibold">
+                        {category === 'Multi-tier' ? 'Tiered' : category}
+                      </legend>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {cakeCatalog
+                          .filter(c => c.category === category)
+                          .map(item => (
+                            <Choice
+                              key={item.value}
+                              title={item.label.replace(' round', '')}
+                              sub={`Serves ${item.servings}`}
+                              selected={size === item.value}
+                              onClick={() => set('size', item.value)}
+                            />
+                          ))}
+                      </div>
+                    </fieldset>
+                  ))}
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowAll(false)}
+                      className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-primary underline underline-offset-4"
+                    >
+                      {guests ? 'Back to suggestions' : 'Hide sizes'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
