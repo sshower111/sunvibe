@@ -22,7 +22,7 @@ export const publicPages = {
       'Explore Sunville Bakery’s savory buns, sweet buns, rolls, and specialty pastries in Las Vegas. Call to confirm availability and same-day pickup.',
   },
   '/order-cake': {
-    title: 'Order a Cake or Custom Cake in Las Vegas',
+    title: 'Plan Your Cake: Celebration Cakes in Las Vegas',
     description:
       'Order Sunville Bakery’s chiffon cakes online: tell us your party size and we’ll suggest the right cake. Pay online for pickup, or request a quote for a custom, tiered or delivered cake.',
   },

@@ -48,7 +48,7 @@ export function Footer() {
               Menu
             </Link>
             <Link href="/order-cake" className={linkStyle}>
-              Order a Cake
+              Plan Your Cake
             </Link>
             <Link href="/#about" className={linkStyle}>
               About
@@ -140,7 +140,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/order-cake" className={linkStyle}>
-                  Order a Cake
+                  Plan Your Cake
                 </Link>
               </li>
               <li>

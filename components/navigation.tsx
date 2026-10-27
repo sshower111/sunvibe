@@ -10,7 +10,7 @@ import { SITE } from '@/lib/site-info'
 const baseLinks = [
   { href: '/', label: 'Home' },
   { href: '/menu', label: 'Menu' },
-  { href: '/order-cake', label: 'Order a Cake' },
+  { href: '/order-cake', label: 'Plan Your Cake' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/contact', label: 'Contact' },
 ]

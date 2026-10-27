@@ -11,7 +11,7 @@ export function CakeStructuredData() {
             '@type': 'BreadcrumbList',
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-              { '@type': 'ListItem', position: 2, name: 'Order a cake', item: SITE_URL + '/order-cake' },
+              { '@type': 'ListItem', position: 2, name: 'Plan your cake', item: SITE_URL + '/order-cake' },
             ],
           },
           {
