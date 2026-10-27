@@ -1,6 +1,6 @@
 # Online cake orders (/order-cake)
 
-Customers order one of the everyday chiffon cakes, pay by card through Square, and pick it up at the bakery. Custom designs, tiers and delivery stay on `/custom-cakes` (inquiry, no payment).
+Customers order one of the everyday chiffon cakes, pay by card through Square, and pick it up at the bakery. Custom designs, tiers and delivery go through the same page but end as a quote request (inquiry, no payment).
 
 ## What customers can order
 

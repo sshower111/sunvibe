@@ -4,7 +4,7 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 
 ## Customer experience
 
-- `/custom-cakes` and `/order-cake` share one order flow (`components/cake-order-flow.tsx`): party size → shape → size (best fit suggested, `lib/cake-finder.ts`) → flavor → filling → design (simple or custom) → date and pickup/delivery → details.
+- One page, `/order-cake`, runs the order flow (`/custom-cakes` redirects there) (`components/cake-order-flow.tsx`): party size → shape → size (best fit suggested, `lib/cake-finder.ts`) → flavor → filling → design (simple or custom) → date and pickup/delivery → details.
 - It ends as a paid online order (see `docs/CAKE-ORDERS.md`) when the cake is an everyday size, flavor and filling are listed, the design is simple, it's pickup, and the pickup time is offered. Everything else is sent here as an inquiry for a quote, with at least 3 days' notice.
 - Custom design adds the occasion, inspiration photos and design/dietary notes in the design step; delivery adds the address in the date step. Budget is sent as "Not sure — please advise"; occasion is "Other" for simple cakes that become quotes.
 - The email to the bakery has a Traditional Chinese copy under the English (labels and options translated, customer text as written). Contact and pre-order emails do the same. To change a translation, edit `lib/email-zh.ts`.

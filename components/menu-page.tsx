@@ -353,14 +353,11 @@ export default function MenuPage({
                 A cake made for your celebration
               </h2>
               <p className="mt-3 max-w-2xl text-muted-foreground">
-                Choose a size, explore flavors, and request a quote.
+                Tell us your party size and we’ll suggest the right cake.
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button asChild className="w-full sm:w-auto">
-                  <a href="/order-cake">Order an everyday cake</a>
-                </Button>
-                <Button asChild variant="outline" className="w-full sm:w-auto">
-                  <a href="/custom-cakes">Custom cake inquiry</a>
+                  <a href="/order-cake">Order a cake</a>
                 </Button>
               </div>
               <p className="mt-3 text-sm text-muted-foreground">

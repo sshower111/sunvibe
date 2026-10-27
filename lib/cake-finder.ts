@@ -1,7 +1,7 @@
 import { cakeCatalog, deliveryOptions, type CakeSpec } from './cake-catalog'
 import { FILLING_PRICE_GROUP } from './cake-order'
 
-// Cake size finder on /custom-cakes: the customer says how many guests, which shape and filling,
+// Size suggestion in the order flow (/order-cake): the customer says how many guests, which shape and filling,
 // and we suggest the smallest cake that serves everyone, with a starting price.
 
 export type FinderShape = CakeSpec['category'] | 'Any'

@@ -9,6 +9,10 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_PHOTO_BASE: photoHost ? `https://${photoHost}/storage/v1/object/public/${photoBucket}/` : '',
   },
+  // Custom cake inquiries and online orders are one page now.
+  async redirects() {
+    return [{ source: '/custom-cakes', destination: '/order-cake', permanent: true }]
+  },
   async headers() {
     return [
       {

@@ -4,7 +4,7 @@ import { flavors, fillings, MAX_CAKE_MESSAGE } from './cake-inquiry'
 import { addDays, storeDate } from './occasion-dates'
 import { zhOption } from './email-zh'
 
-// Standard menu cakes ordered and paid for online (/order-cake). Custom designs stay on /custom-cakes.
+// Standard menu cakes ordered and paid for online through the order flow on /order-cake.
 // Lead times and approval rules come from the bakery (Oct 2026):
 // - 8" round and 1/4 sheet: fine from the day before.
 // - 6", 10", 12" round, 1/2 and full sheet: fine 2+ days ahead; the day before needs approval.

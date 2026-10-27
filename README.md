@@ -27,7 +27,7 @@ Vercel deploys `main` automatically: `git push origin handoff-cleanup:main`.
 
 ## Where things are
 
-- Pages: `app/` (home, menu, custom-cakes, gallery, contact, pre-order, admin)
+- Pages: `app/` (home, menu, order-cake, gallery, contact, pre-order, admin)
 - Bakery phone/address/hours/email: `lib/site-info.ts`
 - Database access: `lib/database*.ts` (schema in `db/001-bakery.sql`)
 - Admin sign-in and sessions: `lib/admin-auth.ts`

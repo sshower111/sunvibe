@@ -29,7 +29,6 @@ import {
 import { deliveryFee, finderShapes, largestServings, priceRange, recommend, startingPrice } from '@/lib/cake-finder'
 import { formatPhone } from '@/lib/form-helpers'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
-import { flavorArt, fillingArt, NotSureArt } from '@/components/cake-illustrations'
 import { ContactCaptcha, type CaptchaHandle } from '@/components/contact-captcha'
 import { EmailInput } from '@/components/email-input'
 import { EventDatePicker, formatEventDate } from '@/components/event-date-picker'
@@ -40,7 +39,7 @@ import { NativeSelect } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { FormAlert } from '@/components/ui/form-message'
 
-// One cake order flow for /order-cake and /custom-cakes. Each answer is part of the order; nothing is asked twice.
+// The cake order flow on /order-cake (everyday and custom cakes). Each answer is part of the order; nothing is asked twice.
 // At the end it either takes payment now (everyday size, simple design, pickup, a pickup time we offer)
 // through /api/cake-orders, or sends a custom cake inquiry for a quote through /api/custom-cakes.
 
@@ -100,7 +99,8 @@ function Tile({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        'relative flex min-h-24 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border bg-card px-3 py-4 text-center transition-colors hover:border-foreground/40 hover:bg-secondary',
+        'relative flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border bg-card px-3 py-4 text-center transition-colors hover:border-foreground/40 hover:bg-secondary',
+        art ? 'min-h-24' : 'min-h-16',
         selected && 'border-primary bg-surface text-primary ring-1 ring-primary hover:border-primary hover:bg-surface',
       )}
     >
@@ -115,6 +115,23 @@ function Tile({
     </button>
   )
 }
+/** "Not sure": a little question mark with sparkles, drawn like the cake illustrations. */
+const NotSureArt = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 120 120"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={3.2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    className={className}
+  >
+    <path d="M44 46c0-12 8-18 18-18s18 6 18 16c0 12-18 14-18 28" />
+    <circle cx="62" cy="90" r="3" fill="currentColor" stroke="none" />
+    <path d="M26 30v12M20 36h12M94 70v10M89 75h10" />
+  </svg>
+)
 const ShapeArt = ({ shape }: { shape: string }) =>
   shapeArt[shape] ? (
     <Image src={shapeArt[shape]} alt="" width={80} height={80} className="size-full object-contain" />
@@ -346,7 +363,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   const shell = (content: React.ReactNode) => (
     <div
       ref={top}
-      className="scroll-mt-32 overflow-hidden rounded-xl border bg-card lg:grid lg:min-h-[40rem] lg:grid-cols-[16rem_1fr]"
+      className="flex min-h-[calc(100dvh-var(--header-height)-2.5rem)] scroll-mt-32 flex-col overflow-hidden rounded-xl border bg-card lg:grid lg:grid-cols-[16rem_1fr]"
     >
       <aside className="relative bg-gradient-to-br from-brand via-brand to-brand-deep px-5 py-4 text-white lg:px-7 lg:py-8">
         <p className="font-serif text-lg lg:text-2xl">Your cake</p>
@@ -371,7 +388,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         )}
         <div aria-hidden="true" className="absolute right-0 bottom-0 left-0 h-1.5 bg-gold lg:hidden" />
       </aside>
-      <div className="flex min-w-0 flex-col">{content}</div>
+      <div className="flex min-w-0 flex-1 flex-col">{content}</div>
     </div>
   )
 
@@ -567,18 +584,14 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         {step === 3 && (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {flavors.map(flavor => {
-                const Art = flavorArt[flavor]
-                return (
-                  <Tile
-                    key={flavor}
-                    title={flavor === 'Please recommend' ? 'Not sure' : flavor}
-                    art={Art ? <Art className="size-full" /> : <NotSureArt className="size-full" />}
-                    selected={data.flavor === flavor}
-                    onClick={() => pick('flavor', flavor)}
-                  />
-                )
-              })}
+              {flavors.map(flavor => (
+                <Tile
+                  key={flavor}
+                  title={flavor === 'Please recommend' ? 'Not sure' : flavor}
+                  selected={data.flavor === flavor}
+                  onClick={() => pick('flavor', flavor)}
+                />
+              ))}
             </div>
             {data.flavor && continueButton()}
           </>
@@ -588,7 +601,6 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {fillings.map(filling => {
-                const Art = fillingArt[filling]
                 const price = cake ? startingPrice(cake, filling) : null
                 return (
                   <Tile
@@ -601,7 +613,6 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                           : filling
                     }
                     sub={price !== null && cake?.category !== 'Multi-tier' ? money(price) : undefined}
-                    art={Art ? <Art className="size-full" /> : <NotSureArt className="size-full" />}
                     selected={data.filling === filling}
                     onClick={() => pick('filling', filling)}
                   />
