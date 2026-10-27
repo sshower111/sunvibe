@@ -11,7 +11,7 @@ export function CakeStructuredData() {
             '@type': 'BreadcrumbList',
             itemListElement: [
               { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-              { '@type': 'ListItem', position: 2, name: 'Custom cakes', item: SITE_URL + '/custom-cakes' },
+              { '@type': 'ListItem', position: 2, name: 'Order a cake', item: SITE_URL + '/order-cake' },
             ],
           },
           {
@@ -22,7 +22,7 @@ export function CakeStructuredData() {
               position: i + 1,
               item: {
                 '@type': 'Product',
-                '@id': SITE_URL + '/custom-cakes#' + cake.value,
+                '@id': SITE_URL + '/order-cake#' + cake.value,
                 name: cake.label + ' celebration cake',
                 category: cake.category,
                 brand: { '@type': 'Brand', name: 'Sunville Bakery' },
@@ -34,7 +34,7 @@ export function CakeStructuredData() {
                         '@type': 'Offer',
                         price: cake.prices[0],
                         priceCurrency: 'USD',
-                        url: SITE_URL + '/custom-cakes#serving-guide',
+                        url: SITE_URL + '/order-cake',
                         seller: { '@id': SITE_URL + '/#bakery' },
                       }
                     : {
@@ -42,7 +42,7 @@ export function CakeStructuredData() {
                         lowPrice: Math.min(...cake.prices),
                         highPrice: Math.max(...cake.prices),
                         priceCurrency: 'USD',
-                        url: SITE_URL + '/custom-cakes#serving-guide',
+                        url: SITE_URL + '/order-cake',
                         seller: { '@id': SITE_URL + '/#bakery' },
                       },
               },

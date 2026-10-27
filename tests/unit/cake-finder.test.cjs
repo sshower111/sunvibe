@@ -1,5 +1,5 @@
 'use strict'
-// Cake size finder on /custom-cakes: size suggestions and starting prices.
+// Size suggestion in the order flow: size suggestions and starting prices.
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { createLoader } = require('../helpers/load-ts.cjs')

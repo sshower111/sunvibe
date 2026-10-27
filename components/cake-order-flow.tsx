@@ -37,7 +37,7 @@ import { NativeSelect } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { FormAlert } from '@/components/ui/form-message'
 
-// One cake order for /order-cake and /custom-cakes. Every answer is part of the order; nothing is asked twice.
+// The cake order on /order-cake (everyday and custom cakes). Every answer is part of the order; nothing is asked twice.
 // It ends with payment now (everyday size, listed flavor and filling, simple design, pickup at a time we offer)
 // through /api/cake-orders, or with a quote request (custom cake inquiry) through /api/custom-cakes.
 
@@ -67,19 +67,22 @@ const empty = {
 }
 type Data = typeof empty
 
-/** A selectable card (size, design, pickup or delivery). */
+/** A large tap tile (B style): guests, sizes, design, pickup or delivery. */
 function Choice({
   selected,
   onClick,
   title,
   sub,
   badge,
+  big,
 }: {
   selected: boolean
   onClick: () => void
   title: string
   sub?: string
   badge?: string
+  /** Size cards: larger serif title. */
+  big?: boolean
 }) {
   return (
     <button
@@ -87,24 +90,29 @@ function Choice({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        'relative flex min-h-14 w-full cursor-pointer flex-col items-start justify-center rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:border-foreground/40 hover:bg-secondary',
-        selected && 'border-primary bg-surface ring-1 ring-primary hover:border-primary hover:bg-surface',
+        'relative flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border bg-card px-3 text-center transition-colors hover:border-foreground/40 hover:bg-secondary',
+        big ? 'min-h-28 py-5' : 'min-h-16 py-3',
+        selected && 'border-primary ring-1 ring-primary hover:border-primary',
+        selected && (big ? 'bg-card hover:bg-card' : 'bg-primary text-primary-foreground hover:bg-primary'),
       )}
     >
       {badge && (
-        <span className="absolute top-2 right-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold whitespace-nowrap text-primary-foreground">
           {badge}
         </span>
       )}
-      <span className="pr-16 font-semibold">{title}</span>
-      {sub && <span className="mt-0.5 text-sm text-muted-foreground">{sub}</span>}
+      <span className={big ? 'font-serif text-xl text-primary sm:text-2xl' : 'font-semibold sm:text-lg'}>{title}</span>
+      {sub && (
+        <span className={cn('mt-1 text-sm', selected && !big ? 'text-primary-foreground/85' : 'text-muted-foreground')}>
+          {sub}
+        </span>
+      )}
     </button>
   )
 }
 
-/** Pills for flavor and filling. Real radios, so arrow keys work. */
+/** Flavor or filling: a grid of tap tiles under a label. */
 function Pills({
-  name,
   legend,
   options,
   value,
@@ -119,21 +127,14 @@ function Pills({
   return (
     <fieldset>
       <legend className="mb-3 text-sm font-semibold">{legend}</legend>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {options.map(option => (
-          <label key={option} className="cursor-pointer">
-            <input
-              type="radio"
-              name={name}
-              value={option}
-              checked={value === option}
-              onChange={() => onChange(option)}
-              className="peer sr-only"
-            />
-            <span className="inline-flex min-h-11 items-center rounded-full border bg-card px-4 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:border-foreground/40">
-              {showOption(option)}
-            </span>
-          </label>
+          <Choice
+            key={option}
+            title={showOption(option)}
+            selected={value === option}
+            onClick={() => onChange(option)}
+          />
         ))}
       </div>
     </fieldset>
@@ -405,7 +406,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
 
   return (
     <div ref={top} className="grid scroll-mt-32 items-start gap-6 lg:grid-cols-[1fr_18rem]">
-      <form onSubmit={next} noValidate aria-busy={busy} className="rounded-lg border bg-card card-pad">
+      <form onSubmit={next} noValidate aria-busy={busy} className="relative rounded-lg border bg-card card-pad">
         <ol aria-label="Order progress" className="mb-8 grid grid-cols-5 gap-2">
           {steps.map((name, index) => (
             <li
@@ -429,10 +430,22 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             </li>
           ))}
         </ol>
-        <p className="eyebrow mb-1">
-          Step {step + 1} of {steps.length}
-        </p>
-        <h3 ref={heading} tabIndex={-1} className="heading-3 mb-6 focus:outline-none">
+        <div className="flex min-h-11 items-center">
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={() => go(step - 1)}
+              className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted-foreground hover:text-foreground"
+            >
+              ← Back
+            </button>
+          )}
+        </div>
+        <h3
+          ref={heading}
+          tabIndex={-1}
+          className="mt-2 mb-8 text-center font-serif text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-primary focus:outline-none"
+        >
           {
             [
               'How many guests?',
@@ -444,50 +457,48 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           }
         </h3>
 
-        <fieldset disabled={busy} className="min-w-0 space-y-6">
+        <fieldset disabled={busy} className="mx-auto min-w-0 max-w-3xl space-y-6">
           <legend className="sr-only">{steps[step]}</legend>
 
           {step === 0 && (
             <>
-              <div className="flex flex-wrap items-end gap-2">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 {guestPresets.map(value => (
-                  <Button
+                  <Choice
                     key={value}
-                    type="button"
-                    variant={data.guests === String(value) ? 'default' : 'outline'}
-                    aria-pressed={data.guests === String(value)}
+                    title={value === 100 ? '100+' : String(value)}
+                    selected={data.guests === String(value)}
                     onClick={() => set('guests', String(value))}
-                  >
-                    {value === 100 ? '100+' : value}
-                  </Button>
-                ))}
-                <div className="w-32">
-                  <label htmlFor="flow-guests" className="sr-only">
-                    Number of guests
-                  </label>
-                  <Input
-                    id="flow-guests"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={999}
-                    placeholder="Other"
-                    value={data.guests}
-                    onChange={e => set('guests', e.target.value)}
                   />
-                </div>
+                ))}
+              </div>
+              <div className="mx-auto flex max-w-xs items-center justify-center gap-3">
+                <label htmlFor="flow-guests" className="shrink-0 text-sm font-semibold">
+                  Or type a number
+                </label>
+                <Input
+                  id="flow-guests"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={999}
+                  placeholder="e.g., 24"
+                  value={data.guests}
+                  onChange={e => set('guests', e.target.value)}
+                />
               </div>
               {result &&
                 (result.best ? (
                   <fieldset>
-                    <legend className={label}>Cake size</legend>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <legend className="mb-5 w-full text-center text-sm text-muted-foreground">We suggest</legend>
+                    <div className="grid gap-x-3 gap-y-5 sm:grid-cols-3">
                       {sizeOptions.map(item => (
                         <Choice
                           key={item.value}
                           title={item.label}
-                          sub={`Serves ${item.servings} · from ${money(priceRange(item)[0])}${item === result.bigger ? ' · extra slices' : ''}`}
+                          sub={`Serves ${item.servings} · from ${money(priceRange(item)[0])}`}
                           badge={item === result.best ? 'Best fit' : undefined}
+                          big
                           selected={size === item.value}
                           onClick={() => set('size', item.value)}
                         />
@@ -796,17 +807,12 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           )}
 
           {error && <FormAlert type="error">{error}</FormAlert>}
-          <div className="flex flex-wrap justify-between gap-3 border-t pt-5">
-            {step > 0 && (
-              <Button type="button" variant="outline" onClick={() => go(step - 1)}>
-                Back
-              </Button>
-            )}
+          <div className="flex justify-center border-t pt-6">
             <Button
               type="submit"
               loading={busy}
               disabled={busy || (step === 4 && payNow && !cardReady)}
-              className="ml-auto flex-1 sm:flex-none"
+              className="w-full sm:w-auto sm:min-w-48"
             >
               {step < 4
                 ? 'Continue'
@@ -825,11 +831,21 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             <p className="text-xs text-muted-foreground">Card details go straight to Square; we never see them.</p>
           )}
         </fieldset>
+        {priceText && (
+          <div className="sticky bottom-0 -mx-[clamp(1rem,0.6rem_+_2vw,2rem)] mt-6 -mb-[clamp(1rem,0.6rem_+_2vw,2rem)] flex items-center justify-between gap-3 rounded-b-lg border-t bg-surface px-5 py-3 text-sm lg:hidden">
+            <span className="min-w-0 truncate text-muted-foreground">
+              {[data.guests && `${data.guests} guests`, cake?.label].filter(Boolean).join(' · ')}
+            </span>
+            <span className="shrink-0">
+              {payNow ? 'Total' : 'From'} <strong className="text-lg text-primary">{priceText}</strong>
+            </span>
+          </div>
+        )}
       </form>
 
       <aside
         aria-label="Your cake"
-        className="order-first rounded-lg border bg-surface card-pad lg:sticky lg:top-32 lg:order-last"
+        className="hidden rounded-lg border bg-surface card-pad lg:sticky lg:top-32 lg:block"
       >
         <h3 className="heading-3">Your cake</h3>
         <dl className="mt-4 space-y-2 text-sm">

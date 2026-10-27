@@ -11,7 +11,6 @@ const baseLinks = [
   { href: '/', label: 'Home' },
   { href: '/menu', label: 'Menu' },
   { href: '/order-cake', label: 'Order a Cake' },
-  { href: '/custom-cakes', label: 'Custom Cake Inquiry' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/contact', label: 'Contact' },
 ]

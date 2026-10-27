@@ -50,9 +50,6 @@ export function Footer() {
             <Link href="/order-cake" className={linkStyle}>
               Order a Cake
             </Link>
-            <Link href="/custom-cakes" className={linkStyle}>
-              Custom Cake Inquiry
-            </Link>
             <Link href="/#about" className={linkStyle}>
               About
             </Link>
@@ -144,11 +141,6 @@ export function Footer() {
               <li>
                 <Link href="/order-cake" className={linkStyle}>
                   Order a Cake
-                </Link>
-              </li>
-              <li>
-                <Link href="/custom-cakes" className={linkStyle}>
-                  Custom Cake Inquiry
                 </Link>
               </li>
               <li>
