@@ -4,9 +4,9 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 
 ## Customer experience
 
-- Hero and direct inquiry link, then the cake size finder (section `#serving-guide`).
-- Size finder: five questions (occasion, guests, shape, flavor and filling, pickup or delivery) → the smallest cake that serves everyone and a starting price (cake price for the filling's price column plus delivery; tiered cakes have one price; "Please recommend" or a custom filling shows a range). Rules are in `lib/cake-finder.ts`. "Use this for my inquiry" fills in the form below (shared through `components/cake-plan.tsx`); customers can change anything.
-- Four steps: event, cake preferences, contact/photos, review and send. Previous entries survive back navigation and failed sends.
+- `/custom-cakes` and `/order-cake` show the same order (`components/cake-order-flow.tsx`): party size (best-fit size suggested, `lib/cake-finder.ts`) → flavor and filling → simple or custom design → pickup or delivery and date → contact.
+- It ends as a paid online order (`docs/CAKE-ORDERS.md`) for an everyday size, listed flavor and filling, simple design and pickup at an offered time. Everything else is sent here as an inquiry for a quote, with at least 3 days' notice.
+- Custom design adds inspiration photos and design/dietary notes; delivery adds the address. Occasion is sent as "Other" and budget as "Not sure — please advise".
 - The email to the bakery has a Traditional Chinese copy under the English (labels and options translated, customer text as written). Contact and pre-order emails do the same. To change a translation, edit `lib/email-zh.ts`.
 - Problems (missing or invalid fields, unticked acknowledgement, could not send) are listed in one box right above the Continue / Send button, and the fields with problems turn red, the same as the contact form. A photo that cannot be added shows its message under the photo picker.
 - Event date uses Las Vegas calendar time and requires at least three days' notice. The visible guidance requests 3–5 days and explains that availability must be confirmed.

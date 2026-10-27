@@ -1,10 +1,10 @@
 # Online cake orders (/order-cake)
 
-Customers order one of the everyday chiffon cakes, pay by card through Square, and pick it up at the bakery. Custom designs, tiers and delivery stay on `/custom-cakes` (inquiry, no payment).
+Customers order one of the everyday chiffon cakes, pay by card through Square, and pick it up at the bakery. Custom designs, tiers and delivery go through the same order but end as a quote request (no payment).
 
 ## What customers can order
 
-- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet. The form links to Sizes & prices on `/custom-cakes` for servings.
+- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet. Orders go through the shared order (`components/cake-order-flow.tsx`), which suggests a size from the guest count and only takes payment when the order qualifies; otherwise it sends a custom cake inquiry.
 - Any listed flavor and filling. The price comes from the pricing sheet column for the filling (`lib/cake-catalog.ts`): Custard; Mixed Fruit / Strawberry / Banana / Strawberry Banana; Mango / Taro; Coconut / Durian.
 - Optional writing on the cake (60 characters) and notes.
 - Pickup only. No tax is added.

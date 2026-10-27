@@ -1,0 +1,856 @@
+'use client'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ImagePlus } from 'lucide-react'
+import { SITE } from '@/lib/site-info'
+import { cn } from '@/lib/utils'
+import { storeDate } from '@/lib/occasion-dates'
+import { cakeCatalog, deliveryOptions, type CakeSpec } from '@/lib/cake-catalog'
+import {
+  earliestCakeDate,
+  fillings,
+  flavors,
+  formatEventTime,
+  MAX_CAKE_MESSAGE,
+  MAX_PHOTO_BYTES,
+  MAX_PHOTOS,
+} from '@/lib/cake-inquiry'
+import {
+  decideOrder,
+  formatPickupTime,
+  formatVegasTime,
+  ORDER_FILLINGS,
+  ORDER_FLAVORS,
+  ORDER_SIZES,
+  pickupSlots,
+} from '@/lib/cake-order'
+import { deliveryFee, largestServings, priceRange, recommend, startingPrice } from '@/lib/cake-finder'
+import { formatPhone } from '@/lib/form-helpers'
+import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
+import { ContactCaptcha, type CaptchaHandle } from '@/components/contact-captcha'
+import { EmailInput } from '@/components/email-input'
+import { EventDatePicker, formatEventDate } from '@/components/event-date-picker'
+import { SquareCard, type SquareCardHandle, type SquareConfig } from '@/components/square-card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { FormAlert } from '@/components/ui/form-message'
+
+// One cake order for /order-cake and /custom-cakes. Every answer is part of the order; nothing is asked twice.
+// It ends with payment now (everyday size, listed flavor and filling, simple design, pickup at a time we offer)
+// through /api/cake-orders, or with a quote request (custom cake inquiry) through /api/custom-cakes.
+
+const steps = ['Party size', 'Flavor', 'Design', 'Pickup or delivery', 'Your details'] as const
+const PICKUP = deliveryOptions[0]
+const guestPresets = [10, 20, 30, 50, 75, 100]
+const money = (n: number) => '$' + (Number.isInteger(n) ? n : n.toFixed(2))
+const showOption = (value: string) =>
+  value === 'Please recommend' ? 'Not sure' : value.startsWith('Something else') ? 'Something else' : value
+
+const empty = {
+  guests: '',
+  size: '',
+  flavor: '',
+  filling: '',
+  design: '' as '' | 'simple' | 'custom',
+  cakeMessage: '',
+  notes: '',
+  fulfillment: PICKUP as string,
+  deliveryAddress: '',
+  date: '',
+  time: '',
+  name: '',
+  email: '',
+  phone: '',
+  acknowledged: false,
+}
+type Data = typeof empty
+
+/** A selectable card (size, design, pickup or delivery). */
+function Choice({
+  selected,
+  onClick,
+  title,
+  sub,
+  badge,
+}: {
+  selected: boolean
+  onClick: () => void
+  title: string
+  sub?: string
+  badge?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={cn(
+        'relative flex min-h-14 w-full cursor-pointer flex-col items-start justify-center rounded-lg border bg-card px-4 py-3 text-left transition-colors hover:border-foreground/40 hover:bg-secondary',
+        selected && 'border-primary bg-surface ring-1 ring-primary hover:border-primary hover:bg-surface',
+      )}
+    >
+      {badge && (
+        <span className="absolute top-2 right-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+          {badge}
+        </span>
+      )}
+      <span className="pr-16 font-semibold">{title}</span>
+      {sub && <span className="mt-0.5 text-sm text-muted-foreground">{sub}</span>}
+    </button>
+  )
+}
+
+/** Pills for flavor and filling. Real radios, so arrow keys work. */
+function Pills({
+  name,
+  legend,
+  options,
+  value,
+  onChange,
+}: {
+  name: string
+  legend: string
+  options: readonly string[]
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <fieldset>
+      <legend className="mb-3 text-sm font-semibold">{legend}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map(option => (
+          <label key={option} className="cursor-pointer">
+            <input
+              type="radio"
+              name={name}
+              value={option}
+              checked={value === option}
+              onChange={() => onChange(option)}
+              className="peer sr-only"
+            />
+            <span className="inline-flex min-h-11 items-center rounded-full border bg-card px-4 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:border-foreground/40">
+              {showOption(option)}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function PhotoPreview({ file }: { file: File }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    const value = URL.createObjectURL(file)
+    setUrl(value)
+    return () => URL.revokeObjectURL(value)
+  }, [file])
+  return url ? <img src={url} alt="Your inspiration photo" className="size-16 rounded-md object-cover" /> : null
+}
+
+export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
+  const [data, setData] = useState<Data>(empty)
+  const [step, setStep] = useState(0)
+  const [error, setError] = useState('')
+  const [photos, setPhotos] = useState<File[]>([])
+  const [preparing, setPreparing] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [cardReady, setCardReady] = useState(false)
+  const [now, setNow] = useState(() => new Date())
+  const [done, setDone] = useState<
+    { kind: 'paid'; held: boolean; ref: string; approveBy?: string; receiptUrl?: string } | { kind: 'quote' } | null
+  >(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const top = useRef<HTMLDivElement>(null)
+  const card = useRef<SquareCardHandle>(null)
+  const captcha = useRef<CaptchaHandle>(null)
+  const requestId = useRef('')
+
+  // Pickup times depend on the current time.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const set = <K extends keyof Data>(key: K, value: Data[K]) => {
+    setData(d => ({ ...d, [key]: value }))
+    setError('')
+    requestId.current = ''
+  }
+  const go = (next: number) => {
+    if (next !== steps.length - 1) setCardReady(false)
+    setStep(next)
+    setError('')
+    requestAnimationFrame(() => {
+      heading.current?.focus({ preventScroll: true })
+      const box = top.current?.getBoundingClientRect()
+      if (box && box.top < 0) top.current?.scrollIntoView({ block: 'start' })
+    })
+  }
+
+  // Step 1: size choices for the guest count, best fit first.
+  const guests = /^\d{1,3}$/.test(data.guests) ? Number(data.guests) : 0
+  const result = useMemo(() => (guests > 0 ? recommend(guests, 'Any', 'Please recommend') : null), [guests])
+  const sizeOptions = useMemo(() => {
+    if (!result?.best) return []
+    return [result.best, ...result.others, result.bigger].filter(
+      (c, index, list): c is CakeSpec => !!c && list.indexOf(c) === index,
+    )
+  }, [result])
+  const size = sizeOptions.some(c => c.value === data.size)
+    ? data.size
+    : (result?.best?.value ?? (guests > 0 ? 'Not sure' : ''))
+  const cake = cakeCatalog.find(c => c.value === size) ?? null
+
+  // Pay now only for an everyday cake picked up at a time we offer; everything else is quoted.
+  const payNow =
+    !!square &&
+    data.design === 'simple' &&
+    (ORDER_SIZES as readonly string[]).includes(size) &&
+    ORDER_FLAVORS.includes(data.flavor as never) &&
+    ORDER_FILLINGS.includes(data.filling as never) &&
+    data.fulfillment === PICKUP
+  const minDate = payNow ? storeDate(now) : earliestCakeDate(now)
+  const slots = useMemo(() => (payNow && data.date ? pickupSlots(data.date, now) : []), [payNow, data.date, now])
+  const decision = payNow && data.date && data.time ? decideOrder(size, data.date, data.time, now) : null
+  const held = !!(decision?.ok && decision.needsApproval)
+  // Keep the date and time valid when the ending changes (a quote needs 3 days' notice).
+  useEffect(() => {
+    if (data.date && data.date < minDate) setData(d => ({ ...d, date: '', time: '' }))
+    else if (payNow && data.time && !slots.includes(data.time)) setData(d => ({ ...d, time: '' }))
+  }, [minDate, payNow, slots]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cakePrice = cake && data.filling ? startingPrice(cake, data.filling) : null
+  const fee = deliveryFee(data.fulfillment)
+  const priceText =
+    cakePrice !== null
+      ? fee === null
+        ? `${money(cakePrice)} + delivery`
+        : money(cakePrice + fee)
+      : cake
+        ? money(priceRange(cake)[0] + (fee ?? 0))
+        : ''
+
+  function check(): string {
+    if (step === 0) {
+      if (!guests) return 'Enter how many guests, from 1 to 999.'
+    }
+    if (step === 1) {
+      if (!data.flavor) return 'Choose a flavor.'
+      if (!data.filling) return 'Choose a filling.'
+    }
+    if (step === 2 && !data.design) return 'Choose simple or custom design.'
+    if (step === 3) {
+      if (!data.date) return 'Choose a date.'
+      if (payNow && !data.time) return 'Choose a pickup time.'
+      if (decision && !decision.ok) return decision.error
+    }
+    if (step === 4) {
+      if (!data.name.trim()) return 'Enter your name.'
+      if (data.phone.replace(/\D/g, '').length < 10) return 'Enter your phone number.'
+      if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) return 'Enter a valid email address.'
+      if (!payNow && !data.acknowledged) return 'Please tick the box to confirm this is a quote request.'
+    }
+    return ''
+  }
+  function next(event: React.FormEvent) {
+    event.preventDefault()
+    const problem = check()
+    if (problem) return setError(problem)
+    if (step === 0) set('size', size)
+    if (step < steps.length - 1) go(step + 1)
+    else void submit()
+  }
+
+  async function submit() {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    requestId.current ||= crypto.randomUUID()
+    try {
+      if (payNow) {
+        if (!card.current || !cardReady || cakePrice === null) throw new Error('Please wait for the card form to load.')
+        const cardToken = await card.current.tokenize(cakePrice, data)
+        const captchaToken = await captcha.current?.verify()
+        if (!captchaToken) throw new Error('Please try verification again.')
+        const response = await fetch('/api/cake-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: requestId.current,
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            size,
+            flavor: data.flavor,
+            filling: data.filling,
+            cakeMessage: data.cakeMessage,
+            pickupDate: data.date,
+            pickupTime: data.time,
+            notes: '',
+            cardToken,
+            captchaToken,
+          }),
+        })
+        const body = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(body.error || `Please try again or call ${SITE.phone}.`)
+        setDone({ kind: 'paid', ...body })
+      } else {
+        const form = new FormData()
+        const fields: Record<string, string> = {
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          eventDate: data.date,
+          eventTime: data.time,
+          eventType: 'Other',
+          servings: String(guests),
+          size,
+          flavor: data.flavor,
+          filling: data.filling,
+          cakeMessage: data.cakeMessage,
+          budget: 'Not sure — please advise',
+          fulfillment: data.fulfillment,
+          deliveryAddress: data.fulfillment === PICKUP ? '' : data.deliveryAddress,
+          notes: data.design === 'custom' ? data.notes : '',
+          acknowledged: 'yes',
+          requestId: requestId.current,
+        }
+        Object.entries(fields).forEach(([key, value]) => form.set(key, value))
+        if (data.design === 'custom') photos.forEach(file => form.append('photos', file))
+        const captchaToken = await captcha.current?.verify()
+        if (!captchaToken) throw new Error('Please try verification again.')
+        form.set('captchaToken', captchaToken)
+        const response = await fetch('/api/custom-cakes', { method: 'POST', body: form })
+        const body = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          const first = body.fields && Object.values(body.fields as Record<string, string[]>)[0]?.[0]
+          throw new Error(first || body.error || 'Unable to send your request. Please try again.')
+        }
+        setDone({ kind: 'quote' })
+      }
+      requestAnimationFrame(() => top.current?.scrollIntoView({ block: 'start' }))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Please try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (done)
+    return (
+      <div ref={top} role="status" className="scroll-mt-32 space-y-4 rounded-lg border bg-card card-pad">
+        {done.kind === 'paid' ? (
+          <>
+            <h2 className="heading-2">{done.held ? 'Order received' : 'Order confirmed'}</h2>
+            {done.held ? (
+              <p>
+                Your order {done.ref} needs a quick check from us. Your card has a hold for{' '}
+                {cakePrice !== null && money(cakePrice)} but has not been charged. We’ll email you by{' '}
+                {done.approveBy && formatVegasTime(done.approveBy)} (Las Vegas time).
+              </p>
+            ) : (
+              <p>Thank you! Your order {done.ref} is paid. We’ve emailed your confirmation.</p>
+            )}
+            {done.receiptUrl && !done.held && (
+              <a
+                href={done.receiptUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-primary underline"
+              >
+                View your receipt
+              </a>
+            )}
+            <p className="text-sm text-muted-foreground">Pickup at {SITE.address}.</p>
+          </>
+        ) : (
+          <>
+            <h2 className="heading-2">Request sent</h2>
+            <p>
+              Thanks, {data.name}. We’ve emailed a copy to {data.email} and will reply with a quote. Your order isn’t
+              confirmed until we do.
+            </p>
+            <p className="text-sm text-muted-foreground">To change something, just reply to that email.</p>
+          </>
+        )}
+        <p className="text-sm text-muted-foreground">
+          Questions? Call{' '}
+          <a href={SITE.phoneHref} className="text-primary underline">
+            {SITE.phone}
+          </a>
+          .
+        </p>
+      </div>
+    )
+
+  const label = 'mb-2 block text-sm font-semibold'
+  const summary: [string, string][] = [
+    ['Guests', data.guests],
+    ['Cake', cake?.label ?? (size === 'Not sure' ? 'We’ll suggest' : '')],
+    ['Flavor', data.flavor && showOption(data.flavor)],
+    ['Filling', data.filling && showOption(data.filling)],
+    ['Design', data.design === 'custom' ? 'Custom design' : data.design === 'simple' ? 'Simple' : ''],
+    [
+      data.fulfillment === PICKUP ? 'Pickup' : 'Delivery',
+      data.date
+        ? [formatEventDate(data.date), payNow ? data.time && formatPickupTime(data.time) : formatEventTime(data.time)]
+            .filter(Boolean)
+            .join(' · ')
+        : '',
+    ],
+  ]
+
+  return (
+    <div ref={top} className="grid scroll-mt-32 items-start gap-6 lg:grid-cols-[1fr_18rem]">
+      <form onSubmit={next} noValidate aria-busy={busy} className="rounded-lg border bg-card card-pad">
+        <ol aria-label="Order progress" className="mb-8 grid grid-cols-5 gap-2">
+          {steps.map((name, index) => (
+            <li
+              key={name}
+              aria-current={step === index ? 'step' : undefined}
+              className={cn('border-t-4 pt-3 transition-colors', index <= step ? 'border-primary' : 'border-border')}
+            >
+              <span
+                className={cn('block text-xs font-semibold', index <= step ? 'text-primary' : 'text-muted-foreground')}
+              >
+                {index + 1}
+              </span>
+              <span
+                className={cn(
+                  'mt-1 text-xs sm:text-sm',
+                  step === index ? 'block font-semibold' : 'hidden text-muted-foreground sm:block',
+                )}
+              >
+                {name}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="eyebrow mb-1">
+          Step {step + 1} of {steps.length}
+        </p>
+        <h3 ref={heading} tabIndex={-1} className="heading-3 mb-6 focus:outline-none">
+          {
+            [
+              'How many guests?',
+              'Flavor & filling',
+              'Writing or a custom design?',
+              'When, and pickup or delivery?',
+              'Your details',
+            ][step]
+          }
+        </h3>
+
+        <fieldset disabled={busy} className="min-w-0 space-y-6">
+          <legend className="sr-only">{steps[step]}</legend>
+
+          {step === 0 && (
+            <>
+              <div className="flex flex-wrap items-end gap-2">
+                {guestPresets.map(value => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={data.guests === String(value) ? 'default' : 'outline'}
+                    aria-pressed={data.guests === String(value)}
+                    onClick={() => set('guests', String(value))}
+                  >
+                    {value === 100 ? '100+' : value}
+                  </Button>
+                ))}
+                <div className="w-32">
+                  <label htmlFor="flow-guests" className="sr-only">
+                    Number of guests
+                  </label>
+                  <Input
+                    id="flow-guests"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={999}
+                    placeholder="Other"
+                    value={data.guests}
+                    onChange={e => set('guests', e.target.value)}
+                  />
+                </div>
+              </div>
+              {result &&
+                (result.best ? (
+                  <fieldset>
+                    <legend className={label}>Cake size</legend>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {sizeOptions.map(item => (
+                        <Choice
+                          key={item.value}
+                          title={item.label}
+                          sub={`Serves ${item.servings} · from ${money(priceRange(item)[0])}${item === result.bigger ? ' · extra slices' : ''}`}
+                          badge={item === result.best ? 'Best fit' : undefined}
+                          selected={size === item.value}
+                          onClick={() => set('size', item.value)}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
+                ) : (
+                  <p>
+                    Our largest cake serves {largestServings}. For a bigger party we can make more than one cake; we’ll
+                    plan it with you.
+                  </p>
+                ))}
+            </>
+          )}
+
+          {step === 1 && (
+            <>
+              <Pills
+                name="flow-flavor"
+                legend="Cake flavor"
+                options={flavors}
+                value={data.flavor}
+                onChange={value => set('flavor', value)}
+              />
+              <Pills
+                name="flow-filling"
+                legend="Filling"
+                options={fillings}
+                value={data.filling}
+                onChange={value => set('filling', value)}
+              />
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Choice
+                  title="Simple, with writing"
+                  sub="Our classic look"
+                  selected={data.design === 'simple'}
+                  onClick={() => set('design', 'simple')}
+                />
+                <Choice
+                  title="Custom design"
+                  sub="Theme, colors, decorations"
+                  selected={data.design === 'custom'}
+                  onClick={() => set('design', 'custom')}
+                />
+              </div>
+              {data.design && (
+                <div>
+                  <label htmlFor="flow-message" className={label}>
+                    Writing on the cake (optional)
+                  </label>
+                  <Input
+                    id="flow-message"
+                    maxLength={MAX_CAKE_MESSAGE}
+                    autoComplete="off"
+                    placeholder="Happy Birthday Amy"
+                    value={data.cakeMessage}
+                    onChange={e => set('cakeMessage', e.target.value)}
+                  />
+                </div>
+              )}
+              {data.design === 'custom' && (
+                <>
+                  <div>
+                    <span className={label}>Inspiration photos (optional)</span>
+                    <input
+                      id="flow-photos"
+                      type="file"
+                      multiple
+                      className="peer sr-only"
+                      disabled={preparing || photos.length >= MAX_PHOTOS}
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
+                      onChange={async event => {
+                        const selected = Array.from(event.target.files || [])
+                        event.target.value = ''
+                        if (photos.length + selected.length > MAX_PHOTOS)
+                          return setError(`Please choose up to ${MAX_PHOTOS} photos.`)
+                        setPreparing(true)
+                        setError('')
+                        try {
+                          const prepared: File[] = []
+                          for (const file of selected)
+                            prepared.push(await prepareGalleryPhoto(file, { maxSide: 1600, maxBytes: MAX_PHOTO_BYTES }))
+                          setPhotos(current => [...current, ...prepared])
+                          requestId.current = ''
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : 'This photo could not be added.')
+                        } finally {
+                          setPreparing(false)
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor="flow-photos"
+                      className={cn(
+                        'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed bg-surface px-4 py-3 text-sm font-semibold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:bg-secondary',
+                        (preparing || photos.length >= MAX_PHOTOS) && 'cursor-not-allowed opacity-50',
+                      )}
+                    >
+                      <ImagePlus aria-hidden="true" className="size-5 text-primary" />
+                      {preparing
+                        ? 'Preparing photo…'
+                        : photos.length
+                          ? `Add more (${photos.length} of ${MAX_PHOTOS})`
+                          : 'Add photos'}
+                    </label>
+                    {photos.length > 0 && (
+                      <ul className="mt-3 flex flex-wrap gap-3">
+                        {photos.map((file, index) => (
+                          <li key={file.name + index} className="relative">
+                            <PhotoPreview file={file} />
+                            <button
+                              type="button"
+                              aria-label={`Remove photo ${index + 1}`}
+                              onClick={() => setPhotos(current => current.filter((_, i) => i !== index))}
+                              className="absolute -top-2 -right-2 flex size-6 cursor-pointer items-center justify-center rounded-full bg-ink text-xs text-white"
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="flow-notes" className={label}>
+                      Design ideas & dietary requests (optional)
+                    </label>
+                    <Textarea
+                      id="flow-notes"
+                      rows={4}
+                      maxLength={3000}
+                      placeholder="Colors, theme, allergies…"
+                      value={data.notes}
+                      onChange={e => set('notes', e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {deliveryOptions.map(option => {
+                  const [title, cost] = option.split(' — ')
+                  return (
+                    <Choice
+                      key={option}
+                      title={title}
+                      sub={option === PICKUP ? SITE.street : cost}
+                      selected={data.fulfillment === option}
+                      onClick={() => set('fulfillment', option)}
+                    />
+                  )
+                })}
+              </div>
+              {data.fulfillment !== PICKUP && (
+                <div>
+                  <label htmlFor="flow-address" className={label}>
+                    Delivery address or hotel
+                  </label>
+                  <Input
+                    id="flow-address"
+                    autoComplete="street-address"
+                    maxLength={500}
+                    value={data.deliveryAddress}
+                    onChange={e => set('deliveryAddress', e.target.value)}
+                  />
+                </div>
+              )}
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="flow-date" className={label}>
+                    Date
+                  </label>
+                  <EventDatePicker
+                    id="flow-date"
+                    value={data.date}
+                    minDate={minDate}
+                    onChange={value => set('date', value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="flow-time" className={label}>
+                    {payNow ? 'Pickup time' : 'Time (optional)'}
+                  </label>
+                  {payNow ? (
+                    <NativeSelect
+                      id="flow-time"
+                      value={data.time}
+                      disabled={!data.date || !slots.length}
+                      onChange={e => set('time', e.target.value)}
+                    >
+                      <option value="">
+                        {data.date && !slots.length ? 'No times left, pick another day' : 'Choose…'}
+                      </option>
+                      {slots.map(t => (
+                        <option key={t} value={t}>
+                          {formatPickupTime(t)}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  ) : (
+                    <Input
+                      id="flow-time"
+                      type="time"
+                      step={900}
+                      value={data.time}
+                      onChange={e => set('time', e.target.value)}
+                    />
+                  )}
+                </div>
+              </div>
+              {held && decision?.ok && decision.needsApproval && (
+                <p className="rounded-md bg-surface px-4 py-3 text-sm">
+                  We’ll confirm this order by {formatVegasTime(decision.approveBy.toISOString())}. Your card is held
+                  until then, not charged.
+                </p>
+              )}
+              {!payNow && (
+                <p className="rounded-md bg-surface px-4 py-3 text-sm">
+                  We’ll send you a quote before you pay. Please allow at least 3 days.
+                </p>
+              )}
+            </>
+          )}
+
+          {step === 4 && (
+            <>
+              <div>
+                <label htmlFor="flow-name" className={label}>
+                  Name
+                </label>
+                <Input
+                  id="flow-name"
+                  autoComplete="name"
+                  maxLength={100}
+                  value={data.name}
+                  onChange={e => set('name', e.target.value)}
+                />
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="flow-phone" className={label}>
+                    Phone
+                  </label>
+                  <Input
+                    id="flow-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    maxLength={14}
+                    placeholder="(702) 555-0123"
+                    value={data.phone}
+                    onChange={e => set('phone', formatPhone(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="flow-email" className={label}>
+                    Email
+                  </label>
+                  <EmailInput
+                    id="flow-email"
+                    type="email"
+                    autoComplete="email"
+                    maxLength={100}
+                    placeholder="you@example.com"
+                    value={data.email}
+                    onChange={e => set('email', e.target.value)}
+                  />
+                </div>
+              </div>
+              {payNow && square ? (
+                <>
+                  <SquareCard
+                    ref={card}
+                    square={square}
+                    onReady={() => setCardReady(true)}
+                    onError={message => setError(`${message} Or call ${SITE.phone}.`)}
+                  />
+                  {!cardReady && <p className="text-sm text-muted-foreground">Loading secure card form…</p>}
+                </>
+              ) : (
+                <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-md border p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1 size-5 shrink-0 accent-primary"
+                    checked={data.acknowledged}
+                    onChange={e => set('acknowledged', e.target.checked)}
+                  />
+                  <span>I understand this is a request for a quote, not a confirmed order.</span>
+                </label>
+              )}
+              <ContactCaptcha
+                key={payNow ? 'pay' : 'quote'}
+                ref={captcha}
+                action={payNow ? 'cake_order' : 'custom_cake'}
+              />
+            </>
+          )}
+
+          {error && <FormAlert type="error">{error}</FormAlert>}
+          <div className="flex flex-wrap justify-between gap-3 border-t pt-5">
+            {step > 0 && (
+              <Button type="button" variant="outline" onClick={() => go(step - 1)}>
+                Back
+              </Button>
+            )}
+            <Button
+              type="submit"
+              loading={busy}
+              disabled={busy || (step === 4 && payNow && !cardReady)}
+              className="ml-auto flex-1 sm:flex-none"
+            >
+              {step < 4
+                ? 'Continue'
+                : busy
+                  ? payNow
+                    ? 'Processing…'
+                    : 'Sending…'
+                  : payNow
+                    ? held
+                      ? `Place order (hold ${money(cakePrice ?? 0)})`
+                      : `Pay ${money(cakePrice ?? 0)}`
+                    : 'Send for a quote'}
+            </Button>
+          </div>
+          {step === 4 && payNow && (
+            <p className="text-xs text-muted-foreground">Card details go straight to Square; we never see them.</p>
+          )}
+        </fieldset>
+      </form>
+
+      <aside
+        aria-label="Your cake"
+        className="order-first rounded-lg border bg-surface card-pad lg:sticky lg:top-32 lg:order-last"
+      >
+        <h3 className="heading-3">Your cake</h3>
+        <dl className="mt-4 space-y-2 text-sm">
+          {summary
+            .filter(([, value]) => value)
+            .map(([name, value]) => (
+              <div key={name} className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">{name}</dt>
+                <dd className="text-right font-semibold">{value}</dd>
+              </div>
+            ))}
+        </dl>
+        {priceText ? (
+          <div className="mt-4 flex items-baseline justify-between gap-4 border-t pt-4">
+            <p className="text-sm font-semibold">{payNow ? 'Total' : 'Starting at'}</p>
+            <p className="price text-2xl font-semibold text-primary">{priceText}</p>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">Start with your party size.</p>
+        )}
+      </aside>
+    </div>
+  )
+}

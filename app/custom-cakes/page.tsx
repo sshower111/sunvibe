@@ -8,10 +8,8 @@ import { cn } from '@/lib/utils'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { buttonVariants } from '@/components/ui/button'
-import { CakeInquiryForm } from '@/components/cake-inquiry-form'
-import { CakeSizeFinder } from '@/components/cake-size-finder'
-import { CakePlanProvider } from '@/components/cake-plan'
-import { earliestCakeDate } from '@/lib/cake-inquiry'
+import { squareClientConfig } from '@/lib/square'
+import { CakeOrderFlow } from '@/components/cake-order-flow'
 // Strict nonce CSP (middleware.ts) requires rendering per request.
 export const dynamic = 'force-dynamic'
 
@@ -32,61 +30,37 @@ export default function CustomCakesPage() {
               href="#cake-inquiry"
               className={cn(buttonVariants(), 'w-full bg-white text-brand hover:bg-white/90 sm:w-auto')}
             >
-              Start an inquiry
+              Start your order
             </a>
           }
         >
           <p>Chiffon cakes for birthdays, weddings, and everything worth celebrating.</p>
           <p className="mt-2 text-base font-semibold text-white">Please allow 3–5 days’ notice.</p>
         </PageBand>
-        <section aria-labelledby="order-online-heading" className="site-container pt-[clamp(1.5rem,4vw,2.5rem)]">
-          <div className="flex flex-col gap-4 rounded-xl border-2 border-gold bg-card card-pad sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 id="order-online-heading" className="heading-3">
-                Need a cake sooner?
-              </h2>
-              <p className="mt-1 text-muted-foreground">
-                Our everyday chiffon cakes can be ordered and paid online for pickup — as soon as today.
-              </p>
+        <section id="cake-inquiry" className="site-container section-space">
+          <div id="serving-guide" />
+          <CakeOrderFlow square={squareClientConfig()} />
+          <div className="mt-10">
+            <h2 className="heading-3 mb-3">Cakes we’ve made</h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {cakePhotos.map(src => (
+                <Link
+                  key={src}
+                  href="/gallery"
+                  className="relative block aspect-square overflow-hidden rounded-lg bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  <Image
+                    src={src}
+                    alt={galleryAlt(src)}
+                    fill
+                    sizes="(min-width: 640px) 25vw, 45vw"
+                    className="object-cover"
+                  />
+                </Link>
+              ))}
             </div>
-            <Link href="/order-cake" className={cn(buttonVariants(), 'w-full shrink-0 sm:w-auto')}>
-              Order a cake
-            </Link>
           </div>
         </section>
-        <CakePlanProvider>
-          <CakeSizeFinder />
-          <section id="cake-inquiry" className="site-container section-space" aria-labelledby="inquiry-heading">
-            <div className="grid items-start gap-8 lg:grid-cols-[0.7fr_1.3fr]">
-              <div>
-                <h2 id="inquiry-heading" className="heading-2">
-                  Plan your cake
-                </h2>
-                <div className="mt-6">
-                  <h3 className="heading-3 mb-3">Cakes we’ve made</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {cakePhotos.map(src => (
-                      <Link
-                        key={src}
-                        href="/gallery"
-                        className="relative block aspect-square overflow-hidden rounded-lg bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        <Image
-                          src={src}
-                          alt={galleryAlt(src)}
-                          fill
-                          sizes="(min-width: 1024px) 160px, 45vw"
-                          className="object-cover"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <CakeInquiryForm minDate={earliestCakeDate()} />
-            </div>
-          </section>
-        </CakePlanProvider>
       </main>
       <Footer />
     </div>
