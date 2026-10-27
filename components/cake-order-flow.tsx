@@ -41,7 +41,10 @@ import { FormAlert } from '@/components/ui/form-message'
 // It ends with payment now (everyday size, listed flavor and filling, simple design, pickup at a time we offer)
 // through /api/cake-orders, or with a quote request (custom cake inquiry) through /api/custom-cakes.
 
-const steps = ['Party size', 'Flavor', 'Design', 'Pickup or delivery', 'Your details'] as const
+// Planning steps first (no commitment), then a summary, then contact and payment only if they choose to go ahead.
+const steps = ['Party size', 'Flavor', 'Design', 'Date'] as const
+const REVIEW = 4
+const DETAILS = 5
 const PICKUP = deliveryOptions[0]
 const guestPresets = [10, 20, 30, 50, 75, 100]
 const money = (n: number) => '$' + (Number.isInteger(n) ? n : n.toFixed(2))
@@ -181,7 +184,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     requestId.current = ''
   }
   const go = (next: number) => {
-    if (next !== steps.length - 1) setCardReady(false)
+    if (next !== DETAILS) setCardReady(false)
     setStep(next)
     setError('')
     requestAnimationFrame(() => {
@@ -248,7 +251,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
       if (payNow && !data.time) return 'Choose a pickup time.'
       if (decision && !decision.ok) return decision.error
     }
-    if (step === 4) {
+    if (step === DETAILS) {
       if (!data.name.trim()) return 'Enter your name.'
       if (data.phone.replace(/\D/g, '').length < 10) return 'Enter your phone number.'
       if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) return 'Enter a valid email address.'
@@ -261,7 +264,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     const problem = check()
     if (problem) return setError(problem)
     if (step === 0) set('size', size)
-    if (step < steps.length - 1) go(step + 1)
+    if (step < DETAILS) go(step + 1)
     else void submit()
   }
 
@@ -388,12 +391,13 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     )
 
   const label = 'mb-2 block text-sm font-semibold'
-  const summary: [string, string][] = [
-    ['Guests', data.guests],
-    ['Cake', cake?.label ?? (size === 'Not sure' ? 'We’ll suggest' : '')],
-    ['Flavor', data.flavor && showOption(data.flavor)],
-    ['Filling', data.filling && showOption(data.filling)],
-    ['Design', data.design === 'custom' ? 'Custom design' : data.design === 'simple' ? 'Simple' : ''],
+  // [label, value, the step that asks it]
+  const summary: [string, string, number][] = [
+    ['Guests', data.guests, 0],
+    ['Cake', cake?.label ?? (size === 'Not sure' ? 'We’ll suggest' : ''), 0],
+    ['Flavor', data.flavor && showOption(data.flavor), 1],
+    ['Filling', data.filling && showOption(data.filling), 1],
+    ['Design', data.design === 'custom' ? 'Custom design' : data.design === 'simple' ? 'Simple' : '', 2],
     [
       data.fulfillment === PICKUP ? 'Pickup' : 'Delivery',
       data.date
@@ -401,13 +405,14 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             .filter(Boolean)
             .join(' · ')
         : '',
+      3,
     ],
   ]
 
   return (
-    <div ref={top} className="grid scroll-mt-32 items-start gap-6 lg:grid-cols-[1fr_18rem]">
+    <div ref={top} className={cn('grid scroll-mt-32 items-start gap-6', step !== REVIEW && 'lg:grid-cols-[1fr_18rem]')}>
       <form onSubmit={next} noValidate aria-busy={busy} className="relative rounded-lg border bg-card card-pad">
-        <ol aria-label="Order progress" className="mb-8 grid grid-cols-5 gap-2">
+        <ol aria-label="Progress" className="mb-8 grid grid-cols-4 gap-2">
           {steps.map((name, index) => (
             <li
               key={name}
@@ -452,13 +457,14 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
               'Flavor & filling',
               'Writing or a custom design?',
               'When, and pickup or delivery?',
-              'Your details',
+              'Here’s your cake',
+              payNow ? 'Your details & payment' : 'Your details',
             ][step]
           }
         </h3>
 
         <fieldset disabled={busy} className="mx-auto min-w-0 max-w-3xl space-y-6">
-          <legend className="sr-only">{steps[step]}</legend>
+          <legend className="sr-only">{steps[step] ?? (step === REVIEW ? 'Summary' : 'Your details')}</legend>
 
           {step === 0 && (
             <>
@@ -732,7 +738,49 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             </>
           )}
 
-          {step === 4 && (
+          {step === REVIEW && (
+            <div className="space-y-6">
+              <dl className="divide-y rounded-lg border">
+                {summary
+                  .filter(([, value]) => value)
+                  .map(([name, value, to]) => (
+                    <div key={name} className="flex items-center justify-between gap-4 px-4 py-2">
+                      <div className="min-w-0 py-1">
+                        <dt className="text-sm text-muted-foreground">{name}</dt>
+                        <dd className="font-semibold">{value}</dd>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => go(to)}
+                        className="min-h-11 shrink-0 cursor-pointer px-2 text-sm font-semibold text-primary"
+                        aria-label={`Change ${name.toLowerCase()}`}
+                      >
+                        Change
+                      </button>
+                    </div>
+                  ))}
+              </dl>
+              {priceText && (
+                <div className="flex items-baseline justify-between gap-4 rounded-lg bg-surface px-4 py-3">
+                  <span className="font-semibold">Estimated price</span>
+                  <span className="price text-3xl font-semibold text-primary">{priceText}</span>
+                </div>
+              )}
+              <div className="flex flex-col items-center gap-3">
+                <Button type="submit" className="w-full sm:w-auto sm:min-w-64">
+                  {payNow ? `Order & pay ${money(cakePrice ?? 0)}` : 'Request a quote'}
+                </Button>
+                <a
+                  href={SITE.phoneHref}
+                  className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4"
+                >
+                  Or call us about this cake: {SITE.phone}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {step === DETAILS && (
             <>
               <div>
                 <label htmlFor="flow-name" className={label}>
@@ -807,15 +855,15 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           )}
 
           {error && <FormAlert type="error">{error}</FormAlert>}
-          <div className="flex justify-center border-t pt-6">
+          <div className={cn('flex justify-center border-t pt-6', step === REVIEW && 'hidden')}>
             <Button
               type="submit"
               loading={busy}
-              disabled={busy || (step === 4 && payNow && !cardReady)}
+              disabled={busy || (step === DETAILS && payNow && !cardReady)}
               className="w-full sm:w-auto sm:min-w-48"
             >
-              {step < 4
-                ? 'Continue'
+              {step < DETAILS
+                ? 'Next'
                 : busy
                   ? payNow
                     ? 'Processing…'
@@ -827,17 +875,17 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     : 'Send for a quote'}
             </Button>
           </div>
-          {step === 4 && payNow && (
+          {step === DETAILS && payNow && (
             <p className="text-xs text-muted-foreground">Card details go straight to Square; we never see them.</p>
           )}
         </fieldset>
-        {priceText && (
+        {priceText && step !== REVIEW && (
           <div className="sticky bottom-0 -mx-[clamp(1rem,0.6rem_+_2vw,2rem)] mt-6 -mb-[clamp(1rem,0.6rem_+_2vw,2rem)] flex items-center justify-between gap-3 rounded-b-lg border-t bg-surface px-5 py-3 text-sm lg:hidden">
             <span className="min-w-0 truncate text-muted-foreground">
               {[data.guests && `${data.guests} guests`, cake?.label].filter(Boolean).join(' · ')}
             </span>
             <span className="shrink-0">
-              {payNow ? 'Total' : 'From'} <strong className="text-lg text-primary">{priceText}</strong>
+              Est. <strong className="text-lg text-primary">{priceText}</strong>
             </span>
           </div>
         )}
@@ -845,7 +893,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
 
       <aside
         aria-label="Your cake"
-        className="hidden rounded-lg border bg-surface card-pad lg:sticky lg:top-32 lg:block"
+        className={cn(
+          'hidden rounded-lg border bg-surface card-pad lg:sticky lg:top-32',
+          step !== REVIEW && 'lg:block',
+        )}
       >
         <h3 className="heading-3">Your cake</h3>
         <dl className="mt-4 space-y-2 text-sm">
@@ -860,7 +911,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         </dl>
         {priceText ? (
           <div className="mt-4 flex items-baseline justify-between gap-4 border-t pt-4">
-            <p className="text-sm font-semibold">{payNow ? 'Total' : 'Starting at'}</p>
+            <p className="text-sm font-semibold">Estimated price</p>
             <p className="price text-2xl font-semibold text-primary">{priceText}</p>
           </div>
         ) : (

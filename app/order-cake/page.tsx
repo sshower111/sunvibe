@@ -16,8 +16,8 @@ export default function OrderCakePage() {
       <CakeStructuredData />
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        <PageBand id="order-heading" title="Order a cake">
-          <p>Everyday cakes paid online for pickup, or a custom design we’ll quote.</p>
+        <PageBand id="order-heading" title="Plan your cake">
+          <p>Tell us about your party and we’ll suggest the right cake and price.</p>
         </PageBand>
         <section id="cake-inquiry" className="site-container section-space">
           <CakeOrderFlow square={squareClientConfig()} />
