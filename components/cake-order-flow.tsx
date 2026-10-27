@@ -410,7 +410,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   ]
 
   return (
-    <div ref={top} className={cn('grid scroll-mt-32 items-start gap-6', step !== REVIEW && 'lg:grid-cols-[1fr_18rem]')}>
+    <div ref={top} className="mx-auto max-w-4xl scroll-mt-32">
       <form onSubmit={next} noValidate aria-busy={busy} className="relative rounded-lg border bg-card card-pad">
         <ol aria-label="Progress" className="mb-8 grid grid-cols-4 gap-2">
           {steps.map((name, index) => (
@@ -879,45 +879,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             <p className="text-xs text-muted-foreground">Card details go straight to Square; we never see them.</p>
           )}
         </fieldset>
-        {priceText && step !== REVIEW && (
-          <div className="sticky bottom-0 -mx-[clamp(1rem,0.6rem_+_2vw,2rem)] mt-6 -mb-[clamp(1rem,0.6rem_+_2vw,2rem)] flex items-center justify-between gap-3 rounded-b-lg border-t bg-surface px-5 py-3 text-sm lg:hidden">
-            <span className="min-w-0 truncate text-muted-foreground">
-              {[data.guests && `${data.guests} guests`, cake?.label].filter(Boolean).join(' · ')}
-            </span>
-            <span className="shrink-0">
-              Est. <strong className="text-lg text-primary">{priceText}</strong>
-            </span>
-          </div>
-        )}
       </form>
-
-      <aside
-        aria-label="Your cake"
-        className={cn(
-          'hidden rounded-lg border bg-surface card-pad lg:sticky lg:top-32',
-          step !== REVIEW && 'lg:block',
-        )}
-      >
-        <h3 className="heading-3">Your cake</h3>
-        <dl className="mt-4 space-y-2 text-sm">
-          {summary
-            .filter(([, value]) => value)
-            .map(([name, value]) => (
-              <div key={name} className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">{name}</dt>
-                <dd className="text-right font-semibold">{value}</dd>
-              </div>
-            ))}
-        </dl>
-        {priceText ? (
-          <div className="mt-4 flex items-baseline justify-between gap-4 border-t pt-4">
-            <p className="text-sm font-semibold">Estimated price</p>
-            <p className="price text-2xl font-semibold text-primary">{priceText}</p>
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-muted-foreground">Start with your party size.</p>
-        )}
-      </aside>
     </div>
   )
 }
