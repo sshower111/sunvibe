@@ -4,7 +4,7 @@ Customers order one of the everyday chiffon cakes, pay by card through Square, a
 
 ## What customers can order
 
-- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet. The form links to Sizes & prices on `/custom-cakes` for servings.
+- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet. Orders are placed through the shared order flow (`components/cake-order-flow.tsx`), which suggests a size from the guest count and takes payment only when the order qualifies; otherwise it sends a custom cake inquiry.
 - Any listed flavor and filling. The price comes from the pricing sheet column for the filling (`lib/cake-catalog.ts`): Custard; Mixed Fruit / Strawberry / Banana / Strawberry Banana; Mango / Taro; Coconut / Durian.
 - Optional writing on the cake (60 characters) and notes.
 - Pickup only. No tax is added.

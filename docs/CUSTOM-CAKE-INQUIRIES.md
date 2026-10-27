@@ -4,9 +4,9 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 
 ## Customer experience
 
-- Hero and direct inquiry link, then the cake size finder (section `#serving-guide`).
-- Size finder: five questions (occasion, guests, shape, flavor and filling, pickup or delivery) → the smallest cake that serves everyone and a starting price (cake price for the filling's price column plus delivery; tiered cakes have one price; "Please recommend" or a custom filling shows a range). Rules are in `lib/cake-finder.ts`. "Use this for my inquiry" fills in the form below (shared through `components/cake-plan.tsx`); customers can change anything.
-- Four steps: event, cake preferences, contact/photos, review and send. Previous entries survive back navigation and failed sends.
+- `/custom-cakes` and `/order-cake` share one order flow (`components/cake-order-flow.tsx`): party size → shape → size (best fit suggested, `lib/cake-finder.ts`) → flavor → filling → design (simple or custom) → date and pickup/delivery → details.
+- It ends as a paid online order (see `docs/CAKE-ORDERS.md`) when the cake is an everyday size, flavor and filling are listed, the design is simple, it's pickup, and the pickup time is offered. Everything else is sent here as an inquiry for a quote, with at least 3 days' notice.
+- Custom design adds the occasion, inspiration photos and design/dietary notes in the design step; delivery adds the address in the date step. Budget is sent as "Not sure — please advise"; occasion is "Other" for simple cakes that become quotes.
 - The email to the bakery has a Traditional Chinese copy under the English (labels and options translated, customer text as written). Contact and pre-order emails do the same. To change a translation, edit `lib/email-zh.ts`.
 - Problems (missing or invalid fields, unticked acknowledgement, could not send) are listed in one box right above the Continue / Send button, and the fields with problems turn red, the same as the contact form. A photo that cannot be added shows its message under the photo picker.
 - Event date uses Las Vegas calendar time and requires at least three days' notice. The visible guidance requests 3–5 days and explains that availability must be confirmed.
