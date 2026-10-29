@@ -19,6 +19,8 @@ pnpm test           # unit tests in tests/unit (providers mocked, in-memory Post
 pnpm format         # Prettier; pnpm format:check to verify only
 ```
 
+GitHub Actions (`.github/workflows/ci.yml`) runs `pnpm format:check`, `pnpm test` and `pnpm build` on every push and pull request to `main`. It needs no secrets.
+
 All environment variables are listed with explanations in `.env.example`.
 
 ## Deploy

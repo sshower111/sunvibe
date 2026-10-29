@@ -34,7 +34,7 @@ function hasShareKey(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req)
-    if (!rateLimiter.check(`gallery-share:${ip}`, 60, 60 * 60 * 1000))
+    if (!(await rateLimiter.check(`gallery-share:${ip}`, 60, 60 * 60 * 1000)))
       return reply('Too many photos at once. Please try again in an hour.', 429)
     // The key is long and random (at least 32 characters), so it can't be guessed within the rate limit.
     if (!hasShareKey(req)) return reply('This Shortcut is not allowed to add photos. Check the key.', 401)

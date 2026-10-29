@@ -10,7 +10,7 @@ Create a Supabase project at https://supabase.com/dashboard. Copy the Transactio
 
 - MENU_DATA_SOURCE=supabase selects the verified database menu. Unset keeps Stripe.
 - CONTENT_DATA_SOURCE=supabase selects verified database campaigns, reservations and gallery metadata. Unset keeps existing storage.
-- Preserve CAMPAIGN_STORAGE_SECRET (or the current ADMIN_PASSWORD fallback). Existing encrypted reservation payloads need the same key.
+- Preserve CAMPAIGN_STORAGE_SECRET. It is required and is the only encryption key for new data. Records saved before 2026-10-29 may use the old ADMIN_PASSWORD-derived key; they still read while that password is unchanged, and admin → Settings → "Re-encrypt old records" moves them to CAMPAIGN_STORAGE_SECRET.
 
 Each scope requires a bakery_migrations readiness marker. Database errors never silently switch to an old source. Public gallery retains its existing outage fallback.
 

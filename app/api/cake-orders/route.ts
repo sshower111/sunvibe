@@ -19,7 +19,7 @@ const bodySchema = cakeOrderSchema.extend({
 // Online cake order: check the cake and pickup time, then either charge the card now or (for orders that need
 // the bakery's OK) only hold it. The order row is saved before the card is touched.
 export async function POST(request: NextRequest) {
-  if (!rateLimiter.check('cake-order:' + getClientIp(request), 8, 10 * 60 * 1000))
+  if (!(await rateLimiter.check('cake-order:' + getClientIp(request), 8, 10 * 60 * 1000)))
     return fail(`Too many attempts. Please wait 10 minutes or call ${SITE.phone}.`, 429)
   if (!squareClientConfig() || !process.env.RESEND_API_KEY)
     return fail(`Online cake orders are unavailable right now. Please call ${SITE.phone}.`, 503)

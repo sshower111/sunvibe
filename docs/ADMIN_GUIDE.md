@@ -55,10 +55,11 @@ Orders show as a table (ordered, pickup, cake, customer, status, phone, email). 
 ## Settings
 
 - Maintenance mode is set in Vercel (`MAINTENANCE_MODE=true`, then redeploy). Admin keeps working while it is on.
+- **Encryption key**: customer details are encrypted with `CAMPAIGN_STORAGE_SECRET`. Records saved before 2026-10-29 may still use a key made from the admin password. **Check** shows how many; **Re-encrypt old records** moves them to `CAMPAIGN_STORAGE_SECRET`. Both are safe to press again. Do this before changing the password.
 
 ## Changing the password
 
-In Vercel set a new `ADMIN_PASSWORD` (type Secret) and redeploy. Keep `CAMPAIGN_STORAGE_SECRET` unchanged: it decrypts saved pre-orders and cake inquiries.
+First, in admin → Settings → Encryption key, press **Check**; if it shows any old records, press **Re-encrypt old records** until it shows 0 (old records still need the current password to read). Then in Vercel set a new `ADMIN_PASSWORD` (type Secret) and redeploy. Never change `CAMPAIGN_STORAGE_SECRET`: it decrypts saved pre-orders, cake inquiries and cake orders.
 
 ## Google Analytics
 

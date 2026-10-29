@@ -13,7 +13,7 @@ const bodySchema = z.object({ cardToken: z.string().min(1).max(2048).optional() 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   if (!/^[0-9a-f-]{36}$/i.test(id)) return fail('Payment link not found.', 404)
-  if (!rateLimiter.check('pay:' + getClientIp(request), 8, 10 * 60 * 1000))
+  if (!(await rateLimiter.check('pay:' + getClientIp(request), 8, 10 * 60 * 1000)))
     return fail(`Too many attempts. Please wait 10 minutes or call ${SITE.phone}.`, 429)
   if (!squareClientConfig()) return fail(`Online payment is unavailable right now. Please call ${SITE.phone}.`, 503)
   let body
