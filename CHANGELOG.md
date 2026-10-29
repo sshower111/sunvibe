@@ -4,6 +4,12 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-29
+
+- **CI on GitHub**: every push and pull request to `main` installs with the lockfile, then runs `pnpm format:check`, `pnpm test` and `pnpm build` (Node 22, pnpm cache). The build needs no real secrets. (`.github/workflows/ci.yml`, `README.md`)
+- **Security: encryption no longer tied to the admin password**: customer details (pre-orders, cake inquiries and their notes and photos, cake orders) are now encrypted only with `CAMPAIGN_STORAGE_SECRET`, which is required (saving fails without it). Before, it fell back to `ADMIN_PASSWORD` when unset, so changing the password could make saved data unreadable. Data saved with the old password-based key still reads. Admin → Settings → Encryption key has **Check** and **Re-encrypt old records** to move it to the new key; both are safe to repeat and only overwrite a record that hasn't changed meanwhile. Before deploying, make sure `CAMPAIGN_STORAGE_SECRET` is set in Vercel. (`lib/storage-crypto.ts`, `lib/storage-reencrypt.ts`, `lib/photo-storage.ts`, `lib/inquiry-photos.ts`, `app/api/admin/storage-key/route.ts`, `components/admin-storage-key.tsx`, `app/admin/page.tsx`, `.env.example`, `tests/unit/storage-crypto.test.cjs`, `docs/ADMIN_GUIDE.md`, `docs/OCCASIONS.md`, `docs/SUPABASE-MIGRATION.md`)
+- **Rate limits shared across servers**: limits on the contact, pre-order, cake, pay and gallery forms and on admin sign-in now count across all Vercel instances, in a new `bakery_rate_limits` table (keys are hashed, so IPs aren't stored). If the database can't be reached, each instance falls back to its own in-memory limit as before. Needs `db/006-rate-limits.sql` run in Supabase; until then limits stay per instance. (`lib/security.ts`, `app/api/*/route.ts`, `db/006-rate-limits.sql`, `tests/unit/rate-limit.test.cjs`)
+
 ## 2026-10-27
 
 - **Any size, guest count optional**: in the first step, "See all sizes" (under the suggestions) shows every round, sheet and tiered size to pick from, and "Not sure yet? Pick a size instead" lets customers who don't know their guest count choose a size directly. Changing the guest count goes back to the suggestions. Without a guest count, the quote request sends the chosen cake's servings and the summary shows "Not sure yet". (`components/cake-order-flow.tsx`)

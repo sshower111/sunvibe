@@ -23,6 +23,7 @@ import { adminPost, SignedOutError } from '@/lib/admin-api'
 import { Input } from '@/components/ui/input'
 import { AdminOccasions } from '@/components/admin-occasions'
 import { AdminPreOrders } from '@/components/admin-pre-orders'
+import { AdminStorageKey } from '@/components/admin-storage-key'
 import { AdminCakeInquiries } from '@/components/admin-cake-inquiries'
 import { AdminCakeOrders } from '@/components/admin-cake-orders'
 import { AdminProductCreate } from '@/components/admin-product-create'
@@ -620,6 +621,7 @@ export default function AdminPage() {
                   redeploy.
                 </p>
               </div>
+              <AdminStorageKey />
             </section>
           )}
         </main>

@@ -1,7 +1,7 @@
 import 'server-only'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { database } from './database'
-import { decryptBytes, encryptBytes } from './storage-crypto'
+import { decryptBytes, encryptBytes, reencryptBytes } from './storage-crypto'
 const bucket = () => process.env.SUPABASE_STORAGE_BUCKET || 'bakery-images'
 let client: SupabaseClient | undefined
 function storage() {
@@ -61,4 +61,18 @@ export async function downloadPrivateFile(pathname: string) {
   const { data, error } = await storage().download(pathname)
   if (error || !data) throw new Error('File unavailable')
   return decryptBytes(Buffer.from(await data.arrayBuffer()))
+}
+/** Re-saves a private file under the current encryption key. Returns false when it already used it. */
+export async function reencryptPrivateFile(pathname: string, dryRun = false) {
+  const { data, error } = await storage().download(pathname)
+  if (error || !data) throw new Error('File unavailable')
+  const updated = reencryptBytes(Buffer.from(await data.arrayBuffer()))
+  if (!updated) return false
+  if (dryRun) return true
+  const { error: uploadError } = await storage().upload(pathname, updated, {
+    contentType: 'application/octet-stream',
+    upsert: true,
+  })
+  if (uploadError) throw new Error('File upload unavailable')
+  return true
 }

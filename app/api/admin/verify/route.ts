@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting: 5 attempts per 15 minutes per IP
-    if (!rateLimiter.check(`admin-verify:${getClientIp(request)}`, 5, 15 * 60 * 1000)) {
+    if (!(await rateLimiter.check(`admin-verify:${getClientIp(request)}`, 5, 15 * 60 * 1000))) {
       return NextResponse.json({ error: 'Too many attempts. Please try again in 15 minutes.' }, { status: 429 })
     }
     const { password } = await request.json()

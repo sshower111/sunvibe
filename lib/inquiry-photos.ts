@@ -1,5 +1,5 @@
 import 'server-only'
-import { downloadPrivateFile, uploadPrivateFile } from './photo-storage'
+import { downloadPrivateFile, reencryptPrivateFile, uploadPrivateFile } from './photo-storage'
 
 /** Reference photo names look like "1.jpg"; the number is its place in the inquiry email. */
 export const INQUIRY_PHOTO_NAME = /^[1-9]\.(jpg|png|webp)$/
@@ -25,3 +25,5 @@ export async function saveInquiryPhotos(inquiryId: string, photos: { filename: s
 }
 
 export const readInquiryPhoto = (inquiryId: string, name: string) => downloadPrivateFile(photoPath(inquiryId, name))
+export const reencryptInquiryPhoto = (inquiryId: string, name: string, dryRun = false) =>
+  reencryptPrivateFile(photoPath(inquiryId, name), dryRun)

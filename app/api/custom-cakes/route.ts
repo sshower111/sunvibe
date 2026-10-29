@@ -12,7 +12,7 @@ export const runtime = 'nodejs'
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status })
 export async function POST(request: NextRequest) {
   try {
-    if (!rateLimiter.check(`cake:${getClientIp(request)}`, 5, 10 * 60 * 1000))
+    if (!(await rateLimiter.check(`cake:${getClientIp(request)}`, 5, 10 * 60 * 1000)))
       return fail('Too many attempts. Please try again in 10 minutes or call the bakery.', 429)
     if (!request.headers.get('content-type')?.startsWith('multipart/form-data;'))
       return fail('Please submit the inquiry form.', 415)

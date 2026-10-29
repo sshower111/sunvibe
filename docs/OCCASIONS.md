@@ -26,7 +26,7 @@ Admin > Pre-orders shows the immutable customer/item details and permits status 
 
 ## Storage and configuration
 
-CAMPAIGN_STORAGE_SECRET is optional but recommended as a stable encryption secret before first production use. If absent, ADMIN_PASSWORD is the encryption secret. Preserve whichever secret was used: changing it makes existing records unreadable unless they are migrated with the old key. Never put it in a NEXT_PUBLIC variable. No credentials are stored in campaign JSON.
+CAMPAIGN_STORAGE_SECRET is required: it is the only key used to encrypt reservations (saving fails without it). Records saved before 2026-10-29 may use the old ADMIN_PASSWORD-derived key; they still read, and admin → Settings → "Re-encrypt old records" moves them to CAMPAIGN_STORAGE_SECRET. Never change CAMPAIGN_STORAGE_SECRET once set: existing records would become unreadable. Never put it in a NEXT_PUBLIC variable. No credentials are stored in campaign JSON.
 
 Email reuses RESEND_API_KEY and NOTIFICATION_EMAIL (fallback sunvillebakerylv@gmail.com), plus the existing sender. TURNSTILE_SECRET_KEY, NEXT_PUBLIC_TURNSTILE_SITE_KEY, and TURNSTILE_ALLOWED_HOSTNAMES remain required. Optional SMS_GATEWAY_EMAIL enables a plain-text email-to-SMS notification. Gateway delivery depends on the carrier. The code has a Twilio migration note; no SMS provider was added.
 

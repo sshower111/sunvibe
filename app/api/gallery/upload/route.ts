@@ -12,7 +12,7 @@ const MAX_BYTES = 5 * 1024 * 1024
 export async function POST(req: NextRequest) {
   try {
     const clientIp = getClientIp(req)
-    if (!rateLimiter.check(`gallery-upload:${clientIp}`, 20, 60 * 60 * 1000)) {
+    if (!(await rateLimiter.check(`gallery-upload:${clientIp}`, 20, 60 * 60 * 1000))) {
       return NextResponse.json({ error: 'Too many uploads. Please try again later.' }, { status: 429 })
     }
     // Checked before the body is read, so signed-out requests never upload anything.
