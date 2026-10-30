@@ -69,6 +69,7 @@ Cards and popovers are white. Dark mode is not used.
 - Home hero: full-bleed bakery photo with a dark shade behind the words (left on 768px+, bottom on phones) and the gold ribbon edge.
 - Home photo strip (`components/bakery-marquee.tsx`): every gallery photo, square with a thin gold frame, moving about 35px a second. Stops on hover and keyboard focus; reduced-motion visitors get a still, swipeable strip. Photos come from the same gallery data as `/gallery`.
 - Contact: the form comes first on phones; visit details move beside it from 1024px.
+- Cake planner (`components/cake-order-flow.tsx`): no card frame on phones, and the Next button sticks to the bottom of the screen. `<CakePreview>` (`components/cake-preview.tsx`) draws the cake from the answers; it is the page's one rich element, so its food colors (sponge, fillings, roses) live in that file, not in the tokens. Beside the steps from 1024px, a small strip above the steps below that.
 
 ## Header
 

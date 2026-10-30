@@ -266,12 +266,6 @@ export default function ContactPage() {
                       </div>
 
                       <ContactCaptcha ref={captcha} />
-                      <a
-                        href="/privacy"
-                        className="inline-flex min-h-12 min-w-11 items-center text-xs text-muted-foreground underline underline-offset-4"
-                      >
-                        Privacy
-                      </a>
                       <div ref={feedbackRef} tabIndex={-1} className="focus:outline-none empty:hidden">
                         {submitted && <FormAlert type="success">Message sent. We'll get back to you soon.</FormAlert>}
                         {fieldMessages.length > 0 && (
@@ -295,6 +289,12 @@ export default function ContactPage() {
                       <Button type="submit" loading={submitting} className="w-full">
                         {submitting ? 'Sending…' : 'Send message'}
                       </Button>
+                      <p className="text-center text-xs text-muted-foreground">
+                        How we use your details:{' '}
+                        <a href="/privacy" className="inline-flex min-h-11 items-center underline underline-offset-4">
+                          privacy notice
+                        </a>
+                      </p>
                     </fieldset>
                   </form>
                 </CardContent>

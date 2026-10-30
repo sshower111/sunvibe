@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { FormAlert } from '@/components/ui/form-message'
+import { CakePreview } from '@/components/cake-preview'
 
 // The cake order on /order-cake (everyday and custom cakes). Every answer is part of the order; nothing is asked twice.
 // It ends with payment now (everyday size, listed flavor and filling, simple design, pickup at a time we offer)
@@ -411,10 +412,55 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     ],
   ]
 
+  const preview = (
+    <CakePreview
+      size={cake ? size : ''}
+      flavor={data.flavor}
+      fillingName={data.filling}
+      design={data.design}
+      message={data.cakeMessage}
+      className="h-auto w-full"
+    />
+  )
+  // One line under the drawing: what has been chosen so far.
+  const chosen = [
+    cake?.label,
+    data.flavor && data.flavor !== 'Please recommend' && data.flavor,
+    data.filling && showOption(data.filling) !== 'Not sure' && showOption(data.filling) + ' filling',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
-    <div ref={top} className="mx-auto max-w-4xl scroll-mt-32">
-      <form onSubmit={next} noValidate aria-busy={busy} className="relative rounded-lg border bg-card card-pad">
-        <ol aria-label="Progress" className="mb-8 grid grid-cols-4 gap-2">
+    <div ref={top} className="mx-auto grid max-w-6xl scroll-mt-32 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* Wide screens: the cake stays in view beside the questions. */}
+      <aside
+        aria-label="Your cake"
+        className="sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden rounded-lg bg-surface p-6 lg:block"
+      >
+        <p className="heading-3">Your cake</p>
+        <div className="mt-4">{preview}</div>
+        <p className="mt-3 min-h-12 text-sm text-ink-muted">{chosen || 'Choose a size to start'}</p>
+        {cake && <p className="mt-1 text-sm text-ink-muted">Serves {cake.servings}</p>}
+      </aside>
+      <form
+        onSubmit={next}
+        noValidate
+        aria-busy={busy}
+        className="relative min-w-0 sm:rounded-lg sm:border sm:bg-card sm:card-pad"
+      >
+        {/* Phones and tablets: a small drawing of the cake above the steps, once there is a size. */}
+        {cake && (
+          <div className="mb-6 flex items-center gap-4 rounded-lg bg-surface p-3 lg:hidden">
+            <div className="w-32 shrink-0">{preview}</div>
+            <div className="min-w-0">
+              <p className="heading-3 text-base">Your cake</p>
+              <p className="text-sm text-ink-muted">{chosen}</p>
+              <p className="text-sm text-ink-muted">Serves {cake.servings}</p>
+            </div>
+          </div>
+        )}
+        <ol aria-label="Progress" className="mb-4 grid grid-cols-4 gap-2 sm:mb-6">
           {steps.map((name, index) => (
             <li
               key={name}
@@ -437,21 +483,19 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             </li>
           ))}
         </ol>
-        <div className="flex min-h-11 items-center">
-          {step > 0 && (
-            <button
-              type="button"
-              onClick={() => go(step - 1)}
-              className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted-foreground hover:text-foreground"
-            >
-              ← Back
-            </button>
-          )}
-        </div>
+        {step > 0 && (
+          <button
+            type="button"
+            onClick={() => go(step - 1)}
+            className="mb-2 inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted-foreground hover:text-foreground"
+          >
+            ← Back
+          </button>
+        )}
         <h3
           ref={heading}
           tabIndex={-1}
-          className="mt-2 mb-8 text-center font-serif text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-primary focus:outline-none"
+          className="mb-6 text-center font-serif text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-primary focus:outline-none sm:mb-8"
         >
           {
             [
@@ -907,7 +951,13 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           )}
 
           {error && <FormAlert type="error">{error}</FormAlert>}
-          <div className={cn('flex justify-center border-t pt-6', step === REVIEW && 'hidden')}>
+          <div
+            className={cn(
+              'flex justify-center border-t pt-6',
+              'max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:-mx-[var(--gutter)] max-sm:bg-card max-sm:px-[var(--gutter)] max-sm:pt-3 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:shadow-pop',
+              step === REVIEW && 'hidden',
+            )}
+          >
             <Button
               type="submit"
               loading={busy}
