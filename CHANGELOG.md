@@ -4,6 +4,20 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-30
+
+- **Design polish pass**: small fixes so every page follows the bakery-counter design. (`docs/UI-DESIGN-SYSTEM.md`)
+  - **Menu items without a photo** show their Chinese name large in red on box-paper pink, like a shelf label, instead of an icon and "Photo coming soon". Festival pre-order items without a photo do the same instead of a gradient tile reading "Sunville Bakery". (`components/item-name.tsx` `ShelfLabel`, `components/menu-page.tsx`, `components/pre-order-form.tsx`, `docs/ADMIN_GUIDE.md`)
+  - **Sentence case** for labels: "Plan your cake" in the top menu and footer, menu filters "All items", "Savory buns", "Sweet buns & rolls", "Specialty items", "Custom cakes", and "Phone number (optional)" / "Send message" on the contact form. (`components/navigation.tsx`, `components/footer.tsx`, `lib/menu.ts`, `components/menu-page.tsx`, `app/contact/page.tsx`, `tests/unit/menu-search.test.cjs`)
+  - **Bigger logo**: the empty space around `logo-dark.png` and `logo-light.png` is trimmed (now 509×123), so the header and footer logo reads at a real size. (`public/`, `components/navigation.tsx`, `components/footer.tsx`, `app/maintenance/page.tsx`)
+  - **Footer links** are 36px rows on computers with a mouse instead of 48px; phones and tablets keep 48px tap targets. (`components/footer.tsx`)
+  - **Gallery**: removed the magnifier badge from every photo; photos zoom slightly on hover (mouse only) and show a zoom cursor instead. (`components/gallery-view.tsx`)
+  - **Contact**: the visit details and form line up with the page title instead of sitting in a narrower centered column. (`app/contact/page.tsx`)
+  - **Festival pre-orders**: the top band is the flat red signboard with the gold edge (no gradient), prices read "$2.50" instead of "$ 2.50", and the "no pre-orders right now" page uses the same red band as other pages. (`components/pre-order-form.tsx`, `app/pre-order/page.tsx`)
+  - **Maintenance page** rebuilt in the bakery colors with the logo, phone and directions links (no emoji or warning triangle). (`app/maintenance/page.tsx`)
+  - **Link preview image** (`/og`) is pastry-box red with the gold edge, in sentence case. (`app/og/route.tsx`)
+  - The green "open" dot on red uses a new `success-on-dark` token instead of a raw color. (`app/globals.css`, `components/store-status.tsx`, `components/menu-page.tsx`)
+
 ## 2026-10-29
 
 - **CI on GitHub**: every push and pull request to `main` installs with the lockfile, then runs `pnpm format:check`, `pnpm test` and `pnpm build` (Node 22, pnpm cache). The build needs no real secrets. (`.github/workflows/ci.yml`, `README.md`)

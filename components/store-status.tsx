@@ -20,7 +20,13 @@ export function StoreStatus({ className, onLight = false }: { className?: string
         aria-hidden="true"
         className={cn(
           'size-2.5 shrink-0 rounded-full',
-          onLight ? (status?.open ? 'bg-success' : 'bg-ink-muted') : status?.open ? 'bg-[#6fd08c]' : 'bg-white/50',
+          onLight
+            ? status?.open
+              ? 'bg-success'
+              : 'bg-ink-muted'
+            : status?.open
+              ? 'bg-success-on-dark'
+              : 'bg-white/50',
         )}
       />
       <span>{status ? status.text : `Open ${SITE.hours.daily} (Wed ${SITE.hours.wednesday})`}</span>

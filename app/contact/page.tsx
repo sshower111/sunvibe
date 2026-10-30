@@ -135,7 +135,7 @@ export default function ContactPage() {
           <p>Questions about an order or a cake? Send us a message, or call while we’re open.</p>
         </PageBand>
         <div className="site-container section-space">
-          <div className="mx-auto grid max-w-5xl items-start gap-10 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-14">
+          <div className="grid max-w-5xl items-start gap-10 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-14">
             <aside aria-labelledby="visit-heading" className="order-last space-y-6 lg:order-first">
               <h2 id="visit-heading" className="heading-2">
                 Visit the bakery
@@ -230,7 +230,7 @@ export default function ContactPage() {
 
                       <div id="optional-phone" className={validationErrors.phone ? 'block' : 'hidden sm:block'}>
                         <label htmlFor="phone" className="mb-2 block text-sm font-semibold text-foreground">
-                          Phone Number (Optional)
+                          Phone number (optional)
                         </label>
                         <Input
                           type="tel"
@@ -293,7 +293,7 @@ export default function ContactPage() {
                         {error && <FormAlert type="error">{error}</FormAlert>}
                       </div>
                       <Button type="submit" loading={submitting} className="w-full">
-                        {submitting ? 'Sending…' : 'Send Message'}
+                        {submitting ? 'Sending…' : 'Send message'}
                       </Button>
                     </fieldset>
                   </form>

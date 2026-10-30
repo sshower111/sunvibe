@@ -17,9 +17,9 @@ const item = (name, category = 'Traditional Pastries & Mooncakes', description =
 })
 
 test('roll cakes are grouped as specialty items', () => {
-  assert.equal(menuGroup(item('Chocolate Roll Cake', 'Roll Cakes')), 'Specialty Items')
-  assert.equal(menuGroup(item('Japanese Cheese Cake', 'Roll Cakes')), 'Specialty Items')
-  assert.equal(menuGroup(item('Coconut Bun', 'Buns')), 'Sweet Buns & Rolls')
+  assert.equal(menuGroup(item('Chocolate Roll Cake', 'Roll Cakes')), 'Specialty items')
+  assert.equal(menuGroup(item('Japanese Cheese Cake', 'Roll Cakes')), 'Specialty items')
+  assert.equal(menuGroup(item('Coconut Bun', 'Buns')), 'Sweet buns & rolls')
 })
 
 test('search ranks name matches above category matches and does not mutate input', () => {

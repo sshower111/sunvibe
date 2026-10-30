@@ -1,37 +1,39 @@
 import type { Metadata } from 'next'
+import { MapPin, Phone } from 'lucide-react'
 import { SITE } from '@/lib/site-info'
 
 // Shown for every public page while MAINTENANCE_MODE=true (see middleware.ts). Admin stays reachable.
 export const metadata: Metadata = {
-  title: 'Under maintenance | Sunville Bakery',
+  title: 'Back soon | Sunville Bakery',
   robots: { index: false, follow: false },
 }
 
 export default function MaintenancePage() {
   return (
-    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg card-pad text-center">
-        <div className="mb-6">
-          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-          <h1 className="heading-1 mb-2">Under Maintenance</h1>
-          <p className="text-gray-600 mb-4">
-            We're currently performing scheduled maintenance to improve our services.
-          </p>
-          <p className="text-sm text-gray-500">Please check back soon. We apologize for any inconvenience.</p>
-        </div>
-        <div className="border-t pt-6">
-          <p className="text-sm font-medium mb-2">Contact Us:</p>
-          <p className="text-sm text-gray-600">📍 {SITE.address}</p>
-          <p className="text-sm text-gray-600">📞 {SITE.phone}</p>
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-screen items-center justify-center border-t-[6px] border-gold bg-surface p-4"
+    >
+      <div className="w-full max-w-md rounded-lg border bg-card card-pad">
+        <img src="/logo-dark.png" width={509} height={123} alt="Sunville Bakery" className="h-10 w-auto" />
+        <h1 className="heading-2 mt-8">The website is getting a quick update</h1>
+        <p className="mt-3 text-pretty-body">In the meantime, call us about today’s buns or a cake order.</p>
+        <div className="mt-6 space-y-1 border-t pt-4 text-sm">
+          <a href={SITE.phoneHref} className="flex min-h-11 items-center gap-2 font-semibold text-primary">
+            <Phone aria-hidden="true" className="h-4 w-4" />
+            {SITE.phone}
+          </a>
+          <a
+            href={SITE.directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-11 items-center gap-2 text-ink-muted"
+          >
+            <MapPin aria-hidden="true" className="h-4 w-4" />
+            {SITE.address}
+            <span className="sr-only"> (opens a new tab)</span>
+          </a>
         </div>
       </div>
     </main>

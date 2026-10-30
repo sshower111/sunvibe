@@ -24,7 +24,7 @@ The refactor is done in steps, each reviewed before the next:
 | `ink-muted`                                | `#6b5650` | Secondary text                                                      |
 | `paper`                                    | `#ffffff` | Page background                                                     |
 | `line` / `input-line`                      |           | Borders / form field borders                                        |
-| `success`, `warning`, `danger` (+ `-tint`) |           | Status messages and errors                                          |
+| `success`, `warning`, `danger` (+ `-tint`), `success-on-dark` |           | Status messages and errors                                          |
 
 Cards and popovers are white. Dark mode is not used.
 
@@ -43,6 +43,7 @@ Cards and popovers are white. Dark mode is not used.
   - `text-display` 40–72px (hero), `heading-1` 34–52px, `heading-2` 26–36px, `heading-3` 20px. Headings balance their line breaks.
   - `eyebrow`: small muted sentence-case label (no capitals or letter spacing). `text-pretty-body`: muted paragraph, 65 characters wide, no orphans.
   - `heading-label`: compact sans-serif label for footer and contact subsections. `heading-on-dark` for headings over photos.
+- `<ShelfLabel>` (`components/item-name.tsx`): stands in for a missing photo on menu and festival cards. The Chinese name large in red on `surface` pink (or the English name in Young Serif if there is none). No icons or "coming soon" text.
 - `han-label`: red Chinese item name. Use `<ItemName name="Pineapple Bun 菠蘿包" />` (`components/item-name.tsx`), which splits the English and Chinese with `splitName` (`lib/bilingual.ts`).
 - `signboard`: red background, white text and headings. `<PageBand>` (`components/page-band.tsx`) is the red band with the gold edge at the top of menu, custom cakes, gallery and contact. It pads itself under the fixed header.
 - `<StoreStatus>` (`components/store-status.tsx`): live open/closed line in Las Vegas time; `onLight` for white backgrounds.
@@ -51,7 +52,7 @@ Cards and popovers are white. Dark mode is not used.
 ## Interactive states
 
 - **Focus**: one 2px brown ring, 2px away from the edge, shown only for keyboard users (`:focus-visible` in `app/globals.css`). Components should not add their own focus rings. A menu card outlines as a whole when its hidden button is focused.
-- **Hover / pressed**: buttons darken on hover and darken more and shrink slightly (98%) when pressed. Outline buttons also get a darker border. Menu cards lift 2px with `shadow-pop` and their photo zooms to 104% (`menu-card-photo`), only on devices with a mouse. Form fields get a darker border on hover.
+- **Hover / pressed**: buttons darken on hover and darken more and shrink slightly (98%) when pressed. Outline buttons also get a darker border. Menu cards lift 2px with `shadow-pop` and their photo zooms to 104% (`menu-card-photo`), only on devices with a mouse. Form fields get a darker border on hover. Gallery photos zoom to 104% on hover (mouse only) with a zoom-in cursor; no badges on the photos.
 - **Disabled**: 50% opacity, no clicks (buttons); fields get a soft background and a not-allowed cursor. Links styled as buttons use `aria-disabled`.
 - **Loading**: `<Button loading>` shows a spinner, disables the button and sets `aria-busy` (used on contact, cake inquiry, admin sign-in, add photo link). `<Skeleton>` (`components/ui/skeleton.tsx`, `skeleton` utility) is a pulsing placeholder; always pair it with a screen-reader "Loading…" status. Menu pages use `MenuGridSkeleton` (`components/menu-grid-skeleton.tsx`), which has the same shape as a menu card; the admin menu and photo lists use `Skeleton` directly.
 - **Form messages** (`components/ui/form-message.tsx`): `FormAlert` (error or success box with icon) goes right above the submit button and lists every field problem (contact and cake inquiry forms); fields point to it with `aria-describedby`. `FieldError` is a small red line under one field, only for messages that appear without pressing submit (for example a photo that cannot be added). Forms use `noValidate` so the browser's own bubbles don't appear, and invalid fields get `aria-invalid` (red border).
@@ -61,7 +62,7 @@ Cards and popovers are white. Dark mode is not used.
 
 - Sizes scale with the screen using `clamp()` instead of jumping at breakpoints: headings, `section-space`, `--gutter`, and card padding (`card-pad` 16–32px, `card-pad-lg` 20–40px). Use these instead of `p-6 sm:p-8`.
 - Headings balance their lines; paragraphs and list items use `text-wrap: pretty`; links and addresses break long words.
-- Touch targets: at least 44px wide and 48px tall (`min-h-12 min-w-11`) for text links in the header, footer and forms. Phones and tablets also get a 44px minimum on buttons and tel/mail/map links.
+- Touch targets: at least 44px wide and 48px tall (`min-h-12 min-w-11`) for text links in the header, footer and forms. Phones and tablets also get a 44px minimum on buttons and tel/mail/map links. Footer links shrink to 36px rows only on devices with a fine pointer (`pointer-fine:min-h-9`).
 - Fixed bottom bars add `env(safe-area-inset-bottom)` padding.
 - On dark backgrounds set `[--ring:#fff]` so the focus ring stays visible.
 - Check new pages at 320, 390 and 768px: no sideways scrolling.

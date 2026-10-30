@@ -10,7 +10,7 @@ import { SITE } from '@/lib/site-info'
 const baseLinks = [
   { href: '/', label: 'Home' },
   { href: '/menu', label: 'Menu' },
-  { href: '/order-cake', label: 'Plan Your Cake' },
+  { href: '/order-cake', label: 'Plan your cake' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/contact', label: 'Contact' },
 ]
@@ -88,15 +88,9 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
               href="/"
               aria-label="Sunville Bakery home"
               onClick={() => setOpen(false)}
-              className="flex h-12 w-[180px] shrink-0 items-center rounded-sm"
+              className="flex h-12 shrink-0 items-center rounded-sm"
             >
-              <img
-                src="/logo-dark.png"
-                width={600}
-                height={204}
-                alt="Sunville Bakery"
-                className="h-9 w-full object-contain object-left md:h-12"
-              />
+              <img src="/logo-dark.png" width={509} height={123} alt="Sunville Bakery" className="h-9 w-auto md:h-11" />
             </Link>
             <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 lg:flex lg:gap-2">
               {/* The logo already links home; drop "Home" on desktop when Pre-order needs the room. */}

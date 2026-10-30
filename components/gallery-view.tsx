@@ -8,7 +8,7 @@ import { Footer } from '@/components/footer'
 import { galleryAlt, canOptimizeGalleryImage } from '@/lib/gallery-images'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { ChevronLeft, ChevronRight, ImageIcon, ZoomIn } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react'
 
 function GalleryPhoto({ src, index, expanded = false }: { src: string; index: number; expanded?: boolean }) {
   const [failed, setFailed] = useState(false)
@@ -48,7 +48,12 @@ function GalleryPhoto({ src, index, expanded = false }: { src: string; index: nu
           loading={expanded ? 'eager' : 'lazy'}
           decoding="async"
           onError={() => setFailed(true)}
-          className={'h-full w-full ' + (expanded ? 'object-contain' : 'object-cover')}
+          className={
+            'h-full w-full ' +
+            (expanded
+              ? 'object-contain'
+              : 'object-cover transition-transform duration-200 ease-standard [@media(hover:hover)]:group-hover:scale-[1.04]')
+          }
         />
       )}
     </span>
@@ -109,20 +114,14 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
                     triggerRef.current = event.currentTarget
                     setSelected(index)
                   }}
-                  className="group relative rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                  className="group relative cursor-zoom-in rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
                 >
                   <GalleryPhoto src={src} index={index} />
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-2 right-2 rounded-full bg-white/95 p-2 text-primary shadow-sm"
-                  >
-                    <ZoomIn className="h-4 w-4" />
-                  </span>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border bg-white card-pad text-center">
+            <div className="rounded-xl border bg-card card-pad text-center">
               <h2 className="heading-2">More photos coming soon</h2>
               <p className="mt-2 text-muted-foreground">Explore our menu to see what’s baking.</p>
             </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { ItemName } from '@/components/item-name'
+import { ItemName, ShelfLabel } from '@/components/item-name'
 import { SITE } from '@/lib/site-info'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MenuGridSkeleton } from '@/components/menu-grid-skeleton'
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Search, X, ChevronDown, Phone, MapPin, ImageIcon } from 'lucide-react'
+import { Search, X, ChevronDown, Phone, MapPin } from 'lucide-react'
 import { canOptimizeGalleryImage } from '@/lib/gallery-images'
 import {
   getStoreStatus,
@@ -82,10 +82,10 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
           />
         )
       ) : (
-        <span className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-          <ImageIcon aria-hidden="true" className="h-7 w-7" />
-          <span className="text-center text-xs">Photo coming soon</span>
-        </span>
+        <ShelfLabel
+          name={product.name}
+          className={'aspect-auto h-full ' + (detail ? 'text-6xl' : 'text-xl sm:text-5xl')}
+        />
       )}
     </span>
   )
@@ -102,7 +102,7 @@ export default function MenuPage({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(initialError)
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('All Items')
+  const [category, setCategory] = useState('All items')
   const [suggesting, setSuggesting] = useState(false)
   const [activeSuggestion, setActiveSuggestion] = useState(-1)
   const [hoursOpen, setHoursOpen] = useState(false)
@@ -149,10 +149,10 @@ export default function MenuPage({
   const ranked = search.results
   const suggestions = query.trim() ? ranked.slice(0, 8) : []
   const showSuggestions = suggesting && suggestions.length > 0
-  const filtered = ranked.filter(product => category === 'All Items' || menuGroup(product) === category)
+  const filtered = ranked.filter(product => category === 'All items' || menuGroup(product) === category)
   const selectSuggestion = (product: MenuProduct) => {
     setQuery(product.name)
-    setCategory('All Items')
+    setCategory('All items')
     setSuggesting(false)
     setActiveSuggestion(-1)
     searchRef.current?.focus()
@@ -165,13 +165,13 @@ export default function MenuPage({
     }
     setSuggesting(false)
     setActiveSuggestion(-1)
-    if (query.trim()) setCategory('All Items')
+    if (query.trim()) setCategory('All items')
     searchRef.current?.blur()
     resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
   const clearFilters = () => {
     setQuery('')
-    setCategory('All Items')
+    setCategory('All items')
     setSuggesting(false)
     setActiveSuggestion(-1)
   }
@@ -195,7 +195,7 @@ export default function MenuPage({
             >
               <span
                 aria-hidden="true"
-                className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-[#6fd08c]' : 'bg-white/50')}
+                className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-success-on-dark' : 'bg-white/50')}
               />
               <span className="text-left">
                 {status?.text || 'View store hours'}{' '}
@@ -329,7 +329,7 @@ export default function MenuPage({
                   aria-pressed={category === item}
                   onClick={() => {
                     setCategory(item)
-                    if (item === 'Custom Cakes') setQuery('')
+                    if (item === 'Custom cakes') setQuery('')
                     setSuggesting(false)
                     setActiveSuggestion(-1)
                   }}
@@ -346,7 +346,7 @@ export default function MenuPage({
             </div>
           </section>
 
-          {category === 'Custom Cakes' ? (
+          {category === 'Custom cakes' ? (
             <section aria-labelledby="custom-menu-title" className="rounded-lg border bg-surface card-pad">
               <span className="badge">3–5 days’ notice</span>
               <h2 id="custom-menu-title" className="heading-2 mt-4">
@@ -380,12 +380,12 @@ export default function MenuPage({
               <div ref={resultsRef} className="mb-4 flex scroll-mt-64 flex-wrap items-center justify-between gap-2">
                 <p role="status" className="text-sm text-muted-foreground">
                   {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
-                  {category !== 'All Items' ? ' in ' + category : ''}
+                  {category !== 'All items' ? ' in ' + category : ''}
                   {query.trim()
                     ? (search.corrected ? ' — close matches for “' : ' matching “') + query.trim() + '”'
                     : ''}
                 </p>
-                {(query || category !== 'All Items') && (
+                {(query || category !== 'All items') && (
                   <Button variant="ghost" onClick={clearFilters}>
                     Clear filters
                   </Button>

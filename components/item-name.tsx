@@ -25,3 +25,22 @@ export function ItemName({
     </Tag>
   )
 }
+
+// Stands in for a missing photo: the Chinese name large in red on box paper, like a shelf label.
+// Decorative, since the card already names the item.
+export function ShelfLabel({ name, nameAlt, className }: { name: string; nameAlt?: string; className?: string }) {
+  const { en, zh } = splitName(nameAlt ? name + ' ' + nameAlt : name)
+  return (
+    <span
+      aria-hidden="true"
+      lang={zh ? 'zh-Hant' : undefined}
+      className={cn(
+        'flex aspect-[4/3] items-center justify-center bg-surface p-3 text-center text-brand',
+        zh ? 'han text-5xl' : 'font-serif text-3xl',
+        className,
+      )}
+    >
+      {zh || en}
+    </span>
+  )
+}

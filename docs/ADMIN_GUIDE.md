@@ -8,7 +8,7 @@ Go to https://sunvillebakerylv.com/admin and sign in with the admin password. Yo
 - Each item shows a small photo, or "No photo" if it has none. Photos marked **Blurry** are too small (under 600 pixels) to look sharp on the menu; replace them with a larger photo.
 - The menu shows every photo as a square, so take photos with the whole item in the middle and some space around it.
 - **Edit item**: photo, name, description, price. Changes appear on the public menu right away.
-- **Photos**: in Edit item or Add menu item, tap **Add photo** (or **Change photo**) and pick one from your phone or computer. iPhone HEIC photos are converted and large photos resized automatically. It uploads straight away, but only shows on the menu after you press **Save changes** / **Add item**. **Remove photo** puts back "Photo coming soon". A replaced photo is deleted from storage unless the gallery or an occasion still uses it.
+- **Photos**: in Edit item or Add menu item, tap **Add photo** (or **Change photo**) and pick one from your phone or computer. iPhone HEIC photos are converted and large photos resized automatically. It uploads straight away, but only shows on the menu after you press **Save changes** / **Add item**. **Remove photo** puts back the shelf label (the item's Chinese name in large red characters). A replaced photo is deleted from storage unless the gallery or an occasion still uses it.
 - **Hide / Show**: removes an item from the public menu without deleting it.
 - **Add menu item**: photo, name, price, category, description.
 

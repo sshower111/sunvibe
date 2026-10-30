@@ -4,7 +4,7 @@ import { ArrowUpRight, MapPin, Phone } from 'lucide-react'
 
 const directions = SITE.directionsUrl
 const linkStyle =
-  'inline-flex min-h-12 min-w-11 items-center rounded-sm text-sm text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
+  'inline-flex min-h-12 min-w-11 items-center rounded-sm text-sm pointer-fine:min-h-9 text-white/90 underline-offset-4 hover:text-white hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white'
 
 export function Footer() {
   return (
@@ -48,7 +48,7 @@ export function Footer() {
               Menu
             </Link>
             <Link href="/order-cake" className={linkStyle}>
-              Plan Your Cake
+              Plan your cake
             </Link>
             <Link href="/#about" className={linkStyle}>
               About
@@ -70,11 +70,11 @@ export function Footer() {
             >
               <img
                 src="/logo-light.png"
-                width={600}
-                height={204}
+                width={509}
+                height={123}
                 alt="Sunville Bakery"
                 loading="lazy"
-                className="h-12 w-auto max-w-full object-contain"
+                className="h-11 w-auto max-w-full object-contain"
               />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/85">
@@ -140,7 +140,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/order-cake" className={linkStyle}>
-                  Plan Your Cake
+                  Plan your cake
                 </Link>
               </li>
               <li>

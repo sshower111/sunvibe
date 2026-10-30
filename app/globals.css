@@ -26,6 +26,7 @@
   --accent-tint: #fce7b8;
   --success: #1e6b3a;
   --success-tint: #eaf5ee;
+  --success-on-dark: #6fd08c; /* open dot on red or brown backgrounds */
   --warning: #8a5300;
   --warning-tint: #fdf3e1;
   --danger: #c0262d;
@@ -112,6 +113,7 @@
   --color-accent-ink: var(--accent-ink);
   --color-success: var(--success);
   --color-success-tint: var(--success-tint);
+  --color-success-on-dark: var(--success-on-dark);
   --color-warning: var(--warning);
   --color-warning-tint: var(--warning-tint);
   --color-danger: var(--danger);

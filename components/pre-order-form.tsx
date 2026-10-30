@@ -5,6 +5,7 @@ import { useRef, useState } from 'react'
 import type { Campaign } from '@/lib/campaign-model'
 import { ContactCaptcha, type CaptchaHandle } from './contact-captcha'
 import { Button } from './ui/button'
+import { ShelfLabel } from './item-name'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { NativeSelect } from './ui/select'
@@ -81,29 +82,24 @@ export function PreOrderForm({
       )}
       <section
         aria-labelledby="preorder-title"
-        className="relative isolate overflow-hidden bg-primary text-primary-foreground"
+        className="signboard relative isolate overflow-hidden border-b-[6px] border-gold"
       >
-        {campaign.page.heroImage ? (
-          <img
-            src={campaign.page.heroImage}
-            alt=""
-            width={1600}
-            height={900}
-            className="absolute inset-0 -z-20 h-full w-full object-cover"
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-20 bg-gradient-to-br from-primary via-primary to-accent"
-          />
+        {campaign.page.heroImage && (
+          <>
+            <img
+              src={campaign.page.heroImage}
+              alt=""
+              width={1600}
+              height={900}
+              className="absolute inset-0 -z-20 h-full w-full object-cover"
+            />
+            {/* Flat red shade so the white words stay readable over any photo. */}
+            <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand/85" />
+          </>
         )}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-gradient-to-r from-primary via-primary/90 to-primary/80"
-        />
         <div className="site-container section-space py-14 sm:py-20">
           <OccasionCountdown date={campaign.orderCutoff} />
-          <h1 id="preorder-title" className="heading-1 mt-6 max-w-3xl text-primary-foreground">
+          <h1 id="preorder-title" className="heading-1 mt-6 max-w-3xl">
             {campaign.page.title}
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed sm:text-lg">{campaign.page.intro}</p>
@@ -122,7 +118,7 @@ export function PreOrderForm({
       <div className="site-container section-space">
         <section aria-labelledby="how-preorders-work" className="mb-10 border-b pb-8">
           <h2 id="how-preorders-work" className="heading-2">
-            A little planning. Something special.
+            A little planning, something special
           </h2>
           <ol className="my-5 grid gap-4 sm:grid-cols-3">
             {['Choose your favorites', 'Pick a pickup date', 'We call to confirm'].map((step, index) => (
@@ -150,7 +146,7 @@ export function PreOrderForm({
         ) : !campaign.items.length ? (
           <section className="rounded-2xl border border-accent bg-secondary card-pad-lg">
             <p className="text-sm font-semibold text-primary">Made for your celebration</p>
-            <h2 className="heading-2 mt-3">Let’s reserve something special.</h2>
+            <h2 className="heading-2 mt-3">Let’s reserve something special</h2>
             <p className="my-4 max-w-xl">
               Our seasonal selection is being prepared. Call us to discuss your favorites and pickup plans.
             </p>
@@ -200,17 +196,13 @@ export function PreOrderForm({
                           className="aspect-[4/3] w-full object-cover"
                         />
                       ) : (
-                        <div
-                          aria-hidden="true"
-                          className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-secondary to-accent/30"
-                        >
-                          <span className="font-serif text-2xl text-primary">Sunville Bakery</span>
-                        </div>
+                        // No photo: the item's name fills the tile like a shelf label, as on the menu.
+                        <ShelfLabel name={item.name} nameAlt={item.nameAlt} />
                       )}
                       <div className="flex flex-1 flex-col p-5">
                         <h3 className="heading-3">{item.name}</h3>
                         {item.nameAlt && <p className="mt-1 text-muted-foreground">{item.nameAlt}</p>}
-                        <p className="my-4 text-xl font-semibold text-primary">$ {item.price.toFixed(2)}</p>
+                        <p className="price my-4 text-xl">${item.price.toFixed(2)}</p>
                         <div className="mt-auto flex items-center justify-between gap-3">
                           <span className="text-sm">Quantity</span>
                           <div className="flex items-center gap-2">

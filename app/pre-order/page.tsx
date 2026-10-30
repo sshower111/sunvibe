@@ -6,6 +6,7 @@ import { Footer } from '@/components/footer'
 import { PreOrderForm } from '@/components/pre-order-form'
 import { CampaignPreview } from '@/components/campaign-preview'
 import { pageMetadata } from '@/lib/seo'
+import { PageBand } from '@/components/page-band'
 // Strict nonce CSP (middleware.ts) requires rendering per request.
 export const dynamic = 'force-dynamic'
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
@@ -24,27 +25,25 @@ export default async function PreOrderPage({ searchParams }: { searchParams: Pro
   return (
     <div className="min-h-screen">
       <Navigation />
-      <main id="main-content" tabIndex={-1} className="pt-16 md:pt-24">
+      <main id="main-content" tabIndex={-1}>
         {query.preview ? (
-          <CampaignPreview id={query.preview} today={storeDate()} />
+          <div className="pt-16 md:pt-24">
+            <CampaignPreview id={query.preview} today={storeDate()} />
+          </div>
         ) : campaign ? (
-          <PreOrderForm campaign={campaign} today={storeDate()} />
+          <div className="pt-16 md:pt-24">
+            <PreOrderForm campaign={campaign} today={storeDate()} />
+          </div>
         ) : (
-          <section className="site-container section-space">
-            <h1 className="heading-1">Festival pre-orders</h1>
-            <p className="mt-5">
-              {storageUnavailable
-                ? 'Online reservations are temporarily unavailable — '
-                : 'No festival pre-orders right now — '}
-              <a
-                href={SITE.phoneHref}
-                className="inline-flex min-h-12 items-center font-semibold text-primary underline"
-              >
-                call {SITE.phone}
+          <PageBand id="preorder-title" title="Festival pre-orders">
+            <p>
+              {storageUnavailable ? 'Online reservations are paused for now. ' : 'No festival pre-orders right now. '}
+              <a href={SITE.phoneHref} className="font-semibold text-white underline underline-offset-4">
+                Call {SITE.phone}
               </a>
-              {storageUnavailable ? ' for availability and reservations.' : " for today's fresh bakes."}
+              {storageUnavailable ? ' for availability and reservations' : ' for today’s fresh bakes'}
             </p>
-          </section>
+          </PageBand>
         )}
       </main>
       <div className={campaign?.items.length ? 'pb-28 md:pb-0' : ''}>
