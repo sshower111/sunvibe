@@ -114,7 +114,30 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
     rows: cakeRows(o),
     after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
   })
-  return Promise.all([bakery, customer])
+  return Promise.all([bakery, customer, held ? sendApprovalText(o) : Promise.resolve(true)])
+}
+
+/**
+ * A text to the bakery phone for an order that needs approval, through the email-to-SMS gateway (SMS_GATEWAY_EMAIL).
+ * Kept short and plain so carriers deliver it as one message.
+ */
+async function sendApprovalText(o: StoredCakeOrder) {
+  const to = process.env.SMS_GATEWAY_EMAIL
+  if (!to) return true
+  try {
+    const result = await mailer().emails.send(
+      {
+        from: EMAIL_FROM,
+        to,
+        subject: tag(o, 'Approve cake order'),
+        text: `${o.test ? '[TEST] ' : ''}APPROVE by ${formatVegasTime(o.approveBy!)}: cake ${orderRef(o)}, ${sizeLabel(o.size)}, pickup ${pickup(o)}. ${SITE_URL}/admin`,
+      },
+      { idempotencyKey: `cake-order-sms-${o.id}` },
+    )
+    return !result.error
+  } catch {
+    return false
+  }
 }
 
 export const sendApprovedEmail = (o: StoredCakeOrder) =>
