@@ -57,7 +57,7 @@ test('an order waiting for approval texts the bakery phone', async () => {
   assert.match(body.text, /^APPROVE by .*12:41 PM: cake #1009, .*pickup .*7:30 PM\. https:\/\/.*\/admin$/)
   assert(body.text.length <= 160, `one SMS: ${body.text.length} characters`)
   assert.equal(body.html, undefined, 'plain text only')
-  assert.equal(options.idempotencyKey, 'cake-order-sms-' + held().id)
+  assert.equal(options.idempotencyKey, 'cake-order-sms-' + held().id + '-0')
 })
 
 test('paid orders and missing gateway send no text', async () => {
@@ -79,4 +79,16 @@ test('test orders are marked in the text', async () => {
   await sendNewOrderEmails({ ...held(), test: true })
   const text = mail.find(m => m.body.to === '7025550123@sms.example.com')
   assert.match(text.body.text, /^\[TEST\] APPROVE by /)
+})
+
+test('several phones each get their own text', async () => {
+  process.env.SMS_GATEWAY_EMAIL = ' 7025550123@tmomail.net , 7025550124@tmomail.net,'
+  mail.length = 0
+  await sendNewOrderEmails(held())
+  const texts = mail.filter(m => m.body.to.endsWith('@tmomail.net'))
+  assert.deepEqual(
+    texts.map(m => m.body.to),
+    ['7025550123@tmomail.net', '7025550124@tmomail.net'],
+  )
+  assert.equal(new Set(texts.map(m => m.options.idempotencyKey)).size, 2)
 })

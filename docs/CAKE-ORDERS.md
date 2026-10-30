@@ -51,7 +51,7 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
 
 - New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese copy for the kitchen) and to the customer.
 - Approved, declined or not approved in time: to the customer.
-- Needs approval: also a text to the bakery phone when `SMS_GATEWAY_EMAIL` is set (an email-to-SMS address such as `7025550123@vtext.com` for Verizon, `@tmomail.net` for T-Mobile, `@txt.att.net` for AT&T). It says the approve-by time, order number, size and pickup, with a link to admin; no customer details, since gateways aren't private. Use **Test order → needs approval** in admin to check it arrives.
+- Needs approval: also a text to the bakery phone when `SMS_GATEWAY_EMAIL` is set (one or more email-to-SMS addresses, comma-separated, each phone texted separately, such as `7025550123@vtext.com` for Verizon, `@tmomail.net` for T-Mobile, `@txt.att.net` for AT&T). It says the approve-by time, order number, size and pickup, with a link to admin; no customer details, since gateways aren't private. Use **Test order → needs approval** in admin to check it arrives.
 
 ## Setup (Vercel environment variables)
 

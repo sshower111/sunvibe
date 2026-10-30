@@ -1,5 +1,5 @@
 import 'server-only'
-import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
+import { mailer, EMAIL_FROM, bakeryInbox, smsGateways } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
 import { SITE_URL } from '@/lib/seo'
 import { escapeHtml } from '@/lib/security'
@@ -122,22 +122,22 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
  * Kept short and plain so carriers deliver it as one message.
  */
 async function sendApprovalText(o: StoredCakeOrder) {
-  const to = process.env.SMS_GATEWAY_EMAIL
-  if (!to) return true
-  try {
-    const result = await mailer().emails.send(
-      {
-        from: EMAIL_FROM,
-        to,
-        subject: tag(o, 'Approve cake order'),
-        text: `${o.test ? '[TEST] ' : ''}APPROVE by ${formatVegasTime(o.approveBy!)}: cake ${orderRef(o)}, ${sizeLabel(o.size)}, pickup ${pickup(o)}. ${SITE_URL}/admin`,
-      },
-      { idempotencyKey: `cake-order-sms-${o.id}` },
-    )
-    return !result.error
-  } catch {
-    return false
-  }
+  const text = `${o.test ? '[TEST] ' : ''}APPROVE by ${formatVegasTime(o.approveBy!)}: cake ${orderRef(o)}, ${sizeLabel(o.size)}, pickup ${pickup(o)}. ${SITE_URL}/admin`
+  // One message per phone, so carriers don't turn it into a group text.
+  const sent = await Promise.all(
+    smsGateways().map(async (to, index) => {
+      try {
+        const result = await mailer().emails.send(
+          { from: EMAIL_FROM, to, subject: tag(o, 'Approve cake order'), text },
+          { idempotencyKey: `cake-order-sms-${o.id}-${index}` },
+        )
+        return !result.error
+      } catch {
+        return false
+      }
+    }),
+  )
+  return sent.every(Boolean)
 }
 
 export const sendApprovedEmail = (o: StoredCakeOrder) =>
