@@ -88,7 +88,7 @@ export function AdminCakeOrders() {
     })
   const act = (
     id: string,
-    action: 'approve' | 'decline' | 'picked_up' | 'not_picked_up' | 'delete' | 'resend_link',
+    action: 'approve' | 'decline' | 'paid_offline' | 'picked_up' | 'not_picked_up' | 'delete' | 'resend_link',
     confirmText?: string,
   ) => {
     if (confirmText && !window.confirm(confirmText)) return
@@ -320,6 +320,23 @@ export function AdminCakeOrders() {
                             Resend link
                           </Button>
                         </>
+                      )}
+                      {(o.status === 'expired' || o.status === 'declined') && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={compact}
+                          disabled={busy}
+                          onClick={() =>
+                            act(
+                              o.id,
+                              'paid_offline',
+                              `Did ${o.name} pay another way (phone or in store)? The order moves to To make. No email is sent.`,
+                            )
+                          }
+                        >
+                          Paid in store / by phone
+                        </Button>
                       )}
                       {(o.status === 'paid' || o.status === 'deposit_paid') && (
                         <Button

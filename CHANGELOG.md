@@ -4,6 +4,11 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-10-31
+
+- **Paid in store / by phone**: orders that were not approved in time, declined, or whose pay link expired get a **Paid in store / by phone** button in admin → Cake orders. It moves the order to To make (status Paid) for a customer who paid another way; no email is sent. (`app/api/admin/cake-orders/route.ts`, `components/admin-cake-orders.tsx`, `docs/CAKE-ORDERS.md`, `docs/ADMIN_GUIDE.md`)
+- **Email-to-text alerts removed**: T-Mobile delayed or dropped them, so the `SMS_GATEWAY_EMAIL` texts are gone, for cake orders needing approval and for festival pre-orders. The bakery emails are unchanged. Delete `SMS_GATEWAY_EMAIL` from Vercel. (`lib/cake-order-email.ts`, `lib/email.ts`, `app/api/pre-orders/route.ts`, `app/privacy/page.tsx`, `.env.example`, `docs/`, removed `tests/unit/cake-order-sms.test.cjs`)
+
 ## 2026-10-30
 
 - **Text alert for cake orders that need approval**: when `SMS_GATEWAY_EMAIL` is set, a held order (same-day or next-day) also texts the bakery phones (several numbers allowed, comma-separated; each gets its own text, and festival pre-order texts work the same way): "APPROVE by Fri, Oct 30, 12:41 PM: cake #1009, 10-inch round, pickup Fri, Oct 30, 7:30 PM" with the admin link. Before, only festival pre-orders sent a text, so a same-day order could expire unnoticed. No customer details go in the text. (`lib/cake-order-email.ts`, `lib/email.ts`, `app/api/pre-orders/route.ts`, `tests/unit/cake-order-sms.test.cjs`, `.env.example`, `docs/CAKE-ORDERS.md`)

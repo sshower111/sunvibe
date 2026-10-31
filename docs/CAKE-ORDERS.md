@@ -24,7 +24,7 @@ Pickup slots are every 30 minutes until 30 minutes before closing (7:30 PM; Wedn
 - Same-day: 1 hour after the order.
 - Next-day: 12 hours after the order or 3 hours before pickup, whichever is earlier (at least 1 hour).
 
-If nobody approves in time, Square releases the hold, the order shows as "Not approved in time", and the customer is emailed. This happens through the Square webhook, and also whenever admin → Cake orders is opened.
+If nobody approves in time, Square releases the hold, the order shows as "Not approved in time", and the customer is emailed. If the customer then pays another way (Square terminal, cash, by phone), **Paid in store / by phone** on the order moves it to To make; no email is sent. The same button works on declined orders and expired pay links. This happens through the Square webhook, and also whenever admin → Cake orders is opened.
 
 ## Where customers find it
 
@@ -51,7 +51,6 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
 
 - New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese copy for the kitchen) and to the customer.
 - Approved, declined or not approved in time: to the customer.
-- Needs approval: also a text to the bakery phone when `SMS_GATEWAY_EMAIL` is set (one or more email-to-SMS addresses, comma-separated, each phone texted separately, such as `7025550123@vtext.com` for Verizon, `@tmomail.net` for T-Mobile, `@txt.att.net` for AT&T). It says the approve-by time, order number, size and pickup, with a link to admin; no customer details, since gateways aren't private. Use **Test order → needs approval** in admin to check it arrives.
 
 ## Setup (Vercel environment variables)
 

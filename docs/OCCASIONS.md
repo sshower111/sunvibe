@@ -28,9 +28,9 @@ Admin > Pre-orders shows the immutable customer/item details and permits status 
 
 CAMPAIGN_STORAGE_SECRET is required: it is the only key used to encrypt reservations (saving fails without it). Records saved before 2026-10-29 may use the old ADMIN_PASSWORD-derived key; they still read, and admin → Settings → "Re-encrypt old records" moves them to CAMPAIGN_STORAGE_SECRET. Never change CAMPAIGN_STORAGE_SECRET once set: existing records would become unreadable. Never put it in a NEXT_PUBLIC variable. No credentials are stored in campaign JSON.
 
-Email reuses RESEND_API_KEY and NOTIFICATION_EMAIL (fallback sunvillebakerylv@gmail.com), plus the existing sender. TURNSTILE_SECRET_KEY, NEXT_PUBLIC_TURNSTILE_SITE_KEY, and TURNSTILE_ALLOWED_HOSTNAMES remain required. Optional SMS_GATEWAY_EMAIL enables a plain-text email-to-SMS notification. Gateway delivery depends on the carrier. The code has a Twilio migration note; no SMS provider was added.
+Email reuses RESEND_API_KEY and NOTIFICATION_EMAIL (fallback sunvillebakerylv@gmail.com), plus the existing sender. TURNSTILE_SECRET_KEY, NEXT_PUBLIC_TURNSTILE_SITE_KEY, and TURNSTILE_ALLOWED_HOSTNAMES remain required.
 
-An accepted request is stored before email is sent. If notification fails, the customer is told the request was saved and to call; the inbox still contains it. Email delivery uses a per-request Resend idempotency key. SMS failure does not discard a saved order. Staff should check the inbox regularly.
+An accepted request is stored before email is sent. If notification fails, the customer is told the request was saved and to call; the inbox still contains it. Email delivery uses a per-request Resend idempotency key. Staff should check the inbox regularly.
 
 ## Verification
 
