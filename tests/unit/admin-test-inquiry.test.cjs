@@ -4,6 +4,9 @@ const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { createLoader } = require('../helpers/load-ts.cjs')
 
+// Email detail rows are table cells: label in one, value in the next.
+const row = (html, label, value) => html.replace(/<td[^>]*>/g, '<td>').includes(`<td>${label}</td><td>${value}</td>`)
+
 process.env.RESEND_API_KEY = 'mock'
 process.env.NOTIFICATION_EMAIL = 'inbox@example.com'
 let admin = true
@@ -51,9 +54,9 @@ test('admin can send a test cake inquiry to the bakery inbox', async () => {
     assert.equal(body.to, 'inbox@example.com')
     assert.match(body.subject, /^\[TEST\] /)
   }
-  assert.match(mail[0].body.subject, /^\[TEST\] Custom cake inquiry: Test Customer · Birthday · /)
+  assert.match(mail[0].body.subject, /^\[TEST\] \[Inquiry\] Custom cake: Test Customer · Birthday · /)
   assert(mail[0].body.text.startsWith('TEST INQUIRY'))
-  assert(mail[0].body.html.includes('<strong>Writing on cake:</strong> Happy Birthday, Test!'))
+  assert(row(mail[0].body.html, 'Writing on cake', 'Happy Birthday, Test!'))
   assert.equal(saved.length, 1, 'added to the list, marked as a test')
   assert.equal(saved[0].test, true)
   assert(!('acknowledged' in saved[0]))

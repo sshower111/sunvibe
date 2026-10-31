@@ -1,5 +1,6 @@
 import { budgets, eventTypes, fillings, flavors } from './cake-inquiry'
 import { cakeCatalog, deliveryOptions } from './cake-catalog'
+import { emailDivider, emailHeading, emailNote, emailRows } from './email-layout'
 
 // Traditional Chinese copy that is added under the English part of every form email to the bakery.
 // Labels and the site's own option text are translated; whatever the customer typed is left as written.
@@ -102,10 +103,10 @@ export const translatableOptions = [
 /** HTML block placed under the English email. Row values must already be HTML-escaped. */
 export function zhHtml(heading: string, rows: [label: string, html: string][], note?: string) {
   return (
-    '<hr style="margin:24px 0;border:0;border-top:1px solid #ddd">' +
-    `<div lang="zh-Hant"><h2>${heading}</h2>` +
-    (note ? `<p>${note}</p>` : '') +
-    rows.map(([label, html]) => `<p><strong>${label}：</strong>${html}</p>`).join('') +
+    emailDivider() +
+    `<div lang="zh-Hant">${emailHeading(heading)}` +
+    (note ? emailNote(note) : '') +
+    emailRows(rows) +
     '</div>'
   )
 }

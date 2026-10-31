@@ -246,7 +246,7 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert(createCall.holdMinutes >= 60)
   const heldOrder = await store.getCakeOrder(held.requestId)
   assert.equal(heldOrder.status, 'awaiting_approval')
-  assert(emails.some(e => e.subject.startsWith('APPROVE BY')))
+  assert(emails.some(e => e.subject.startsWith('[Order] APPROVE BY')))
   assert.equal((await post(admin, { action: 'approve', id: held.requestId })).status, 401)
   r = await adminCall({ action: 'approve', id: held.requestId })
   assert.equal(r.status, 200)
@@ -485,7 +485,7 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
   assert.equal((await inquiries.getCakeInquiry(inquiryId)).status, 'confirmed_paid')
   assert(emails.some(e => e.subject.startsWith('Payment received for your custom cake')))
-  const bakery = emails.find(e => e.subject.startsWith('Paid: custom cake'))
+  const bakery = emails.find(e => e.subject.startsWith('[Order] Paid: custom cake'))
   assert(bakery.text.includes('方式：賭場／酒店送貨 — $50'))
   assert(bakery.text.includes('地址：Bellagio, Las Vegas'))
   // Can't pay twice.

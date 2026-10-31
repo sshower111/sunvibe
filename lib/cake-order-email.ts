@@ -3,6 +3,7 @@ import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
 import { SITE_URL } from '@/lib/seo'
 import { escapeHtml } from '@/lib/security'
+import { emailDivider, emailHeading, emailPage, emailParagraph, emailRows, SUBJECT_TAG } from '@/lib/email-layout'
 import {
   amountDueNow,
   isDelivery,
@@ -34,12 +35,33 @@ const cakeRows = (o: StoredCakeOrder): [string, string][] => [
     : []),
   ...(o.notes ? ([[o.kind === 'custom' ? 'Design notes' : 'Notes', o.notes]] as [string, string][]) : []),
 ]
-const html = (paragraphs: string[], rows: [string, string][], after: string[] = []) =>
-  paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('') +
-  rows.map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`).join('') +
-  after.map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('')
-const text = (paragraphs: string[], rows: [string, string][], after: string[] = []) =>
-  [...paragraphs, '', ...rows.map(([l, v]) => `${l}: ${v}`), '', ...after].join('\n')
+const html = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string) =>
+  emailPage(
+    paragraphs.map(p => emailParagraph(escapeHtml(p))).join('') +
+      emailRows(rows.map(([label, value]) => [label, escapeHtml(value)])) +
+      after.map(p => emailParagraph(escapeHtml(p).replace(/\n/g, '<br>'))).join('') +
+      // Kitchen copy lines are "label：value", shown as a second table.
+      (kitchen
+        ? emailDivider() +
+          `<div lang="zh-Hant">${emailHeading('Chinese copy for the kitchen')}` +
+          emailRows(
+            kitchen.split('\n').map(line => {
+              const [label, ...value] = line.split('：')
+              return [escapeHtml(label), escapeHtml(value.join('：'))]
+            }),
+          ) +
+          '</div>'
+        : ''),
+  )
+const text = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string) =>
+  [
+    ...paragraphs,
+    '',
+    ...rows.map(([l, v]) => `${l}: ${v}`),
+    '',
+    ...after,
+    ...(kitchen ? ['', '— Chinese copy for the kitchen —', kitchen] : []),
+  ].join('\n')
 
 /** Customer emails for a test order go to the bakery inbox instead. */
 const customerEmail = (o: StoredCakeOrder) => (o.test ? bakeryInbox() : o.email)
@@ -53,6 +75,8 @@ async function send(
     paragraphs: string[]
     rows: [string, string][]
     after?: string[]
+    /** Chinese copy for the kitchen (bakery emails only). */
+    kitchen?: string
     replyTo?: string
   },
 ) {
@@ -63,8 +87,8 @@ async function send(
         to: message.to,
         ...(message.replyTo ? { replyTo: message.replyTo } : {}),
         subject: message.subject,
-        html: html(message.paragraphs, message.rows, message.after),
-        text: text(message.paragraphs, message.rows, message.after),
+        html: html(message.paragraphs, message.rows, message.after, message.kitchen),
+        text: text(message.paragraphs, message.rows, message.after, message.kitchen),
       },
       { idempotencyKey: key },
     )
@@ -84,7 +108,7 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
     replyTo: o.email,
     subject: tag(
       o,
-      `${held ? 'APPROVE BY ' + formatVegasTime(o.approveBy!) + ' — ' : ''}Cake order ${ref}: ${o.name} · ${sizeLabel(o.size)} · ${pickup(o)}`,
+      `${SUBJECT_TAG.order}${held ? 'APPROVE BY ' + formatVegasTime(o.approveBy!) + ' — ' : ''}Cake order ${ref}: ${o.name} · ${sizeLabel(o.size)} · ${pickup(o)}`,
     ),
     paragraphs: held
       ? [
@@ -94,7 +118,7 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
         ]
       : [`Paid online: ${money(o.price)}. Admin → Cake orders: ${admin}`],
     rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
-    after: ['— Chinese copy for the kitchen —', kitchenText(o)],
+    kitchen: kitchenText(o),
   })
   const customer = send(`cake-order-customer-${o.id}`, {
     to: customerEmail(o),
@@ -176,10 +200,10 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
     send(`cake-order-custom-paid-bakery-${o.id}`, {
       to: bakeryInbox(),
       replyTo: o.email,
-      subject: tag(o, `Paid: custom cake ${orderRef(o)} · ${o.name} · ${pickup(o)}`),
+      subject: tag(o, `${SUBJECT_TAG.order}Paid: custom cake ${orderRef(o)} · ${o.name} · ${pickup(o)}`),
       paragraphs: [`${o.name} paid the ${what} online. Admin → Cake orders: ${SITE_URL}/admin?tab=cake-orders`],
       rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
-      after: ['— Chinese copy for the kitchen —', kitchenText(o)],
+      kitchen: kitchenText(o),
     }),
   ])
 }

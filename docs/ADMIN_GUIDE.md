@@ -53,6 +53,21 @@ Orders show as a table (ordered, pickup, cake, customer, status, phone, email). 
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
 - **Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use "Delete test inquiry" to remove it.
 
+## Bakery inbox (Gmail)
+
+Every email the website sends to the bakery starts with a tag, so Gmail can sort it:
+
+| Tag | What |
+| --- | --- |
+| `[Order]` | Online cake orders, including `APPROVE BY …` and `Paid:` emails |
+| `[Inquiry]` | Custom cake inquiries (name, event, date, time and `#code`) |
+| `[Contact]` | Contact form messages |
+| `[Pre-order]` | Festival pre-orders |
+
+Test emails start with `[TEST]` before the tag. Pressing Reply on any of them answers the customer.
+
+To give each kind its own label: in Gmail search, type `subject:[Order]`, open the search options, choose **Create filter**, tick **Apply the label**, and pick or make a label such as `Bakery/Orders`. Repeat for the other tags. Status (needs reply, waiting on customer, paid, done) is kept in admin → Cake inquiries and Cake orders, not in Gmail.
+
 ## Settings
 
 - Maintenance mode is set in Vercel (`MAINTENANCE_MODE=true`, then redeploy). Admin keeps working while it is on.

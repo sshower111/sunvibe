@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { ZH, zhOption } from '@/lib/email-zh'
+import { SUBJECT_TAG } from '@/lib/email-layout'
 import { SITE } from '@/lib/site-info'
 import { preOrderSchema, priceOrder } from '@/lib/pre-order'
 import { getCampaign } from '@/lib/campaigns'
@@ -93,7 +94,15 @@ export async function POST(request: NextRequest) {
           from: EMAIL_FROM,
           to: bakeryInbox(),
           ...(order.email ? { replyTo: order.email } : {}),
-          subject: 'Festival pre-order: ' + order.name + ' — ' + order.pickupDate + ' (' + campaign.name + ')',
+          subject:
+            SUBJECT_TAG.preorder +
+            'Festival pre-order: ' +
+            order.name +
+            ' — ' +
+            order.pickupDate +
+            ' (' +
+            campaign.name +
+            ')',
           text,
         },
         { idempotencyKey: 'preorder-' + order.id },

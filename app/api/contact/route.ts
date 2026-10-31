@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readBody } from '@/lib/request-body'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { ZH, zhHtml } from '@/lib/email-zh'
+import { emailHeading, emailPage, emailRows, SUBJECT_TAG } from '@/lib/email-layout'
 import { escapeHtml, isValidEmail, rateLimiter, getClientIp } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
@@ -97,22 +98,22 @@ export async function POST(request: NextRequest) {
         to: bakeryInbox(),
         // Replying to the notification answers the customer directly
         replyTo: email.trim().toLowerCase(),
-        subject: `New Contact Form Submission from ${safeName}`,
-        html:
-          `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${safeName}</p>
-        <p><strong>Email:</strong> ${safeEmail}</p>
-        <p><strong>Phone:</strong> ${safePhone}</p>
-        <p><strong>Message:</strong></p>
-        <p>${safeMessage}</p>
-      ` +
-          zhHtml(ZH.contactHeading, [
-            [ZH.name, safeName],
-            [ZH.email, safeEmail],
-            [ZH.phone, phone ? safePhone : ZH.notProvided],
-            [ZH.message, safeMessage],
-          ]),
+        subject: `${SUBJECT_TAG.contact}Message from ${name.trim().replace(/\s+/g, ' ')}`,
+        html: emailPage(
+          emailHeading('New contact form message') +
+            emailRows([
+              ['Name', safeName],
+              ['Email', safeEmail],
+              ['Phone', safePhone],
+              ['Message', safeMessage],
+            ]) +
+            zhHtml(ZH.contactHeading, [
+              [ZH.name, safeName],
+              [ZH.email, safeEmail],
+              [ZH.phone, phone ? safePhone : ZH.notProvided],
+              [ZH.message, safeMessage],
+            ]),
+        ),
       },
       { idempotencyKey: 'contact-' + duplicateKey },
     )

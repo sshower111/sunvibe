@@ -54,7 +54,7 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
 
 ## Emails
 
-- New order: to the bakery inbox (subject starts with `APPROVE BY …` when it needs approval, with the Chinese copy for the kitchen) and to the customer.
+- New order: to the bakery inbox (subject starts with `[Order]`, then `APPROVE BY …` when it needs approval, with the Chinese copy for the kitchen) and to the customer.
 - Approved, declined or not approved in time: to the customer.
 
 ## Setup (Vercel environment variables)

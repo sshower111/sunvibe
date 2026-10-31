@@ -5,6 +5,9 @@ const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { createLoader } = require('../helpers/load-ts.cjs')
 
+// Email detail rows are table cells: label in one, value in the next.
+const row = (html, label, value) => html.replace(/<td[^>]*>/g, '<td>').includes(`<td>${label}</td><td>${value}</td>`)
+
 Object.assign(process.env, {
   TURNSTILE_SECRET_KEY: 'mock',
   TURNSTILE_ALLOWED_HOSTNAMES: 'example.test',
@@ -142,11 +145,11 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   const copy = mail[1]
   assert.equal(copy.body.to, valid.email)
   assert.equal(copy.body.replyTo, process.env.NOTIFICATION_EMAIL || 'sunvillebakerylv@gmail.com')
-  assert.equal(mail[0].body.subject, 'Custom cake inquiry: <script>test</script> · Birthday · 2099-01-20 · #1111')
+  assert.equal(mail[0].body.subject, '[Inquiry] Custom cake: <script>test</script> · Birthday · 2099-01-20 · #1111')
   assert.equal(copy.body.subject, 'We received your cake inquiry #1111 — Sunville Bakery')
   assert.equal(copy.options.idempotencyKey, 'cake-copy-' + valid.requestId)
   assert(copy.body.html.includes('Hi &lt;script&gt;test&lt;/script&gt;') && !copy.body.html.includes('<script>'))
-  assert(copy.body.html.includes('<strong>Writing on cake:</strong> Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  assert(row(copy.body.html, 'Writing on cake', 'Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
   assert(copy.body.text.includes('Just reply to this email'))
   assert(!copy.body.html.includes('allergy request'), 'customer notes are not echoed')
   assert.equal(copy.body.attachments, undefined)
@@ -156,17 +159,17 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal(mail[0].body.replyTo, valid.email)
   // Traditional Chinese copy under the English: labels and options translated, typed text as written and escaped.
   const zh = mail[0].body.html.slice(mail[0].body.html.indexOf('lang="zh-Hant"'))
-  assert(zh.includes('<strong>活動類型：</strong>生日'))
-  assert(zh.includes('<strong>蛋糕尺寸：</strong>8 吋圓形'))
-  assert(zh.includes('<strong>送貨地址／酒店：</strong>店內自取'))
-  assert(zh.includes('<strong>活動時間：</strong>未定'))
-  assert(mail[0].body.html.includes('<strong>Event time:</strong> Not decided yet'))
+  assert(row(zh, '活動類型', '生日'))
+  assert(row(zh, '蛋糕尺寸', '8 吋圓形'))
+  assert(row(zh, '送貨地址／酒店', '店內自取'))
+  assert(row(zh, '活動時間', '未定'))
+  assert(row(mail[0].body.html, 'Event time', 'Not decided yet'))
   assert(zh.includes('&lt;img src=x&gt; allergy request') && !zh.includes('<img'))
   assert(mail[0].body.text.includes('\n— 中文 —\n訂製蛋糕查詢（需報價）'))
   assert.equal(mail[0].options.idempotencyKey, 'cake-' + valid.requestId)
   // Writing on the cake: escaped in both languages, never translated.
-  assert(mail[0].body.html.includes('<strong>Writing on cake:</strong> Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
-  assert(zh.includes('<strong>蛋糕上的字：</strong>Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  assert(row(mail[0].body.html, 'Writing on cake', 'Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  assert(row(zh, '蛋糕上的字', 'Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
   // Delivered inquiries are saved to the tracker, without the acknowledgement checkbox.
   assert.equal(saved.length, 1)
   assert.equal(saved[0].id, valid.requestId)
@@ -177,7 +180,7 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   // A tracker outage does not fail an inquiry that was emailed.
   storeDown = true
   assert.equal((await post({ cakeMessage: '' })).status, 200)
-  assert(mail.at(-1).body.html.includes('<strong>Writing on cake:</strong> None'))
+  assert(row(mail.at(-1).body.html, 'Writing on cake', 'None'))
   storeDown = false
   emailError = true
   const savedBefore = saved.length
