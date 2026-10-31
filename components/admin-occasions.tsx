@@ -10,6 +10,7 @@ import { Textarea } from './ui/textarea'
 import { NativeSelect } from './ui/select'
 import { OccasionPhotoPicker } from './occasion-photo-picker'
 import { TextField, OccasionItemEditor } from './admin-occasion-fields'
+import { AdminPageHeader } from './admin-page-header'
 function reservationNotice(campaign: Campaign) {
   const today = storeDate()
   if (today > campaign.orderCutoff) return 'Reservations closed: order cutoff was ' + campaign.orderCutoff + '.'
@@ -106,15 +107,12 @@ export function AdminOccasions() {
 
   return (
     <section className="space-y-5">
-      <h2 className="heading-2">Occasions</h2>
+      <AdminPageHeader title="Occasions" onRefresh={load} busy={busy} />
       <p>
         One campaign controls the site-wide banner and reservation page. The first active campaign in this list is
         shown.
       </p>
       <p role="status">{message}</p>
-      <Button variant="outline" onClick={load} disabled={busy}>
-        Refresh campaigns
-      </Button>
       <div className="grid gap-3 md:grid-cols-2">
         {campaigns.map(c => (
           <article key={c.id} className="rounded-xl border bg-card p-4">

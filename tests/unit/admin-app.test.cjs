@@ -136,3 +136,16 @@ test('db/007: old paid orders count as sent to the kitchen; re-running leaves ne
   await assert.rejects(add(id(6), 'made_up_status'))
   await db.close()
 })
+
+test('order actions: at most two buttons per order, the rest in the menu', () => {
+  const { orderActionIds, isPrimaryAction } = load('lib/admin-order-actions.ts')
+  const buttons = o => orderActionIds(o).filter(id => isPrimaryAction(o, id))
+  assert.deepEqual(buttons(order('awaiting_approval', '2026-11-03')), ['approve', 'decline'])
+  assert.deepEqual(buttons(order('paid', '2026-11-03')), ['picked_up'])
+  assert.deepEqual(buttons(order('awaiting_payment', '2026-11-03', { kind: 'custom' })), ['resend_link'])
+  assert.deepEqual(buttons(order('picked_up', '2026-10-30', { test: true })), [])
+  const declined = orderActionIds(order('declined', '2026-11-03'))
+  assert.ok(declined.includes('paid_offline') && declined.includes('copy_kitchen') && !declined.includes('approve'))
+  for (const status of ['awaiting_approval', 'paid', 'deposit_paid', 'picked_up', 'declined', 'expired'])
+    assert.ok(buttons(order(status, '2026-11-03', { kind: 'custom', test: true })).length <= 2, status)
+})

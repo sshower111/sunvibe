@@ -53,13 +53,14 @@ Three lists are pinned at the top of **Orders** when they have anything in them:
 - **Checking with kitchen**: orders you have asked the kitchen about (used from the next update).
 - **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
 
-The full list follows underneath:
+The full list follows underneath. Each order shows its main buttons (**Approve & charge** / **Decline**, **Mark picked up**, or **Resend pay link**); everything else is in its **⋯** menu: Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
+
 
 - **Needs approval**: same-day orders, and next-day orders for 6", 10", 12", 1/2 sheet and full sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.
 - **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.
 - **Declined / expired**: if the customer pays you another way afterwards (Square terminal, cash, by phone), press **Paid in store / by phone** to move the order back to To make. No email is sent, so let the customer know yourself.
 - **Copy for kitchen** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text kitchen** opens Messages with it filled in.
-- **Test order (paid)** adds a sample 8" order 3 days out; **Test order (needs approval)** adds a 10" order for tomorrow so Approve & charge / Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
+- **⋯ → Test order (paid)** adds a sample 8" order 3 days out; **Test order (needs approval)** adds a 10" order for tomorrow so Approve & charge / Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
 - Refunds and changes to paid orders: Square Dashboard → Transactions, search by the order number (e.g. `#1001`). Orders are numbered in sequence; a failed payment can leave a gap.
 
 ## Cake inquiries
@@ -71,7 +72,7 @@ The full list follows underneath:
 - Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
 - A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
-- **Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use "Delete test inquiry" to remove it.
+- **⋯ → Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use "Delete test inquiry" to remove it.
 
 ## Bakery inbox (Gmail)
 

@@ -13,6 +13,7 @@ import {
 import { cakeLabel } from '@/lib/cake-catalog'
 import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
+import { AdminPageHeader } from './admin-page-header'
 import { AdminSegmented } from './admin-segmented'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
@@ -109,17 +110,12 @@ export function AdminCakeInquiries() {
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="heading-2">Cake inquiries</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={sendTest} disabled={busy}>
-            Send test inquiry
-          </Button>
-          <Button variant="outline" onClick={load} disabled={busy}>
-            Refresh
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Cake inquiries"
+        onRefresh={load}
+        busy={busy}
+        menu={[{ label: 'Send test inquiry', onSelect: () => void sendTest() }]}
+      />
       <AdminSegmented
         label="Show inquiries"
         value={filter}

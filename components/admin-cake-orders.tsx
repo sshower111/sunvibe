@@ -14,6 +14,9 @@ import {
 } from '@/lib/cake-order'
 import { adminPost } from '@/lib/admin-api'
 import { isUrgent, orderBoard } from '@/lib/admin-order-board'
+import { isPrimaryAction, orderActionIds, type OrderActionId } from '@/lib/admin-order-actions'
+import { AdminActionMenu, type MenuItem } from './admin-action-menu'
+import { AdminPageHeader } from './admin-page-header'
 import { Button } from './ui/button'
 import { AdminSegmented } from './admin-segmented'
 import { AdminStatusBadge, type BadgeTone } from './admin-status-badge'
@@ -40,11 +43,6 @@ const statusTone: Record<CakeOrderStatus, BadgeTone> = {
   failed: 'red',
 }
 type SortKey = 'created' | 'pickup'
-// Small buttons in the wide-screen table; full tap size on the cards.
-const compact = 'xl:w-full xl:!min-h-8 xl:!px-2 xl:!py-1 xl:!text-xs'
-// Below 1280px wide each row is a card and each cell shows its column name above it.
-const cell =
-  'block px-3 py-1.5 xl:table-cell xl:py-2 before:block before:text-xs before:font-semibold before:text-muted-foreground before:content-[attr(data-label)] xl:before:content-none'
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
@@ -144,6 +142,93 @@ export function AdminCakeOrders() {
         sort.by === 'pickup' ? pickupKey(a).localeCompare(pickupKey(b)) : a.createdAt.localeCompare(b.createdAt)
       return sort.asc ? diff : -diff
     })
+  const actionLabels: Record<OrderActionId, (o: StoredCakeOrder) => string> = {
+    approve: () => 'Approve & charge',
+    decline: () => 'Decline',
+    picked_up: () => 'Mark picked up',
+    resend_link: () => 'Resend pay link',
+    copy_link: o => (copied === 'link-' + o.id ? 'Copied!' : 'Copy pay link'),
+    paid_offline: () => 'Paid in store / by phone',
+    text_kitchen: () => 'Text kitchen',
+    copy_kitchen: o => (copied === o.id ? 'Copied!' : 'Copy for kitchen'),
+    call: o => 'Call ' + o.phone,
+    email: () => 'Email customer',
+    not_picked_up: () => 'Undo picked up',
+    delete: () => 'Delete test order',
+  }
+  const menuItem = (o: StoredCakeOrder, id: OrderActionId): MenuItem => {
+    const label = actionLabels[id](o)
+    switch (id) {
+      case 'approve':
+        return { label, onSelect: () => act(o.id, 'approve', `Approve and charge ${o.price.toFixed(2)}?`) }
+      case 'decline':
+        return {
+          label,
+          danger: true,
+          onSelect: () => act(o.id, 'decline', 'Decline this order? The hold is released and the customer is emailed.'),
+        }
+      case 'picked_up':
+      case 'not_picked_up':
+      case 'delete':
+        return { label, danger: id === 'delete', onSelect: () => act(o.id, id) }
+      case 'resend_link':
+        return { label, onSelect: () => act(o.id, 'resend_link', `Email ${o.email} a new pay link (valid 3 days)?`) }
+      case 'copy_link':
+        return { label, onSelect: () => void copyLink(o) }
+      case 'paid_offline':
+        return {
+          label,
+          onSelect: () =>
+            act(
+              o.id,
+              'paid_offline',
+              `Did ${o.name} pay another way (phone or in store)? The order moves to To make. No email is sent.`,
+            ),
+        }
+      case 'text_kitchen':
+        return { label, phoneOnly: true, href: 'sms:?&body=' + encodeURIComponent(kitchenText(o)) }
+      case 'copy_kitchen':
+        return { label, onSelect: () => void copy(o) }
+      case 'call':
+        return { label, href: 'tel:' + o.phone.replace(/[^+0-9]/g, '') }
+      case 'email':
+        return { label, href: 'mailto:' + o.email }
+    }
+  }
+  // Main actions as buttons; everything else in the order's "⋯" menu.
+  const orderActions = (o: StoredCakeOrder) => {
+    const ids = orderActionIds(o)
+    const rest = ids.filter(id => !isPrimaryAction(o, id))
+    return (
+      <div className="flex flex-wrap items-center gap-2 pt-1 xl:w-max xl:flex-nowrap xl:pt-0">
+        {ids
+          .filter(id => isPrimaryAction(o, id))
+          .map(id => {
+            const item = menuItem(o, id)
+            return item.href ? (
+              <Button key={id} asChild size="sm" variant="outline" className={item.phoneOnly ? 'sm:hidden' : ''}>
+                <a href={item.href}>{item.label}</a>
+              </Button>
+            ) : (
+              <Button
+                key={id}
+                size="sm"
+                variant={id === 'approve' ? 'default' : 'outline'}
+                disabled={busy}
+                onClick={item.onSelect}
+              >
+                {item.label}
+              </Button>
+            )
+          })}
+        {rest.length > 0 && (
+          <span className="ml-auto xl:ml-0">
+            <AdminActionMenu label={`More actions for order ${orderRef(o)}`} items={rest.map(id => menuItem(o, id))} />
+          </span>
+        )}
+      </div>
+    )
+  }
   const sortBy = (by: SortKey) => setSort(s => (s.by === by ? { by, asc: !s.asc } : { by, asc: by === 'pickup' }))
   const sortHeader = (by: SortKey, label: string) => (
     <th scope="col" className="px-3 py-2" aria-sort={sort.by === by ? (sort.asc ? 'ascending' : 'descending') : 'none'}>
@@ -155,20 +240,15 @@ export function AdminCakeOrders() {
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="heading-2">Cake orders</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={load} disabled={busy}>
-            Refresh
-          </Button>
-          <Button variant="outline" onClick={() => sendTest('paid')} disabled={busy}>
-            Test order (paid)
-          </Button>
-          <Button variant="outline" onClick={() => sendTest('approval')} disabled={busy}>
-            Test order (needs approval)
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Cake orders"
+        onRefresh={load}
+        busy={busy}
+        menu={[
+          { label: 'Test order (paid)', onSelect: () => void sendTest('paid') },
+          { label: 'Test order (needs approval)', onSelect: () => void sendTest('approval') },
+        ]}
+      />
       <PinnedOrders orders={orders} busy={busy} act={act} />
       <AdminSegmented
         label="Show orders"
@@ -191,205 +271,76 @@ export function AdminCakeOrders() {
       </p>
       {loaded && !shown.length && !error && <p>No orders here.</p>}
       {shown.length > 0 && (
-        <div className="xl:overflow-x-auto xl:rounded-xl xl:border xl:bg-card">
-          <table className="block w-full text-left text-sm xl:table">
-            <thead className="sr-only border-b bg-secondary xl:not-sr-only xl:table-header-group">
-              <tr className="whitespace-nowrap">
-                {sortHeader('created', 'Ordered')}
-                {sortHeader('pickup', 'Pickup')}
-                <th scope="col" className="px-3 py-2">
-                  Cake
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Customer
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Status
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="grid gap-3 md:grid-cols-2 xl:table-row-group">
-              {shown.map(o => (
-                <tr
-                  key={o.id}
-                  className="block rounded-xl border bg-card py-2 align-top xl:table-row xl:rounded-none xl:border-0 xl:border-b xl:bg-transparent xl:py-0 xl:last:border-0"
-                >
-                  <td data-label="Ordered" className={cell}>
-                    {formatVegasTime(o.createdAt)}
-                  </td>
-                  <td data-label="Pickup" className={cell}>
+        <>
+          {/* Phones and tablets: one compact card per order. */}
+          <ul className="grid gap-2 md:grid-cols-2 xl:hidden">
+            {shown.map(o => (
+              <li key={o.id} className="space-y-1.5 rounded-xl border bg-card p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-semibold">
                     {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
-                  </td>
-                  <td data-label="Cake" className={cell + ' xl:min-w-40'}>
-                    {sizeLabel(o.size)} · {o.flavor} · {o.filling}
-                    {o.cakeMessage && <div className="text-muted-foreground">Writing: {o.cakeMessage}</div>}
-                    {isDelivery(o) && (
-                      <div className="text-muted-foreground">
-                        Delivery: {o.deliveryAddress} ({o.fulfillment})
-                      </div>
-                    )}
-                    <div className="text-muted-foreground">
-                      ${o.price.toFixed(2)}
-                      {o.deposit
-                        ? ` · deposit $${o.deposit.toFixed(2)}, balance $${(o.price - o.deposit).toFixed(2)}`
-                        : ''}
-                    </div>
-                    {o.notes && <div className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</div>}
-                  </td>
-                  <td data-label="Customer" className={cell + ' xl:min-w-40'}>
-                    {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
-                    {o.test && (
-                      <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
-                        TEST
-                      </span>
-                    )}
-                    {o.kind === 'custom' && (
-                      <span className="ml-1 rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold">CUSTOM</span>
-                    )}
-                    <div className="mt-1 text-xs">
-                      <a className="whitespace-nowrap underline" href={'tel:' + o.phone.replace(/[^+0-9]/g, '')}>
-                        {o.phone}
-                      </a>
-                    </div>
-                    <div className="text-xs">
-                      <a className="break-words underline [overflow-wrap:anywhere]" href={`mailto:${o.email}`}>
-                        {o.email}
-                      </a>
-                    </div>
-                  </td>
-                  <td data-label="Status" className={cell}>
-                    <AdminStatusBadge tone={statusTone[o.status]}>
-                      {o.kind === 'custom' && o.status === 'expired'
-                        ? 'Pay link expired'
-                        : cakeOrderStatusLabels[o.status]}
-                    </AdminStatusBadge>
-                    {o.status === 'awaiting_approval' && o.approveBy && (
-                      <div className="text-xs text-amber-900 xl:min-w-32">
-                        {o.approvalReason}. Approve by {formatVegasTime(o.approveBy)}
-                      </div>
-                    )}
-                    {o.status === 'awaiting_payment' && o.payBy && (
-                      <div className="text-xs text-muted-foreground xl:min-w-32">
-                        Link valid until {formatVegasTime(o.payBy)}
-                      </div>
-                    )}
-                    {o.status === 'deposit_paid' && o.deposit && (
-                      <div className="text-xs text-muted-foreground xl:min-w-32">
-                        Collect ${(o.price - o.deposit).toFixed(2)} at {isDelivery(o) ? 'delivery' : 'pickup'}
-                      </div>
-                    )}
-                  </td>
-                  <td className="block px-3 pt-2 xl:table-cell xl:px-3 xl:py-2">
-                    <div className="flex flex-wrap gap-2 xl:w-32 xl:flex-col xl:gap-1.5">
-                      <Button size="sm" variant="outline" className={compact} onClick={() => copy(o)}>
-                        {copied === o.id ? 'Copied!' : 'Copy for kitchen'}
-                      </Button>
-                      <Button asChild size="sm" variant="outline" className={compact + ' sm:hidden'}>
-                        <a href={'sms:?&body=' + encodeURIComponent(kitchenText(o))}>Text kitchen</a>
-                      </Button>
-                      {o.status === 'awaiting_approval' && (
-                        <>
-                          <Button
-                            size="sm"
-                            className={compact}
-                            disabled={busy}
-                            onClick={() => act(o.id, 'approve', `Approve and charge $${o.price.toFixed(2)}?`)}
-                          >
-                            Approve &amp; charge
-                          </Button>
-                          <Button
-                            size="sm"
-                            className={compact}
-                            variant="outline"
-                            disabled={busy}
-                            onClick={() =>
-                              act(
-                                o.id,
-                                'decline',
-                                'Decline this order? The hold is released and the customer is emailed.',
-                              )
-                            }
-                          >
-                            Decline
-                          </Button>
-                        </>
-                      )}
-                      {o.kind === 'custom' && (o.status === 'awaiting_payment' || o.status === 'expired') && (
-                        <>
-                          <Button size="sm" variant="outline" className={compact} onClick={() => copyLink(o)}>
-                            {copied === 'link-' + o.id ? 'Copied!' : 'Copy pay link'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            className={compact}
-                            variant="outline"
-                            disabled={busy}
-                            onClick={() => act(o.id, 'resend_link', `Email ${o.email} a new pay link (valid 3 days)?`)}
-                          >
-                            Resend link
-                          </Button>
-                        </>
-                      )}
-                      {(o.status === 'expired' || o.status === 'declined') && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={compact}
-                          disabled={busy}
-                          onClick={() =>
-                            act(
-                              o.id,
-                              'paid_offline',
-                              `Did ${o.name} pay another way (phone or in store)? The order moves to To make. No email is sent.`,
-                            )
-                          }
-                        >
-                          Paid in store / by phone
-                        </Button>
-                      )}
-                      {(o.status === 'paid' || o.status === 'deposit_paid') && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={compact}
-                          disabled={busy}
-                          onClick={() => act(o.id, 'picked_up')}
-                        >
-                          Mark picked up
-                        </Button>
-                      )}
-                      {o.status === 'picked_up' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={compact}
-                          disabled={busy}
-                          onClick={() => act(o.id, 'not_picked_up')}
-                        >
-                          Undo picked up
-                        </Button>
-                      )}
-                      {o.test && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={compact}
-                          disabled={busy}
-                          onClick={() => act(o.id, 'delete')}
-                        >
-                          Delete test
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+                  </p>
+                  <StatusBadge o={o} />
+                </div>
+                <CakeDetails o={o} />
+                <p className="text-muted-foreground">
+                  {o.name} · {orderRef(o)} · ${o.price.toFixed(2)}
+                  <OrderTags o={o} />
+                </p>
+                <StatusNote o={o} />
+                {orderActions(o)}
+              </li>
+            ))}
+          </ul>
+
+          {/* Wide screens: table. */}
+          <div className="hidden overflow-x-auto rounded-xl border bg-card xl:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-secondary">
+                <tr className="whitespace-nowrap">
+                  {sortHeader('created', 'Ordered')}
+                  {sortHeader('pickup', 'Pickup')}
+                  <th scope="col" className="px-3 py-2">
+                    Cake
+                  </th>
+                  <th scope="col" className="px-3 py-2">
+                    Customer
+                  </th>
+                  <th scope="col" className="px-3 py-2">
+                    Status
+                  </th>
+                  <th scope="col" className="px-3 py-2">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {shown.map(o => (
+                  <tr key={o.id} className="border-b align-top last:border-0">
+                    <td className="px-3 py-2">{formatVegasTime(o.createdAt)}</td>
+                    <td className="px-3 py-2">
+                      {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
+                    </td>
+                    <td className="min-w-40 px-3 py-2">
+                      <CakeDetails o={o} />
+                      <div className="text-muted-foreground">${o.price.toFixed(2)}</div>
+                    </td>
+                    <td className="min-w-40 px-3 py-2">
+                      {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
+                      <OrderTags o={o} />
+                      <div className="text-xs text-muted-foreground">{o.phone}</div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <StatusBadge o={o} />
+                      <StatusNote o={o} />
+                    </td>
+                    <td className="px-3 py-2">{orderActions(o)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
       <p className="text-sm text-muted-foreground">
         Refunds and changes to paid orders are done in the Square Dashboard (Transactions), using the order code next to
@@ -483,4 +434,56 @@ function PinnedOrders({ orders, busy, act }: { orders: StoredCakeOrder[]; busy: 
       ))}
     </div>
   )
+}
+
+// Small display pieces shared by the order cards and the table.
+function StatusBadge({ o }: { o: StoredCakeOrder }) {
+  return (
+    <AdminStatusBadge tone={statusTone[o.status]}>
+      {o.kind === 'custom' && o.status === 'expired' ? 'Pay link expired' : cakeOrderStatusLabels[o.status]}
+    </AdminStatusBadge>
+  )
+}
+function CakeDetails({ o }: { o: StoredCakeOrder }) {
+  return (
+    <>
+      <p>
+        {sizeLabel(o.size)} · {o.flavor} · {o.filling}
+      </p>
+      {o.cakeMessage && <p className="text-muted-foreground">Writing: {o.cakeMessage}</p>}
+      {isDelivery(o) && (
+        <p className="text-muted-foreground">
+          Delivery: {o.deliveryAddress} ({o.fulfillment})
+        </p>
+      )}
+      {o.notes && <p className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</p>}
+    </>
+  )
+}
+function OrderTags({ o }: { o: StoredCakeOrder }) {
+  return (
+    <>
+      {o.test && (
+        <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">TEST</span>
+      )}
+      {o.kind === 'custom' && (
+        <span className="ml-1.5 rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold text-foreground">CUSTOM</span>
+      )}
+    </>
+  )
+}
+function StatusNote({ o }: { o: StoredCakeOrder }) {
+  const note =
+    o.status === 'awaiting_approval' && o.approveBy
+      ? `${o.approvalReason}. Approve by ${formatVegasTime(o.approveBy)}`
+      : o.status === 'awaiting_payment' && o.payBy
+        ? `Link valid until ${formatVegasTime(o.payBy)}`
+        : o.status === 'deposit_paid' && o.deposit
+          ? `Collect $${(o.price - o.deposit).toFixed(2)} at ${isDelivery(o) ? 'delivery' : 'pickup'}`
+          : ''
+  return note ? (
+    <p className={'text-xs ' + (o.status === 'awaiting_approval' ? 'text-amber-900' : 'text-muted-foreground')}>
+      {note}
+    </p>
+  ) : null
 }

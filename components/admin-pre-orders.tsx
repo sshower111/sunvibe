@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { orderStatuses, type PreOrder } from '@/lib/pre-order'
-import { Button } from './ui/button'
 import { adminPost } from '@/lib/admin-api'
 import { NativeSelect } from './ui/select'
+import { AdminPageHeader } from './admin-page-header'
 export function AdminPreOrders() {
   const [orders, setOrders] = useState<PreOrder[]>([])
   const [error, setError] = useState('')
@@ -36,10 +36,7 @@ export function AdminPreOrders() {
   }
   return (
     <section className="space-y-4">
-      <h2 className="heading-2">Pre-orders</h2>
-      <Button variant="outline" onClick={load} disabled={busy}>
-        Refresh orders
-      </Button>
+      <AdminPageHeader title="Pre-orders" onRefresh={load} busy={busy} />
       <p role="alert">{error}</p>
       {!orders.length && !error && <p>No reservation requests yet.</p>}
       <div className="grid gap-4 lg:grid-cols-2">
