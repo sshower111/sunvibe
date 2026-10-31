@@ -53,7 +53,7 @@ Three lists are pinned at the top of **Orders** when they have anything in them:
 - **Checking with kitchen**: orders you have asked the kitchen about (used from the next update).
 - **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
 
-The full list follows underneath. Each order shows its main buttons (**Approve & charge** / **Decline**, **Mark picked up**, or **Resend pay link**); everything else is in its **⋯** menu: Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
+The full list follows underneath. Each order shows its main buttons (**Approve & charge** / **Decline**, **Mark picked up**, or **Resend pay link**); everything else is in the **⋯** menu (top-right corner of the order on phones): Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
 
 
 - **Needs approval**: same-day orders, and next-day orders for 6", 10", 12", 1/2 sheet and full sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.
@@ -68,11 +68,12 @@ The full list follows underneath. Each order shows its main buttons (**Approve &
 **Turning a confirmed inquiry into an order:** once the design and price are agreed with the customer (and the bakery), press **Create order & send pay link** on the inquiry. Check the details (size, flavor, filling, writing, pickup or delivery, date and time, design notes), enter the total price (including any delivery fee) and choose **Full amount** or **Deposit** (enter the deposit). The customer is emailed the details and a link to pay online, valid for 3 days. The order appears in **Cake orders** (marked CUSTOM, "Awaiting payment") and the inquiry changes to "Awaiting customer"; when they pay, the order becomes **Paid** or **Deposit paid** and the inquiry **Confirmed & paid** automatically. For deposits, Cake orders shows the balance to collect at pickup or delivery. If the link runs out, use **Resend link** in Cake orders (another 3 days); **Copy pay link** copies it for a text or your own email. Details: `docs/CAKE-ORDERS.md`.
 
 - Every custom cake inquiry from the order page (/order-cake, when it ends as a quote request) appears here (the inquiry email still arrives as before). Reference photos show as small thumbnails: hover one to see it full size, or tap it to open it in a new tab.
+- Each inquiry is a compact card: event, cake, flavors, writing, pickup or delivery, budget and the customer's notes. The **⋯** in its top-right corner has Call, Email, Add/Edit private notes and (for tests) Delete test inquiry. The status picker and **Create order & send pay link** are at the bottom.
 - Set the status as it moves along: New → Awaiting customer / Under bakery review → Confirmed & paid → Completed, or Cancelled. "Open" shows everything still in progress.
 - Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
 - A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
-- **⋯ → Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use "Delete test inquiry" to remove it.
+- **⋯ → Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use **⋯ → Delete test inquiry** to remove it.
 
 ## Bakery inbox (Gmail)
 

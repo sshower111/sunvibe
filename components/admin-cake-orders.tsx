@@ -196,38 +196,37 @@ export function AdminCakeOrders() {
     }
   }
   // Main actions as buttons; everything else in the order's "⋯" menu.
-  const orderActions = (o: StoredCakeOrder) => {
-    const ids = orderActionIds(o)
-    const rest = ids.filter(id => !isPrimaryAction(o, id))
+  const orderButtons = (o: StoredCakeOrder) => {
+    const ids = orderActionIds(o).filter(id => isPrimaryAction(o, id))
+    if (!ids.length) return null
     return (
-      <div className="flex flex-wrap items-center gap-2 pt-1 xl:w-max xl:flex-nowrap xl:pt-0">
-        {ids
-          .filter(id => isPrimaryAction(o, id))
-          .map(id => {
-            const item = menuItem(o, id)
-            return item.href ? (
-              <Button key={id} asChild size="sm" variant="outline" className={item.phoneOnly ? 'sm:hidden' : ''}>
-                <a href={item.href}>{item.label}</a>
-              </Button>
-            ) : (
-              <Button
-                key={id}
-                size="sm"
-                variant={id === 'approve' ? 'default' : 'outline'}
-                disabled={busy}
-                onClick={item.onSelect}
-              >
-                {item.label}
-              </Button>
-            )
-          })}
-        {rest.length > 0 && (
-          <span className="ml-auto xl:ml-0">
-            <AdminActionMenu label={`More actions for order ${orderRef(o)}`} items={rest.map(id => menuItem(o, id))} />
-          </span>
-        )}
+      <div className="flex flex-wrap items-center gap-2 pt-1 xl:flex-nowrap xl:pt-0">
+        {ids.map(id => {
+          const item = menuItem(o, id)
+          return item.href ? (
+            <Button key={id} asChild size="sm" variant="outline" className={item.phoneOnly ? 'sm:hidden' : ''}>
+              <a href={item.href}>{item.label}</a>
+            </Button>
+          ) : (
+            <Button
+              key={id}
+              size="sm"
+              variant={id === 'approve' ? 'default' : 'outline'}
+              disabled={busy}
+              onClick={item.onSelect}
+            >
+              {item.label}
+            </Button>
+          )
+        })}
       </div>
     )
+  }
+  const orderMenu = (o: StoredCakeOrder) => {
+    const rest = orderActionIds(o).filter(id => !isPrimaryAction(o, id))
+    return rest.length ? (
+      <AdminActionMenu label={`More actions for order ${orderRef(o)}`} items={rest.map(id => menuItem(o, id))} />
+    ) : null
   }
   const sortBy = (by: SortKey) => setSort(s => (s.by === by ? { by, asc: !s.asc } : { by, asc: by === 'pickup' }))
   const sortHeader = (by: SortKey, label: string) => (
@@ -276,11 +275,12 @@ export function AdminCakeOrders() {
           <ul className="grid gap-2 md:grid-cols-2 xl:hidden">
             {shown.map(o => (
               <li key={o.id} className="space-y-1.5 rounded-xl border bg-card p-3 text-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <p className="flex-1 font-semibold">
                     {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
                   </p>
                   <StatusBadge o={o} />
+                  {orderMenu(o)}
                 </div>
                 <CakeDetails o={o} />
                 <p className="text-muted-foreground">
@@ -288,7 +288,7 @@ export function AdminCakeOrders() {
                   <OrderTags o={o} />
                 </p>
                 <StatusNote o={o} />
-                {orderActions(o)}
+                {orderButtons(o)}
               </li>
             ))}
           </ul>
@@ -334,7 +334,12 @@ export function AdminCakeOrders() {
                       <StatusBadge o={o} />
                       <StatusNote o={o} />
                     </td>
-                    <td className="px-3 py-2">{orderActions(o)}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex w-max items-center gap-2">
+                        {orderButtons(o)}
+                        {orderMenu(o)}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

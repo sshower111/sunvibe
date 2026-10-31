@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   formatEventTime,
   inquiryRef,
@@ -14,11 +14,12 @@ import { cakeLabel } from '@/lib/cake-catalog'
 import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
 import { AdminPageHeader } from './admin-page-header'
+import { AdminActionMenu, type MenuItem } from './admin-action-menu'
 import { AdminSegmented } from './admin-segmented'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { AdminCustomOrderForm } from './admin-custom-order-form'
-import { cakeOrderStatusLabels, type CakeOrderStatus } from '@/lib/cake-order'
+import { cakeOrderStatusLabels, formatPickupDate, type CakeOrderStatus } from '@/lib/cake-order'
 
 const filters = {
   open: { label: 'Open', statuses: ['new', 'waiting_customer', 'checking_owner'] },
@@ -30,7 +31,13 @@ type Filter = keyof typeof filters
 
 const customerKeys = (i: StoredCakeInquiry) => [i.email.toLowerCase(), i.phone.replace(/\D/g, '')]
 const received = (iso: string) =>
-  new Date(iso).toLocaleString('en-US', { timeZone: 'America/Los_Angeles', dateStyle: 'medium', timeStyle: 'short' })
+  new Date(iso).toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 
 export function AdminCakeInquiries() {
   const [inquiries, setInquiries] = useState<StoredCakeInquiry[]>([])
@@ -133,106 +140,128 @@ export function AdminCakeInquiries() {
         {error}
       </p>
       {loaded && !shown.length && !error && <p>No inquiries here.</p>}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2">
         {shown.map(i => {
           const related = others(i)
+          const editing = i.id in drafts
           const draft = drafts[i.id] ?? i.staffNotes
-          const rows: [string, ReactNode][] = [
-            ['Event', [i.eventType, i.eventDate, formatEventTime(i.eventTime)].filter(Boolean).join(' · ')],
-            ['Cake', `${i.servings} servings · ${cakeLabel(i.size)}`],
-            [
-              'Flavor / filling',
-              i.tierFlavors ? tierFlavorLines(i.size, i.tierFlavors).join('\n') : `${i.flavor} / ${i.filling}`,
-            ],
-            ['Writing on cake', i.cakeMessage || 'None'],
-            ['Budget', i.budget],
-            [
-              'Pickup / delivery',
-              i.fulfillment === 'Pickup' ? 'Pickup' : `${i.fulfillment} · ${i.deliveryAddress || 'Address TBC'}`,
-            ],
-            ['Photos', <InquiryPhotos key="photos" inquiry={i} />],
-            ['Customer notes', i.notes || 'None'],
+          const flavorText = i.tierFlavors
+            ? tierFlavorLines(i.size, i.tierFlavors).join('\n')
+            : `${i.flavor} / ${i.filling}`
+          const menu: MenuItem[] = [
+            { label: 'Call ' + i.phone, href: 'tel:' + i.phone.replace(/[^+0-9]/g, '') },
+            { label: 'Email ' + i.email, href: 'mailto:' + i.email },
+            {
+              label: i.staffNotes ? 'Edit private notes' : 'Add private notes',
+              onSelect: () => setDrafts(d => ({ ...d, [i.id]: i.staffNotes })),
+            },
+            ...(i.test
+              ? [
+                  {
+                    label: 'Delete test inquiry',
+                    danger: true,
+                    onSelect: () => window.confirm('Delete this test inquiry?') && void removeTest(i.id),
+                  },
+                ]
+              : []),
           ]
           return (
-            <article key={i.id} className="min-w-0 space-y-3 rounded-xl border bg-card p-4">
-              <div>
-                <h3 className="heading-3">
+            <article key={i.id} className="min-w-0 space-y-2 rounded-xl border bg-card p-3 text-sm">
+              <div className="flex items-center gap-2">
+                <h3 className="heading-3 min-w-0 flex-1 break-words">
                   {i.name} <span className="text-sm font-normal text-muted-foreground">{inquiryRef(i.id)}</span>
                   {i.test && (
-                    <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
                       TEST
                     </span>
                   )}
                 </h3>
-                <p className="text-sm text-muted-foreground">Received {received(i.createdAt)} (Las Vegas)</p>
+                <AdminActionMenu label={`More actions for inquiry ${inquiryRef(i.id)}`} items={menu} />
               </div>
+              <p className="text-xs text-muted-foreground">Received {received(i.createdAt)}</p>
               {related.length > 0 && (
-                <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">
+                <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-amber-900">
                   Same customer also sent{' '}
                   {related.length === 1 ? 'another inquiry' : `${related.length} other inquiries`}:{' '}
                   {related.map(o => `${received(o.createdAt)} (${inquiryStatusLabels[o.status]})`).join('; ')}
                 </p>
               )}
-              <p className="flex flex-wrap gap-x-4 text-sm">
-                <a className="inline-flex min-h-12 items-center underline" href={`mailto:${i.email}`}>
-                  {i.email}
-                </a>
-                <a
-                  className="inline-flex min-h-12 items-center underline"
-                  href={'tel:' + i.phone.replace(/[^+0-9]/g, '')}
-                >
-                  {i.phone}
-                </a>
-              </p>
-              <dl className="space-y-2 break-words text-sm">
-                {rows.map(([label, value]) => (
-                  <div key={label} className="grid gap-1 sm:grid-cols-[9rem_1fr]">
-                    <dt className="font-semibold">{label}</dt>
-                    <dd className="whitespace-pre-wrap">{value}</dd>
+              <div className="space-y-0.5 break-words">
+                <p className="font-semibold">
+                  {[i.eventType, i.eventDate && formatPickupDate(i.eventDate), formatEventTime(i.eventTime)]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+                <p>
+                  {i.servings} servings · {cakeLabel(i.size)}
+                </p>
+                <p className="whitespace-pre-wrap">{flavorText}</p>
+                {i.cakeMessage && <p className="text-muted-foreground">Writing: {i.cakeMessage}</p>}
+                <p className="text-muted-foreground">
+                  {i.fulfillment === 'Pickup' ? 'Pickup' : `${i.fulfillment} · ${i.deliveryAddress || 'Address TBC'}`} ·
+                  Budget {i.budget}
+                </p>
+                {i.notes && <p className="whitespace-pre-wrap text-muted-foreground">Notes: {i.notes}</p>}
+              </div>
+              {i.photoCount > 0 && <InquiryPhotos inquiry={i} />}
+              {editing ? (
+                <div>
+                  <label htmlFor={'inquiry-notes-' + i.id} className="mb-1 block font-semibold">
+                    Private notes
+                  </label>
+                  <Textarea
+                    id={'inquiry-notes-' + i.id}
+                    rows={3}
+                    maxLength={MAX_STAFF_NOTES}
+                    value={draft}
+                    autoFocus
+                    onChange={e => setDrafts(d => ({ ...d, [i.id]: e.target.value }))}
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={() => saveNotes(i.id)} disabled={busy}>
+                      Save notes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDrafts(({ [i.id]: _, ...rest }) => rest)}
+                      disabled={busy}
+                    >
+                      Cancel
+                    </Button>
                   </div>
-                ))}
-              </dl>
-              <div>
-                <label htmlFor={'inquiry-status-' + i.id} className="mb-1 block text-sm font-semibold">
+                </div>
+              ) : (
+                i.staffNotes && (
+                  <p className="whitespace-pre-wrap rounded-md bg-secondary p-2">
+                    <span className="font-semibold">Private notes:</span> {i.staffNotes}
+                  </p>
+                )
+              )}
+              {i.order && (
+                <p className="rounded-md border bg-secondary p-2">
+                  Order {i.order.ref}: {cakeOrderStatusLabels[i.order.status as CakeOrderStatus] ?? i.order.status}.
+                  Manage it in Cake orders.
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <label htmlFor={'inquiry-status-' + i.id} className="sr-only">
                   Status
                 </label>
                 <NativeSelect
                   id={'inquiry-status-' + i.id}
                   value={i.status}
                   disabled={busy}
+                  className="!min-h-9 w-auto !py-1 text-sm"
                   onChange={e => setStatus(i.id, e.target.value as InquiryStatus)}
                 >
-                  {inquiryStatuses.map(s => (
-                    <option key={s} value={s}>
-                      {inquiryStatusLabels[s]}
+                  {inquiryStatuses.map(st => (
+                    <option key={st} value={st}>
+                      {inquiryStatusLabels[st]}
                     </option>
                   ))}
                 </NativeSelect>
-              </div>
-              <div>
-                <label htmlFor={'inquiry-notes-' + i.id} className="mb-1 block text-sm font-semibold">
-                  Private notes (agreed design, final price, payment)
-                </label>
-                <Textarea
-                  id={'inquiry-notes-' + i.id}
-                  rows={3}
-                  maxLength={MAX_STAFF_NOTES}
-                  value={draft}
-                  onChange={e => setDrafts(d => ({ ...d, [i.id]: e.target.value }))}
-                />
-                {draft.trim() !== i.staffNotes && (
-                  <Button className="mt-2" onClick={() => saveNotes(i.id)} disabled={busy}>
-                    Save notes
-                  </Button>
-                )}
-              </div>
-              {i.order ? (
-                <p className="rounded-md border bg-secondary p-2 text-sm">
-                  Order {i.order.ref}: {cakeOrderStatusLabels[i.order.status as CakeOrderStatus] ?? i.order.status}.
-                  Manage it in Cake orders (resend or copy the pay link there).
-                </p>
-              ) : (
-                !['completed', 'cancelled'].includes(i.status) && (
+                {!i.order && !['completed', 'cancelled'].includes(i.status) && (
                   <AdminCustomOrderForm
                     inquiry={i}
                     onCreated={message => {
@@ -240,13 +269,8 @@ export function AdminCakeInquiries() {
                       void load()
                     }}
                   />
-                )
-              )}
-              {i.test && (
-                <Button variant="outline" onClick={() => removeTest(i.id)} disabled={busy}>
-                  Delete test inquiry
-                </Button>
-              )}
+                )}
+              </div>
             </article>
           )
         })}
@@ -262,7 +286,7 @@ const photoUrl = (id: string, file: string) =>
 function InquiryPhotos({ inquiry: i }: { inquiry: StoredCakeInquiry }) {
   const photos = i.photos ?? []
   if (!i.photoCount) return 'None'
-  if (!photos.length) return `${i.photoCount} (in the inquiry email)`
+  if (!photos.length) return `${i.photoCount} photo${i.photoCount === 1 ? '' : 's'} in the inquiry email`
   return (
     <span className="flex flex-wrap items-center gap-2 whitespace-normal">
       {photos.map((file, n) => (
