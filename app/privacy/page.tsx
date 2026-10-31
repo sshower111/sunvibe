@@ -15,7 +15,7 @@ export default function PrivacyPage() {
             We use the contact details, message, event information, and reference photos you submit to respond to your
             inquiry and discuss your order. Our forms send this information to the bakery through our email delivery
             provider, Resend. Festival reservation details are also stored for bakery staff to review and update their
-            status. If enabled, a short reservation notification is sent to the bakery’s SMS gateway.
+            status.
           </p>
         </section>
         <section className="mt-8 space-y-4">

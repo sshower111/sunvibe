@@ -7,7 +7,7 @@ import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
 
 const actionSchema = z.object({
-  action: z.enum(['approve', 'decline', 'picked_up', 'not_picked_up', 'delete', 'resend_link']),
+  action: z.enum(['approve', 'decline', 'paid_offline', 'picked_up', 'not_picked_up', 'delete', 'resend_link']),
   id: z.string().uuid(),
 })
 
@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
     if (action === 'approve') await approveOrder(id)
     else if (action === 'decline') await declineOrder(id)
     else if (action === 'delete') await deleteTestOrder(id)
-    else if (action === 'resend_link') {
+    else if (action === 'paid_offline') {
+      // Not approved in time, declined or pay link expired, but the customer paid another way (phone, in store).
+      if (!(await moveCakeOrder(id, 'expired', 'paid')) && !(await moveCakeOrder(id, 'declined', 'paid')))
+        throw new Error('This order changed. Refresh the list.')
+    } else if (action === 'resend_link') {
       if (!(await resendPayLink(id))) throw new Error('The email could not be sent. Please retry.')
     } else if (action === 'picked_up') {
       // Deposit orders: the balance is taken at pickup, so they can be marked picked up too.

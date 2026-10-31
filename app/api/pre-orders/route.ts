@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
-import { mailer, EMAIL_FROM, bakeryInbox, smsGateways } from '@/lib/email'
+import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { ZH, zhOption } from '@/lib/email-zh'
 import { SITE } from '@/lib/site-info'
 import { preOrderSchema, priceOrder } from '@/lib/pre-order'
@@ -100,29 +100,6 @@ export async function POST(request: NextRequest) {
       )
       notificationSent = !result.error
     } catch {}
-    // Swap the email-to-SMS gateway for Twilio later if volume grows.
-    // One message per phone, so carriers don't turn it into a group text.
-    for (const [index, to] of smsGateways().entries()) {
-      try {
-        await resend.emails.send(
-          {
-            from: EMAIL_FROM,
-            to,
-            subject: 'New pre-order',
-            text:
-              'New pre-order: ' +
-              order.name +
-              ', ' +
-              order.items.reduce((n, i) => n + i.qty, 0) +
-              ' items, pickup ' +
-              order.pickupDate +
-              ', ' +
-              order.phone,
-          },
-          { idempotencyKey: 'preorder-sms-' + order.id + '-' + index },
-        )
-      } catch {}
-    }
     return NextResponse.json({
       success: true,
       message: notificationSent
