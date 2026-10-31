@@ -1,11 +1,11 @@
 import type { StoredCakeOrder } from './cake-order'
 
-// What can be done with a cake order in admin, depending on its status. The main actions show as buttons on the
-// order; the rest are in its "⋯" menu, so each order takes little space on a phone.
+// What can be done with a cake order in the admin list, depending on its status. The main actions show as buttons
+// on the order; the rest are in its "⋯" menu, so each order takes little space on a phone. Approving, asking the
+// kitchen and declining happen on the order's own page (Review).
 
 export type OrderActionId =
-  | 'approve'
-  | 'decline'
+  | 'review'
   | 'picked_up'
   | 'resend_link'
   | 'copy_link'
@@ -17,14 +17,18 @@ export type OrderActionId =
   | 'not_picked_up'
   | 'delete'
 
+/** Waiting on the bakery's answer: card held, or the hold ended before approval. */
+export const needsAnswer = (o: Pick<StoredCakeOrder, 'status'>) =>
+  o.status === 'awaiting_approval' || o.status === 'checking_kitchen' || o.status === 'hold_expired'
+
 /** Every action available for this order, in the order they are listed. */
 export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
   const ids: OrderActionId[] = []
-  if (o.status === 'awaiting_approval') ids.push('approve', 'decline')
+  if (needsAnswer(o)) ids.push('review')
   if (o.status === 'paid' || o.status === 'deposit_paid') ids.push('picked_up')
-  if (o.kind === 'custom' && (o.status === 'awaiting_payment' || o.status === 'expired'))
+  if ((o.kind === 'custom' || o.payBy) && (o.status === 'awaiting_payment' || o.status === 'expired'))
     ids.push('resend_link', 'copy_link')
-  if (o.status === 'expired' || o.status === 'declined') ids.push('paid_offline')
+  if (o.status === 'expired' || o.status === 'declined' || o.status === 'hold_expired') ids.push('paid_offline')
   ids.push('text_kitchen', 'copy_kitchen', 'call', 'email')
   if (o.status === 'picked_up') ids.push('not_picked_up')
   if (o.test) ids.push('delete')
@@ -36,13 +40,12 @@ export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
 // "Approved — not sent to kitchen" list, and rare or undoing actions stay in the menu.
 export function isPrimaryAction(o: StoredCakeOrder, id: OrderActionId): boolean {
   switch (id) {
-    case 'approve':
-    case 'decline':
-      return o.status === 'awaiting_approval'
+    case 'review':
+      return true
     case 'picked_up':
       return o.status === 'paid' || o.status === 'deposit_paid'
     case 'resend_link':
-      return o.kind === 'custom' && (o.status === 'awaiting_payment' || o.status === 'expired')
+      return (o.kind === 'custom' || !!o.payBy) && (o.status === 'awaiting_payment' || o.status === 'expired')
     default:
       return false
   }

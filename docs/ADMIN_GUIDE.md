@@ -22,9 +22,9 @@ iPhones only allow notifications for apps added to the Home Screen, so install t
 2. Tap **Turn on notifications**, then **Allow**.
 3. Tap **Send test notification**. It should arrive within a few seconds.
 
-What you get (each one, when tapped, opens that order or inquiry, scrolled into view and outlined):
+What you get (tapping an order notification opens that order's page; an inquiry opens the inquiries list, scrolled to it and outlined):
 
-- **New cake order**: "Needs approval" (or "New paid cake order"), e.g. `🎂 8" vanilla/strawberry · Sat 2 PM · Jane D`. **URGENT** when pickup is today or tomorrow.
+- **New cake order**: "Needs approval", e.g. `🎂 8" vanilla/strawberry · Sat 2 PM · Jane D`. **URGENT** when pickup is today or tomorrow.
 - **New custom cake inquiry**: e.g. `🎂 Birthday · Sun, Nov 8 · 20 servings · Linda P`.
 - **Reminders** (each sent once): an urgent order still waiting halfway to its answer time, and again 15 minutes before it is cancelled; any other held order 24 hours before its card hold ends; an order "Checking with kitchen" every 3 hours (9 AM–8 PM).
 - Test orders and inquiries start with **TEST**.
@@ -35,16 +35,22 @@ Notifications are extra: the emails still go out as before, and a notification p
 
 1. Make the keys on any computer with Node: `npx web-push generate-vapid-keys`. Keep the private key secret; never put it in the repo.
 2. In Vercel → Settings → Environment Variables (Production), add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (type Secret) and `VAPID_SUBJECT` = `mailto:` + the bakery email. Also add `CRON_SECRET` (32+ random characters, e.g. `openssl rand -base64 32`, type Secret). Redeploy.
-3. In Supabase → SQL Editor, run `db/008-push-notifications.sql` once.
+3. In Supabase → SQL Editor, run `db/008-push-notifications.sql` once (and `db/009-cake-order-events.sql` for the order history).
 4. Reminders: in Supabase → Database → Extensions, turn on **pg_cron** and **pg_net**. Then in the SQL Editor run this once, with your `CRON_SECRET` in place of `YOUR_CRON_SECRET` (it runs the reminder check every 15 minutes):
 
    ```sql
-   select cron.schedule('sunville-reminders', '*/15 * * * *', $
-     select net.http_get(
-       url := 'https://sunvillebakerylv.com/api/cron/reminders',
-       headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET')
-     )
-   $);
+   select cron.schedule(
+     'sunville-reminders',
+     '*/15 * * * *',
+     'select net.http_get(url := ''https://sunvillebakerylv.com/api/cron/reminders'', headers := jsonb_build_object(''Authorization'', ''Bearer YOUR_CRON_SECRET''))'
+   );
+   ```
+
+   To check it right away, run the call by hand, then read the reply (200 = working, 401 = the secret doesn't match Vercel's `CRON_SECRET`):
+
+   ```sql
+   select net.http_get(url := 'https://sunvillebakerylv.com/api/cron/reminders', headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET'));
+   select status_code, content from net._http_response order by created desc limit 1;
    ```
 
    To stop it: `select cron.unschedule('sunville-reminders');`. If `CRON_SECRET` changes, unschedule and schedule again with the new value. The job also settles held orders whose answer time passed (as opening Cake orders does).
@@ -81,31 +87,52 @@ Changing the VAPID keys turns notifications off on every device; turn them on ag
 
 Online orders from `/order-cake` (paid by card through Square). Details and setup: `docs/CAKE-ORDERS.md`.
 
-Orders show as a table (ordered, pickup, cake, customer, status, phone, email). The list starts on **All**; use the **Status** dropdown to filter, and click **Ordered** or **Pickup** to sort; click again to reverse. Cake writing and notes show under the cake when there are any.
+### Approving an order
 
+Every online order is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or **Review** in the list) to open the order's page. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
+
+| Pickup | Answer by | If not answered |
+| --- | --- | --- |
+| Today (URGENT) | 1 hour after ordering, and at least 2 hours before pickup | Cancelled, card released, customer emailed |
+| Tomorrow (URGENT) | 8 PM tonight (or 3 hours before pickup if sooner) | Cancelled, card released, customer emailed |
+| Later | When the card hold ends (up to 7 days) or 3 hours before pickup | Waits as **Card hold ended** |
+
+The buttons on the order's page:
+
+- **Approve & charge**: charges the card and emails the customer. Then **Send to kitchen** opens Messages to the kitchen with the Chinese order text (and marks it sent; **Mark sent** only marks it).
+- **Ask kitchen**: opens Messages to the kitchen with the order and "請問呢個蛋糕做唔做到？". The order moves to **Checking with kitchen**; an urgent order gets one more hour to answer if the pickup time allows. When the kitchen replies, come back and **Approve & charge** or **Decline**.
+- **Decline**: asks to confirm, releases the card hold, and emails the customer unless you untick **Email … that we can't make it**.
+- **Card hold ended** (later orders only): **Approve & send pay link** emails the customer a link to pay online (`/pay/<id>`, valid 3 days or until pickup). **Decline** closes it.
+
+Tapping a button twice never charges or emails twice. Pickup times on `/order-cake`: today from 10 AM with 3 hours' notice; tomorrow from 9:30 AM if ordered before noon, otherwise from 12 PM.
+
+The kitchen's number is the Vercel environment variable `KITCHEN_PHONE` (digits only, e.g. `7025550123`). Without it, Messages opens with no recipient.
+
+### The list
+
+Orders show as a table (ordered, pickup, cake, customer, status, phone, email). The list starts on **All**; use the **Status** dropdown to filter, and click **Ordered** or **Pickup** to sort; click again to reverse. Cake writing and notes show under the cake when there are any.
 
 Three lists are pinned at the top of **Orders** when they have anything in them:
 
-- **Needs approval**: orders waiting for Approve & charge or Decline. **URGENT** marks a pickup today or tomorrow; those come first.
-- **Checking with kitchen**: orders you have asked the kitchen about (used from the next update).
+- **Needs approval**: orders waiting for your answer, including **Card hold ended**. **URGENT** marks a pickup today or tomorrow; those come first. **Review** opens the order's page.
+- **Checking with kitchen**: orders you have asked the kitchen about.
 - **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
 
-The full list follows underneath. Each order shows its main buttons (**Approve & charge** / **Decline**, **Mark picked up**, or **Resend pay link**); everything else is in the **⋯** menu (top-right corner of the order on phones): Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
+The full list follows underneath. Tap an order's date to open its page. Each order shows its main button (**Review**, **Mark picked up**, or **Resend pay link**); everything else is in the **⋯** menu (top-right corner of the order on phones): Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
 
-
-- **Needs approval**: same-day orders, and next-day orders for 6", 10", 12", 1/2 sheet and full sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.
+- **Needs approval**: every new online order (see Approving an order above).
 - **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.
 - **Declined / expired**: if the customer pays you another way afterwards (Square terminal, cash, by phone), press **Paid in store / by phone** to move the order back to To make. No email is sent, so let the customer know yourself.
 - **Copy for kitchen** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text kitchen** opens Messages with it filled in.
-- **⋯ → Test order (paid)** adds a sample 8" order 3 days out; **Test order (needs approval)** adds a 10" order for tomorrow so Approve & charge / Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
+- **⋯ → Test order (urgent, tomorrow)** adds a sample 10" order for tomorrow at noon; **Test order (in 3 days)** adds an 8" order 3 days out. Both are held so Approve, Ask kitchen and Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
 - Refunds and changes to paid orders: Square Dashboard → Transactions, search by the order number (e.g. `#1001`). Orders are numbered in sequence; a failed payment can leave a gap.
 
 ## Cake inquiries
 
-**Turning a confirmed inquiry into an order:** once the design and price are agreed with the customer (and the bakery), press **Create order & send pay link** on the inquiry. Check the details (size, flavor, filling, writing, pickup or delivery, date and time, design notes), enter the total price (including any delivery fee) and choose **Full amount** or **Deposit** (enter the deposit). The customer is emailed the details and a link to pay online, valid for 3 days. The order appears in **Cake orders** (marked CUSTOM, "Awaiting payment") and the inquiry changes to "Awaiting customer"; when they pay, the order becomes **Paid** or **Deposit paid** and the inquiry **Confirmed & paid** automatically. For deposits, Cake orders shows the balance to collect at pickup or delivery. If the link runs out, use **Resend link** in Cake orders (another 3 days); **Copy pay link** copies it for a text or your own email. Details: `docs/CAKE-ORDERS.md`.
+**Turning a confirmed inquiry into an order:** once the design and price are agreed with the customer (and the bakery), press **Approve & send pay link** on the inquiry. Check the details (size, flavor, filling, writing, pickup or delivery, date and time, design notes), enter the total price (including any delivery fee) and choose **Full amount** or **Deposit** (enter the deposit). The customer is emailed the details and a link to pay online, valid for 3 days. The order appears in **Cake orders** (marked CUSTOM, "Awaiting payment") and the inquiry changes to "Awaiting customer"; when they pay, the order becomes **Paid** or **Deposit paid** and the inquiry **Confirmed & paid** automatically. For deposits, Cake orders shows the balance to collect at pickup or delivery. If the link runs out, use **Resend link** in Cake orders (another 3 days); **Copy pay link** copies it for a text or your own email. Details: `docs/CAKE-ORDERS.md`.
 
 - Every custom cake inquiry from the order page (/order-cake, when it ends as a quote request) appears here (the inquiry email still arrives as before). Reference photos show as small thumbnails: hover one to see it full size, or tap it to open it in a new tab.
-- Each inquiry is a compact card: event, cake, flavors, writing, pickup or delivery, budget and the customer's notes. The **⋯** in its top-right corner has Call, Email, Add/Edit private notes and (for tests) Delete test inquiry. The status picker and **Create order & send pay link** are at the bottom.
+- Each inquiry is a compact card: event, cake, flavors, writing, pickup or delivery, budget and the customer's notes. The **⋯** in its top-right corner has Call, Email, Add/Edit private notes and (for tests) Delete test inquiry. The status picker and **Approve & send pay link** are at the bottom.
 - Set the status as it moves along: New → Awaiting customer / Under bakery review → Confirmed & paid → Completed, or Cancelled. "Open" shows everything still in progress.
 - Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
 - A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
@@ -116,12 +143,12 @@ The full list follows underneath. Each order shows its main buttons (**Approve &
 
 Every email the website sends to the bakery starts with a tag, so Gmail can sort it:
 
-| Tag | What |
-| --- | --- |
-| `[Order]` | Online cake orders, including `APPROVE BY …` and `Paid:` emails |
-| `[Inquiry]` | Custom cake inquiries (name, event, date, time and `#code`) |
-| `[Contact]` | Contact form messages |
-| `[Pre-order]` | Festival pre-orders |
+| Tag           | What                                                            |
+| ------------- | --------------------------------------------------------------- |
+| `[Order]`     | Online cake orders, including `APPROVE BY …` and `Paid:` emails |
+| `[Inquiry]`   | Custom cake inquiries (name, event, date, time and `#code`)     |
+| `[Contact]`   | Contact form messages                                           |
+| `[Pre-order]` | Festival pre-orders                                             |
 
 Test emails start with `[TEST]` before the tag. Pressing Reply on any of them answers the customer.
 

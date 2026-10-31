@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
   cakeOrderStatusLabels,
@@ -6,6 +7,7 @@ import {
   formatPickupTime,
   formatVegasTime,
   isDelivery,
+  kitchenSms,
   kitchenText,
   orderRef,
   sizeLabel,
@@ -44,8 +46,9 @@ const statusTone: Record<CakeOrderStatus, BadgeTone> = {
 }
 type SortKey = 'created' | 'pickup'
 
-export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
+export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
+  const [kitchenPhone, setKitchenPhone] = useState('')
   const [filter, setFilter] = useState<Filter | 'all'>('all')
   const [sort, setSort] = useState<{ by: SortKey; asc: boolean }>({ by: 'pickup', asc: true })
   const [busy, setBusy] = useState(false)
@@ -68,26 +71,16 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
   }
   const load = () =>
     run(async () => {
-      const list: StoredCakeOrder[] = (await request({ action: 'list' })).orders
-      setOrders(list)
+      const r = await request({ action: 'list' })
+      setOrders(r.orders)
+      setKitchenPhone(r.kitchenPhone ?? '')
       setLoaded(true)
     })
   useEffect(() => {
     void load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Opened from a notification (/admin/orders/<id>): show it and scroll to it once the list has loaded.
-  useEffect(() => {
-    if (!loaded || !focusId) return
-    setFilter('all')
-    requestAnimationFrame(() =>
-      [...document.querySelectorAll<HTMLElement>('[data-order-id="' + CSS.escape(focusId) + '"]')]
-        .find(el => el.offsetParent !== null)
-        ?.scrollIntoView({ block: 'center' }),
-    )
-  }, [loaded, focusId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const sendTest = (scenario: 'paid' | 'approval') =>
+  const sendTest = (scenario: 'urgent' | 'later') =>
     run(async () => {
       setNotice('')
       const r = await request({ action: 'test', scenario })
@@ -100,15 +93,7 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
     })
   const act = (
     id: string,
-    action:
-      | 'approve'
-      | 'decline'
-      | 'paid_offline'
-      | 'picked_up'
-      | 'not_picked_up'
-      | 'delete'
-      | 'resend_link'
-      | 'kitchen_sent',
+    action: 'paid_offline' | 'picked_up' | 'not_picked_up' | 'delete' | 'resend_link' | 'kitchen_sent',
     confirmText?: string,
   ) => {
     if (confirmText && !window.confirm(confirmText)) return
@@ -154,8 +139,7 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
       return sort.asc ? diff : -diff
     })
   const actionLabels: Record<OrderActionId, (o: StoredCakeOrder) => string> = {
-    approve: () => 'Approve & charge',
-    decline: () => 'Decline',
+    review: o => (o.status === 'hold_expired' ? 'Review (hold ended)' : 'Review'),
     picked_up: () => 'Mark picked up',
     resend_link: () => 'Resend pay link',
     copy_link: o => (copied === 'link-' + o.id ? 'Copied!' : 'Copy pay link'),
@@ -170,14 +154,8 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
   const menuItem = (o: StoredCakeOrder, id: OrderActionId): MenuItem => {
     const label = actionLabels[id](o)
     switch (id) {
-      case 'approve':
-        return { label, onSelect: () => act(o.id, 'approve', `Approve and charge ${o.price.toFixed(2)}?`) }
-      case 'decline':
-        return {
-          label,
-          danger: true,
-          onSelect: () => act(o.id, 'decline', 'Decline this order? The hold is released and the customer is emailed.'),
-        }
+      case 'review':
+        return { label, href: '/admin/orders/' + o.id }
       case 'picked_up':
       case 'not_picked_up':
       case 'delete':
@@ -197,7 +175,7 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
             ),
         }
       case 'text_kitchen':
-        return { label, phoneOnly: true, href: 'sms:?&body=' + encodeURIComponent(kitchenText(o)) }
+        return { label, phoneOnly: true, href: kitchenSms(kitchenPhone, kitchenText(o)) }
       case 'copy_kitchen':
         return { label, onSelect: () => void copy(o) }
       case 'call':
@@ -214,18 +192,16 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
       <div className="flex flex-wrap items-center gap-2 pt-1 xl:flex-nowrap xl:pt-0">
         {ids.map(id => {
           const item = menuItem(o, id)
-          return item.href ? (
+          return id === 'review' ? (
+            <Button key={id} asChild size="sm">
+              <Link href={item.href!}>{item.label}</Link>
+            </Button>
+          ) : item.href ? (
             <Button key={id} asChild size="sm" variant="outline" className={item.phoneOnly ? 'sm:hidden' : ''}>
               <a href={item.href}>{item.label}</a>
             </Button>
           ) : (
-            <Button
-              key={id}
-              size="sm"
-              variant={id === 'approve' ? 'default' : 'outline'}
-              disabled={busy}
-              onClick={item.onSelect}
-            >
+            <Button key={id} size="sm" variant="outline" disabled={busy} onClick={item.onSelect}>
               {item.label}
             </Button>
           )
@@ -255,11 +231,11 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
         onRefresh={load}
         busy={busy}
         menu={[
-          { label: 'Test order (paid)', onSelect: () => void sendTest('paid') },
-          { label: 'Test order (needs approval)', onSelect: () => void sendTest('approval') },
+          { label: 'Test order (urgent, tomorrow)', onSelect: () => void sendTest('urgent') },
+          { label: 'Test order (in 3 days)', onSelect: () => void sendTest('later') },
         ]}
       />
-      <PinnedOrders orders={orders} busy={busy} act={act} />
+      <PinnedOrders orders={orders} busy={busy} act={act} kitchenPhone={kitchenPhone} />
       <AdminSegmented
         label="Show orders"
         value={filter}
@@ -285,17 +261,11 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
           {/* Phones and tablets: one compact card per order. */}
           <ul className="grid gap-2 md:grid-cols-2 xl:hidden">
             {shown.map(o => (
-              <li
-                key={o.id}
-                data-order-id={o.id}
-                className={
-                  'space-y-1.5 rounded-xl border bg-card p-3 text-sm ' + (o.id === focusId ? 'ring-2 ring-primary' : '')
-                }
-              >
+              <li key={o.id} className="space-y-1.5 rounded-xl border bg-card p-3 text-sm">
                 <div className="flex items-center gap-2">
-                  <p className="flex-1 font-semibold">
+                  <Link href={'/admin/orders/' + o.id} className="flex-1 font-semibold hover:underline">
                     {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
-                  </p>
+                  </Link>
                   <StatusBadge o={o} />
                   {orderMenu(o)}
                 </div>
@@ -333,14 +303,12 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
               </thead>
               <tbody>
                 {shown.map(o => (
-                  <tr
-                    key={o.id}
-                    data-order-id={o.id}
-                    className={'border-b align-top last:border-0 ' + (o.id === focusId ? 'bg-amber-50' : '')}
-                  >
+                  <tr key={o.id} className="border-b align-top last:border-0">
                     <td className="px-3 py-2">{formatVegasTime(o.createdAt)}</td>
                     <td className="px-3 py-2">
-                      {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
+                      <Link href={'/admin/orders/' + o.id} className="hover:underline">
+                        {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
+                      </Link>
                     </td>
                     <td className="min-w-40 px-3 py-2">
                       <CakeDetails o={o} />
@@ -376,11 +344,20 @@ export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
   )
 }
 
-type Act = (id: string, action: 'approve' | 'decline' | 'kitchen_sent', confirmText?: string) => void
-const smsToKitchen = (o: StoredCakeOrder) => 'sms:?&body=' + encodeURIComponent(kitchenText(o))
+type Act = (id: string, action: 'kitchen_sent', confirmText?: string) => void
 
 // Pinned at the top: orders waiting on the bakery. Empty lists are not shown.
-function PinnedOrders({ orders, busy, act }: { orders: StoredCakeOrder[]; busy: boolean; act: Act }) {
+function PinnedOrders({
+  orders,
+  busy,
+  act,
+  kitchenPhone,
+}: {
+  orders: StoredCakeOrder[]
+  busy: boolean
+  act: Act
+  kitchenPhone: string
+}) {
   const board = orderBoard(orders)
   const groups = [
     { id: 'approve', title: 'Needs approval', list: board.needsApproval },
@@ -416,34 +393,21 @@ function PinnedOrders({ orders, busy, act }: { orders: StoredCakeOrder[]; busy: 
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {o.name} · {orderRef(o)} · ${o.price.toFixed(2)}
-                  {o.status === 'awaiting_approval' && o.approveBy && <> · approve by {formatVegasTime(o.approveBy)}</>}
+                  {(o.status === 'awaiting_approval' || o.status === 'checking_kitchen') && o.approveBy && (
+                    <> · answer by {formatVegasTime(o.approveBy)}</>
+                  )}
+                  {o.status === 'hold_expired' && <> · card hold ended</>}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {o.status === 'awaiting_approval' && (
-                    <>
-                      <Button
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => act(o.id, 'approve', `Approve and charge $${o.price.toFixed(2)}?`)}
-                      >
-                        Approve &amp; charge
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() =>
-                          act(o.id, 'decline', 'Decline this order? The hold is released and the customer is emailed.')
-                        }
-                      >
-                        Decline
-                      </Button>
-                    </>
+                  {group.id !== 'send' && (
+                    <Button asChild size="sm">
+                      <Link href={'/admin/orders/' + o.id}>Review</Link>
+                    </Button>
                   )}
                   {group.id === 'send' && (
                     <>
                       <Button asChild size="sm" className="sm:hidden">
-                        <a href={smsToKitchen(o)} onClick={() => act(o.id, 'kitchen_sent')}>
+                        <a href={kitchenSms(kitchenPhone, kitchenText(o))} onClick={() => act(o.id, 'kitchen_sent')}>
                           Send to kitchen
                         </a>
                       </Button>
@@ -463,7 +427,7 @@ function PinnedOrders({ orders, busy, act }: { orders: StoredCakeOrder[]; busy: 
 }
 
 // Small display pieces shared by the order cards and the table.
-function StatusBadge({ o }: { o: StoredCakeOrder }) {
+export function StatusBadge({ o }: { o: StoredCakeOrder }) {
   return (
     <AdminStatusBadge tone={statusTone[o.status]}>
       {o.kind === 'custom' && o.status === 'expired' ? 'Pay link expired' : cakeOrderStatusLabels[o.status]}
@@ -486,7 +450,7 @@ function CakeDetails({ o }: { o: StoredCakeOrder }) {
     </>
   )
 }
-function OrderTags({ o }: { o: StoredCakeOrder }) {
+export function OrderTags({ o }: { o: StoredCakeOrder }) {
   return (
     <>
       {o.test && (
@@ -500,15 +464,15 @@ function OrderTags({ o }: { o: StoredCakeOrder }) {
 }
 function StatusNote({ o }: { o: StoredCakeOrder }) {
   const note =
-    o.status === 'awaiting_approval' && o.approveBy
-      ? `${o.approvalReason}. Approve by ${formatVegasTime(o.approveBy)}`
+    (o.status === 'awaiting_approval' || o.status === 'checking_kitchen') && o.approveBy
+      ? `Answer by ${formatVegasTime(o.approveBy)}`
       : o.status === 'awaiting_payment' && o.payBy
         ? `Link valid until ${formatVegasTime(o.payBy)}`
         : o.status === 'deposit_paid' && o.deposit
           ? `Collect $${(o.price - o.deposit).toFixed(2)} at ${isDelivery(o) ? 'delivery' : 'pickup'}`
           : ''
   return note ? (
-    <p className={'text-xs ' + (o.status === 'awaiting_approval' ? 'text-amber-900' : 'text-muted-foreground')}>
+    <p className={'text-xs ' + (o.approveBy && o.status !== 'paid' ? 'text-amber-900' : 'text-muted-foreground')}>
       {note}
     </p>
   ) : null

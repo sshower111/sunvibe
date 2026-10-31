@@ -5,11 +5,13 @@ import { addDays, storeDate } from './occasion-dates'
 import { zhOption } from './email-zh'
 
 // Standard menu cakes ordered and paid for online through the order flow on /order-cake.
-// Lead times and approval rules come from the bakery (Oct 2026):
-// - 8" round and 1/4 sheet: fine from the day before.
-// - 6", 10", 12" round, 1/2 and full sheet: fine 2+ days ahead; the day before needs approval.
-// - Same-day (any size): at least 3 hours' notice, from 10:00 AM, and always needs approval.
-// - Next-day pickups start at 9:30 AM.
+// Lead times and approval rules come from the bakery (Oct 2026). Every order is only held on the card until the
+// bakery approves it (admin → the order → Approve & charge). The answer is due:
+// - Same day (at least 3 hours' notice, from 10:00 AM): within 1 hour, and at least 2 hours before pickup.
+// - Next day (from 9:30 AM if ordered before noon, otherwise from 12 PM): by 8 PM tonight, and at least
+//   3 hours before pickup. These two are cancelled (hold released, customer told) if not answered in time.
+// - Later: while the card hold lasts (Square allows 7 days), and at least 3 hours before pickup. When the hold
+//   ends the order waits as "Card hold ended"; approving it then emails the customer a pay link.
 
 export const ORDER_SIZES = [
   '6-inch',
@@ -21,8 +23,6 @@ export const ORDER_SIZES = [
   'full-sheet',
 ] as const
 export type OrderSize = (typeof ORDER_SIZES)[number]
-/** Sizes the bakery can make from the day before without checking. */
-const EASY_SIZES: readonly OrderSize[] = ['8-inch', 'quarter-sheet']
 
 export const ORDER_FLAVORS = flavors.filter(f => f !== 'Please recommend')
 // Each filling is priced with one column of the pricing sheet (lib/cake-catalog.ts priceGroups).
@@ -44,6 +44,9 @@ export const MAX_DAYS_AHEAD = 60
 const SLOT_MINUTES = 30
 const SAME_DAY_FIRST = '10:00'
 const NEXT_DAY_FIRST = '09:30'
+/** Next-day orders placed from noon on are for 12 PM onwards. */
+const NEXT_DAY_AFTER_NOON = '12:00'
+const NEXT_DAY_CUTOFF_HOUR = 12
 /** Last pickup slot: 30 minutes before closing (8 PM, Wednesday 3 PM; lib/site-info.ts). */
 const lastSlot = (date: string) => (new Date(date + 'T12:00:00Z').getUTCDay() === 3 ? '14:30' : '19:30')
 
@@ -79,7 +82,13 @@ export function vegasInstant(date: string, time: string) {
 export function pickupSlots(date: string, now = new Date()) {
   const today = storeDate(now)
   if (date < today || date > addDays(today, MAX_DAYS_AHEAD)) return []
-  const first = minutes(date === today ? SAME_DAY_FIRST : NEXT_DAY_FIRST)
+  const first = minutes(
+    date === today
+      ? SAME_DAY_FIRST
+      : date === addDays(today, 1) && vegasHour(now) >= NEXT_DAY_CUTOFF_HOUR
+        ? NEXT_DAY_AFTER_NOON
+        : NEXT_DAY_FIRST,
+  )
   const notice = now.getTime() + SAME_DAY_NOTICE_HOURS * 3600_000
   const slots: string[] = []
   for (let t = first; t <= minutes(lastSlot(date)); t += SLOT_MINUTES) {
@@ -89,26 +98,73 @@ export function pickupSlots(date: string, now = new Date()) {
   return slots
 }
 
+const HOUR = 3600_000
+/** Longest card hold Square allows. */
+export const MAX_HOLD_MINUTES = 7 * 24 * 60
+/** Extra time Square keeps a same-day or next-day hold after the answer deadline: room for Ask Kitchen's extra hour. */
+const SHORT_HOLD_EXTRA = 90 * 60_000
+const vegasHour = (now: Date) =>
+  Number(new Intl.DateTimeFormat('en-US', { timeZone: LAS_VEGAS, hour: 'numeric', hourCycle: 'h23' }).format(now))
+
 export type OrderDecision =
   | { ok: false; error: string }
-  | { ok: true; needsApproval: false }
-  | { ok: true; needsApproval: true; approveBy: Date; reason: string }
+  | {
+      ok: true
+      needsApproval: true
+      /** Answer deadline shown to the bakery and the customer. */
+      approveBy: Date
+      /** How long Square holds the card. */
+      holdMinutes: number
+      /** Same-day or next-day: cancelled if not answered in time (otherwise it waits as "Card hold ended"). */
+      shortHold: boolean
+      reason: string
+    }
 
-/** Checks the pickup time and decides whether the order is charged now or held for approval. */
+/** Checks the pickup time and works out when the bakery must answer. Every order is held for approval. */
 export function decideOrder(size: string, date: string, time: string, now = new Date()): OrderDecision {
   if (!(ORDER_SIZES as readonly string[]).includes(size)) return { ok: false, error: 'Choose a listed cake size.' }
   if (!pickupSlots(date, now).includes(time))
     return { ok: false, error: 'That pickup time is no longer available. Please choose another.' }
   const today = storeDate(now)
+  const t = now.getTime()
   const pickup = vegasInstant(date, time).getTime()
-  const hour = 3600_000
-  if (date === today)
-    return { ok: true, needsApproval: true, approveBy: new Date(now.getTime() + hour), reason: 'Same-day order' }
-  if (date === addDays(today, 1) && !EASY_SIZES.includes(size as OrderSize)) {
-    const approveBy = Math.max(now.getTime() + hour, Math.min(now.getTime() + 12 * hour, pickup - 3 * hour))
-    return { ok: true, needsApproval: true, approveBy: new Date(approveBy), reason: 'Next-day order for this size' }
+  const held = (approveBy: number, holdUntil: number, shortHold: boolean, reason: string) =>
+    ({
+      ok: true,
+      needsApproval: true,
+      approveBy: new Date(approveBy),
+      holdMinutes: Math.min(MAX_HOLD_MINUTES, Math.ceil((holdUntil - t) / 60_000)),
+      shortHold,
+      reason,
+    }) as const
+  if (date === today) {
+    const approveBy = Math.min(t + HOUR, pickup - 2 * HOUR)
+    return held(approveBy, approveBy + SHORT_HOLD_EXTRA, true, 'Same-day order')
   }
-  return { ok: true, needsApproval: false }
+  if (date === addDays(today, 1)) {
+    const tonight = vegasInstant(today, '20:00').getTime()
+    // Ordered after about 7 PM: answer by 3 hours before pickup instead.
+    const approveBy = Math.max(t + HOUR, Math.min(tonight > t + HOUR ? tonight : Infinity, pickup - 3 * HOUR))
+    return held(approveBy, approveBy + SHORT_HOLD_EXTRA, true, 'Next-day order')
+  }
+  const approveBy = Math.min(t + MAX_HOLD_MINUTES * 60_000, pickup - 3 * HOUR)
+  return held(approveBy, approveBy, false, 'Order')
+}
+
+/**
+ * New answer deadline after the bakery asks the kitchen: one more hour for same-day and next-day orders, as long as
+ * it stays 2 hours (same day) or 3 hours (next day) before pickup and within the card hold. Later orders keep theirs.
+ */
+export function askKitchenDeadline(o: StoredCakeOrder, now = new Date()) {
+  if (!o.approveBy || !o.shortHold || !o.holdUntil) return o.approveBy
+  const current = Date.parse(o.approveBy)
+  const gap = o.pickupDate === storeDate(now) ? 2 * HOUR : 3 * HOUR
+  const extended = Math.min(
+    current + HOUR,
+    vegasInstant(o.pickupDate, o.pickupTime).getTime() - gap,
+    Date.parse(o.holdUntil) - 15 * 60_000,
+  )
+  return new Date(Math.max(current, extended)).toISOString()
 }
 
 const phone = z
@@ -180,6 +236,10 @@ export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId' | 'size'> & {
   /** Set when the card is only held: approve before this time or the hold is released. */
   approveBy?: string
   approvalReason?: string
+  /** When Square releases the card hold. */
+  holdUntil?: string
+  /** Same-day or next-day order: cancelled if not answered by approveBy. */
+  shortHold?: boolean
   /** Made with admin "Test order": emails go to the bakery inbox only and no real card is charged. */
   test?: boolean
   /** Sequential order number (#1001, ...), assigned by the database when the order is saved. */
@@ -267,6 +327,13 @@ export function zhPickup(date: string, time: string) {
   const clock = `${Math.floor(t / 60) % 12 || 12}:${time.slice(3, 5)}`
   return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日（星期${ZH_WEEKDAYS[d.getUTCDay()]}）${period}${clock}`
 }
+
+/** Opens Messages to the kitchen with the text filled in ("?&body=" works on iPhone and Android). */
+export const kitchenSms = (phone: string, body: string) =>
+  `sms:${phone.replace(/[^+0-9]/g, '')}?&body=${encodeURIComponent(body)}`
+/** Ask Kitchen: the order plus "can you make this one?". */
+export const askKitchenText = (order: Parameters<typeof kitchenText>[0]) =>
+  kitchenText(order) + '\n請問呢個蛋糕做唔做到？'
 
 /** Order text copied from admin and sent to the kitchen (Traditional Chinese, Hong Kong wording). */
 export function kitchenText(

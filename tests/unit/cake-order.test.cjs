@@ -85,36 +85,83 @@ const { storeDate, addDays } = load('lib/occasion-dates.ts')
 // Friday Oct 23 2026, 8:00 AM in Las Vegas (PDT).
 const now = new Date('2026-10-23T15:00:00Z')
 
-test('pickup times: same day from 10 AM with 3 hours notice, next day from 9:30, Wednesday closes early', () => {
+test('pickup times: same day from 10 AM with 3 hours notice, next day from 9:30 (12 PM if ordered after noon), Wednesday closes early', () => {
   const sameDay = rules.pickupSlots('2026-10-23', now)
   assert.equal(sameDay[0], '11:00')
   assert.equal(sameDay.at(-1), '19:30')
   assert.equal(rules.pickupSlots('2026-10-23', new Date('2026-10-23T13:00:00Z'))[0], '10:00')
   assert.equal(rules.pickupSlots('2026-10-24', now)[0], '09:30')
+  assert.equal(rules.pickupSlots('2026-10-24', new Date('2026-10-23T18:59:00Z'))[0], '09:30') // 11:59 AM
+  assert.equal(rules.pickupSlots('2026-10-24', new Date('2026-10-23T19:00:00Z'))[0], '12:00') // noon
+  assert.equal(rules.pickupSlots('2026-10-25', new Date('2026-10-23T19:00:00Z'))[0], '09:30')
   assert.equal(rules.pickupSlots('2026-10-28', now).at(-1), '14:30')
   assert.deepEqual(rules.pickupSlots('2026-10-22', now), [])
   assert.deepEqual(rules.pickupSlots('2026-10-23', new Date('2026-10-24T00:00:00Z')), [])
   assert.equal(rules.vegasInstant('2026-12-01', '09:30').toISOString(), '2026-12-01T17:30:00.000Z')
 })
 
-test('approval: same day always; next day only for 6", 10", 12" and 1/2 sheet', () => {
-  assert.deepEqual(rules.decideOrder('8-inch', '2026-10-24', '09:30', now), { ok: true, needsApproval: false })
-  assert.deepEqual(rules.decideOrder('quarter-sheet', '2026-10-24', '09:30', now), { ok: true, needsApproval: false })
-  for (const size of ['6-inch', '10-inch', '12-inch', 'half-sheet', 'full-sheet']) {
-    const next = rules.decideOrder(size, '2026-10-24', '12:00', now)
-    assert.equal(next.needsApproval, true, size)
-    assert.equal(next.approveBy.toISOString(), '2026-10-24T03:00:00.000Z') // 8 PM tonight
-    assert.deepEqual(rules.decideOrder(size, '2026-10-25', '09:30', now), { ok: true, needsApproval: false })
-  }
-  const early = rules.decideOrder('10-inch', '2026-10-24', '09:30', now)
-  assert.equal(early.approveBy.toISOString(), '2026-10-24T03:00:00.000Z')
-  const late = rules.decideOrder('10-inch', '2026-10-24', '09:30', new Date('2026-10-24T05:00:00Z'))
-  assert.equal(late.approveBy.toISOString(), '2026-10-24T13:30:00.000Z') // 3 hours before pickup
+test('every order is held; answer deadlines: same day 1 hour, next day 8 PM, later while the 7-day hold lasts', () => {
+  // Same day: within the hour, and at least 2 hours before pickup. Square holds 90 minutes longer (Ask kitchen).
   const same = rules.decideOrder('8-inch', '2026-10-23', '11:00', now)
   assert.equal(same.needsApproval, true)
-  assert.equal(same.approveBy.toISOString(), '2026-10-23T16:00:00.000Z')
-  assert.equal(rules.decideOrder('8-inch', '2026-10-23', '10:30', now).ok, false)
+  assert.equal(same.shortHold, true)
+  assert.equal(same.approveBy.toISOString(), '2026-10-23T16:00:00.000Z') // 9 AM
+  assert.equal(same.holdMinutes, 150)
+  assert.equal(rules.decideOrder('8-inch', '2026-10-23', '10:30', now).ok, false) // under 3 hours' notice
+  // Next day, any size: by 8 PM tonight.
+  for (const size of ['8-inch', '10-inch', 'quarter-sheet', 'full-sheet']) {
+    const next = rules.decideOrder(size, '2026-10-24', '12:00', now)
+    assert.equal(next.approveBy.toISOString(), '2026-10-24T03:00:00.000Z', size)
+    assert.equal(next.shortHold, true)
+  }
+  // Ordered at 8:30 PM: 9:30 AM is gone (after the noon cutoff); answer 3 hours before a 12 PM pickup.
+  const evening = new Date('2026-10-24T03:30:00Z')
+  assert.equal(rules.decideOrder('10-inch', '2026-10-24', '09:30', evening).ok, false)
+  assert.equal(
+    rules.decideOrder('10-inch', '2026-10-24', '12:00', evening).approveBy.toISOString(),
+    '2026-10-24T16:00:00.000Z',
+  )
+  // Later: card held until 3 hours before pickup, at most 7 days (Square's limit); not cancelled at the deadline.
+  const later = rules.decideOrder('8-inch', '2026-10-26', '12:00', now)
+  assert.equal(later.shortHold, false)
+  assert.equal(later.approveBy.toISOString(), '2026-10-26T16:00:00.000Z')
+  assert.equal(later.holdMinutes, 3 * 1440 + 60)
+  const farOff = rules.decideOrder('8-inch', '2026-11-02', '12:00', now)
+  assert.equal(farOff.approveBy.toISOString(), '2026-10-30T15:00:00.000Z')
+  assert.equal(farOff.holdMinutes, rules.MAX_HOLD_MINUTES)
   assert.equal(rules.decideOrder('14-inch', '2026-10-30', '12:00', now).ok, false)
+})
+
+test('Ask kitchen: one more hour for urgent orders if pickup and the card hold allow', () => {
+  const held = (date, time) => {
+    const d = rules.decideOrder('8-inch', date, time, now)
+    return {
+      pickupDate: date,
+      pickupTime: time,
+      approveBy: d.approveBy.toISOString(),
+      shortHold: d.shortHold,
+      holdUntil: new Date(now.getTime() + d.holdMinutes * 60_000).toISOString(),
+    }
+  }
+  assert.equal(rules.askKitchenDeadline(held('2026-10-23', '14:00'), now), '2026-10-23T17:00:00.000Z') // 9 → 10 AM
+  assert.equal(rules.askKitchenDeadline(held('2026-10-23', '11:00'), now), '2026-10-23T16:00:00.000Z') // pickup too soon
+  assert.equal(rules.askKitchenDeadline(held('2026-10-24', '12:00'), now), '2026-10-24T04:00:00.000Z') // 8 → 9 PM
+  assert.equal(rules.askKitchenDeadline(held('2026-10-26', '12:00'), now), '2026-10-26T16:00:00.000Z') // later: same
+  const old = { ...held('2026-10-23', '14:00'), holdUntil: undefined } // placed before holds were longer
+  assert.equal(rules.askKitchenDeadline(old, now), old.approveBy)
+  assert.match(
+    rules.askKitchenText({
+      ...old,
+      phone: '1',
+      size: '8-inch',
+      flavor: 'Vanilla',
+      filling: 'Mango',
+      cakeMessage: '',
+      notes: '',
+    }),
+    /做唔做到？$/,
+  )
+  assert.equal(rules.kitchenSms('(702) 555-0123', '你好'), 'sms:7025550123?&body=%E4%BD%A0%E5%A5%BD')
 })
 
 test('prices follow the pricing sheet column for the filling', () => {
@@ -194,6 +241,8 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   await db.exec(fs.readFileSync(path.join(root, 'db/004-cake-order-numbers.sql'), 'utf8')) // re-runnable
   await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8')) // re-runnable
+  await db.exec(fs.readFileSync(path.join(root, 'db/009-cake-order-events.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/009-cake-order-events.sql'), 'utf8')) // re-runnable
   await db.exec(
     "INSERT INTO bakery_migrations(scope,record_count) VALUES('menu',0),('content',0) ON CONFLICT DO NOTHING",
   )
@@ -203,21 +252,35 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   const store = load('lib/cake-orders-store.ts')
   const adminCall = body => adminPost(admin, body)
 
-  // 8" a week ahead: charged now.
+  // 8" a week ahead: held (7 days at most), then approved and charged; a second tap does nothing more.
   const paid = order()
   let r = await post(route, paid)
   assert.equal(r.status, 200)
-  assert.equal((await r.json()).held, false)
-  assert.equal(square.calls.at(-1)[1].autocomplete, true)
+  assert.equal((await r.json()).held, true)
+  assert.equal(square.calls.at(-1)[1].autocomplete, false)
+  assert(square.calls.at(-1)[1].holdMinutes <= 7 * 1440)
   assert.equal(square.calls.at(-1)[1].amountCents, 4200)
   assert(square.calls.at(-1)[1].idempotencyKey.length <= 45) // Square's limit
+  assert.equal((await store.getCakeOrder(paid.requestId)).status, 'awaiting_approval')
+  assert.equal((await store.getCakeOrder(paid.requestId)).shortHold, false)
+  assert.equal((await (await adminCall({ action: 'approve', id: paid.requestId })).json()).status, 'paid')
+  const approvedEmails = emails.length
+  assert.equal((await adminCall({ action: 'approve', id: paid.requestId })).status, 200)
+  assert.equal(emails.length, approvedEmails)
   assert.equal((await store.getCakeOrder(paid.requestId)).status, 'paid')
+  // Each step is in the order's history.
+  const got = await (await adminCall({ action: 'get', id: paid.requestId })).json()
+  assert.deepEqual(
+    got.events.map(e => e.action),
+    ['placed', 'approved'],
+  )
+  assert.equal(got.order.id, paid.requestId)
   // Order numbers are sequential from #1001 and used in Square and the emails.
   assert.equal((await store.getCakeOrder(paid.requestId)).orderNo, 1001)
-  assert.equal(square.calls.at(-1)[1].referenceId, '#1001')
+  assert.equal(square.calls.findLast(c => c[0] === 'create')[1].referenceId, '#1001')
   assert(emails.some(e => e.subject.includes('#1001')))
   assert(!(await db.query('SELECT payload FROM bakery_cake_orders')).rows[0].payload.includes('Amy'))
-  assert.equal(emails.length, 2)
+  assert.equal(emails.length, 3) // bakery, customer (held), customer (confirmed)
   assert(emails.some(e => e.text.includes('餡料：芒果')))
   // Same request again is not a second order.
   assert.equal((await post(route, paid)).status, 409)
@@ -254,9 +317,21 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal(r.status, 200)
   assert.equal((await store.getCakeOrder(held.requestId)).status, 'paid')
   assert(emails.at(-1).subject.includes('is confirmed'))
-  assert.equal((await adminCall({ action: 'approve', id: held.requestId })).status, 409)
+  assert.equal((await adminCall({ action: 'approve', id: held.requestId })).status, 200) // second tap: still paid
+  assert.equal((await adminCall({ action: 'decline', id: held.requestId })).status, 409) // too late to decline
 
-  // Declined by the bakery: hold released, customer told.
+  // Ask kitchen: waits as "Checking with kitchen" (repeat-safe), then approve still works.
+  const asked = order({ size: '6-inch', pickupDate: addDays(today, 1) })
+  await post(route, asked)
+  assert.equal((await adminCall({ action: 'ask_kitchen', id: asked.requestId })).status, 200)
+  assert.equal((await adminCall({ action: 'ask_kitchen', id: asked.requestId })).status, 200)
+  const askedOrder = await store.getCakeOrder(asked.requestId)
+  assert.equal(askedOrder.status, 'checking_kitchen')
+  assert(askedOrder.kitchenAskedAt)
+  assert.equal((await adminCall({ action: 'approve', id: asked.requestId })).status, 200)
+  assert.equal((await store.getCakeOrder(asked.requestId)).status, 'paid')
+
+  // Declined by the bakery: hold released, customer told (or not, when the email is turned off).
   const declined = order({ size: '6-inch', pickupDate: addDays(today, 1) })
   await post(route, declined)
   r = await adminCall({ action: 'decline', id: declined.requestId })
@@ -265,6 +340,15 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal(declinedOrder.status, 'declined')
   assert.equal(square.payments.get(declinedOrder.paymentId).status, 'CANCELED')
   assert(emails.at(-1).subject.includes("can't make"))
+  let count = emails.length
+  assert.equal((await adminCall({ action: 'decline', id: declined.requestId })).status, 200) // second tap
+  assert.equal(emails.length, count)
+  const quiet = order({ size: '6-inch', pickupDate: addDays(today, 1) })
+  await post(route, quiet)
+  count = emails.length
+  assert.equal((await adminCall({ action: 'decline', id: quiet.requestId, notify: false })).status, 200)
+  assert.equal(emails.length, count)
+  assert.equal((await store.getCakeOrder(quiet.requestId)).status, 'declined')
 
   // Not approved in time: Square releases the hold and calls the webhook.
   const expiring = order({ size: 'half-sheet', pickupDate: addDays(today, 1) })
@@ -304,6 +388,34 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal(list.orders.find(o => o.id === late.requestId).status, 'expired')
   assert.equal(square.calls.at(-1)[0], 'cancel')
 
+  // A later order whose card hold ended waits as "Card hold ended"; approving emails a pay link (/pay/<id>).
+  const longer = order({ size: '10-inch', pickupDate: addDays(today, 5) })
+  await post(route, longer)
+  const longerOrder = await store.getCakeOrder(longer.requestId)
+  square.payments.get(longerOrder.paymentId).status = 'CANCELED'
+  const longerEvent = JSON.stringify({
+    type: 'payment.updated',
+    data: { object: { payment: { id: longerOrder.paymentId, status: 'CANCELED' } } },
+  })
+  count = emails.length
+  await webhook.POST(
+    new Request('http://test.invalid', {
+      method: 'POST',
+      headers: { 'x-square-hmacsha256-signature': sign(longerEvent) },
+      body: longerEvent,
+    }),
+  )
+  assert.equal((await store.getCakeOrder(longer.requestId)).status, 'hold_expired')
+  assert.equal(emails.length, count) // customer not told yet
+  r = await (await adminCall({ action: 'approve', id: longer.requestId })).json()
+  assert.equal(r.status, 'awaiting_payment')
+  const linked = await store.getCakeOrder(longer.requestId)
+  assert.equal(linked.status, 'awaiting_payment')
+  assert(linked.payBy)
+  assert(emails.at(-1).text.includes('/pay/' + longer.requestId))
+  assert(emails.at(-1).subject.includes('Your cake order'))
+  assert(load('lib/custom-cake-orders.ts').canPay(linked))
+
   // Failed attempts older than 2 days are deleted when admin lists orders.
   await db.query("UPDATE bakery_cake_orders SET created_at = now() - interval '3 days' WHERE id = $1", [
     retry.requestId,
@@ -329,11 +441,11 @@ test('admin test orders: inbox-only emails, approval, no card in production, del
   const adminCall = body => adminPost(admin, body)
   const inbox = load('lib/email.ts').bakeryInbox()
 
-  // Sandbox: goes through Square with the test card.
+  // Sandbox: goes through Square with the test card, held like a real order.
   let before = emails.length
-  let r = await (await adminCall({ action: 'test', scenario: 'paid' })).json()
-  assert.equal(r.held, false)
+  let r = await (await adminCall({ action: 'test', scenario: 'later' })).json()
   assert.equal(r.viaSquare, true)
+  assert.equal(square.calls.at(-1)[1].autocomplete, false)
   assert.equal(square.calls.at(-1)[1].sourceId, 'cnon:card-nonce-ok')
   const fresh = emails.slice(before)
   assert.equal(fresh.length, 2)
@@ -343,14 +455,13 @@ test('admin test orders: inbox-only emails, approval, no card in production, del
   process.env.SQUARE_ENVIRONMENT = 'production'
   try {
     const calls = square.calls.length
-    r = await (await adminCall({ action: 'test', scenario: 'approval' })).json()
-    assert.equal(r.held, true)
+    r = await (await adminCall({ action: 'test', scenario: 'urgent' })).json()
     assert.equal(r.viaSquare, false)
     const list = (await (await adminCall({ action: 'list' })).json()).orders
     const test = list.find(o => o.test && o.status === 'awaiting_approval')
     assert.equal((await adminCall({ action: 'approve', id: test.id })).status, 200)
     assert.equal((await store.getCakeOrder(test.id)).status, 'paid')
-    r = await (await adminCall({ action: 'test', scenario: 'approval' })).json()
+    r = await (await adminCall({ action: 'test', scenario: 'urgent' })).json()
     const second = (await (await adminCall({ action: 'list' })).json()).orders.find(
       o => o.test && o.status === 'awaiting_approval',
     )

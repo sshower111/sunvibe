@@ -18,18 +18,19 @@ The payment step (and the custom cake pay link, `/pay/<id>`) shows **Apple Pay**
 
 Pickup slots are every 30 minutes until 30 minutes before closing (7:30 PM; Wednesday 2:30 PM), up to 60 days ahead, Las Vegas time.
 
-| Pickup | 8" round, 1/4 sheet | 6", 10", 12" round, 1/2 sheet, full sheet |
-|---|---|---|
-| 2+ days ahead | Charged now | Charged now |
-| Next day (from 9:30 AM) | Charged now | Card held, needs approval |
-| Same day (from 10 AM, 3+ hours' notice) | Card held, needs approval | Card held, needs approval |
+Since Oct 31, 2026 every order, any size, is only held on the card ("card held": Square authorizes the amount but doesn't charge it) until the bakery approves it on the order's admin page (`/admin/orders/<id>`, `components/admin-order-review.tsx`, `lib/cake-order-actions.ts`).
 
-"Card held" means Square authorizes the amount but doesn't charge it. Approve by:
+| Pickup | Earliest time | Answer by | Square hold | If not answered |
+|---|---|---|---|---|
+| Same day | 10 AM, 3+ hours' notice | 1 hour after the order, and 2+ hours before pickup | deadline + 90 min | Cancelled, customer emailed ("Not approved in time") |
+| Next day | 9:30 AM if ordered before noon, else 12 PM | 8 PM tonight, or 3 hours before pickup if sooner (at least 1 hour) | deadline + 90 min | Cancelled, customer emailed |
+| 2+ days ahead | 9:30 AM | 3 hours before pickup, at most 7 days | until the deadline (Square's maximum is 7 days) | "Card hold ended"; approving emails a pay link (`/pay/<id>`) |
 
-- Same-day: 1 hour after the order.
-- Next-day: 12 hours after the order or 3 hours before pickup, whichever is earlier (at least 1 hour).
+The extra 90 minutes on short holds leave room for **Ask kitchen**, which moves a same-day or next-day deadline one hour later when the pickup time allows (still 2 or 3 hours before pickup). The site enforces the deadline itself (reminder job every 15 minutes, the Square webhook, and opening admin): it cancels the hold and tells the customer once. Orders placed before this change have no extra time and are never extended.
 
-If nobody approves in time, Square releases the hold, the order shows as "Not approved in time", and the customer is emailed. If the customer then pays another way (Square terminal, cash, by phone), **Paid in store / by phone** on the order moves it to To make; no email is sent. The same button works on declined orders and expired pay links. This happens through the Square webhook, and also whenever admin → Cake orders is opened.
+Approve, Ask kitchen and Decline are safe to repeat: Square's complete and cancel calls return the same result when repeated, and an order's status only moves once (`moveCakeOrder`), so the charge and the email happen once. Every status change is saved in `bakery_cake_order_events` (`db/009-cake-order-events.sql`) and shown as the order's history. Decline can skip the customer email.
+
+If nobody approves a same-day or next-day order in time, the hold is released, the order shows as "Not approved in time", and the customer is emailed. If the customer then pays another way (Square terminal, cash, by phone), **Paid in store / by phone** on the order moves it to To make; no email is sent. The same button works on declined orders and expired pay links. This happens through the Square webhook, and also whenever admin → Cake orders is opened.
 
 ## Where customers find it
 
@@ -44,7 +45,7 @@ The order is saved just before the card is charged, so a charge always has an or
 
 ## Custom cake orders (pay links)
 
-Made in admin → Cake inquiries → **Create order & send pay link** (`lib/custom-cake-orders.ts`, `components/admin-custom-order-form.tsx`).
+Made in admin → Cake inquiries → **Approve & send pay link** (`lib/custom-cake-orders.ts`, `components/admin-custom-order-form.tsx`).
 
 - The order stores the agreed cake, pickup or delivery (with address), design notes, total price and an optional deposit.
 - The customer is emailed a link to `/pay/<order id>` (the random ID is the link's secret; the page isn't indexed). It works for 3 days; after that the order shows "Pay link expired" until **Resend link** gives it 3 more days.
@@ -54,7 +55,7 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
 
 ## Emails
 
-- New order: to the bakery inbox (subject starts with `[Order]`, then `APPROVE BY …` when it needs approval, with the Chinese copy for the kitchen) and to the customer.
+- New order: to the bakery inbox (subject starts with `[Order] APPROVE BY …`, with the Chinese copy for the kitchen) and to the customer.
 - Approved, declined or not approved in time: to the customer.
 
 ## Setup (Vercel environment variables)
@@ -68,7 +69,7 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
 3. Webhooks → add a subscription for `payment.updated` with URL `https://sunvillebakerylv.com/api/square/webhook`. Set:
    - `SQUARE_WEBHOOK_URL` — exactly that URL
    - `SQUARE_WEBHOOK_SIGNATURE_KEY` — the subscription's signature key
-4. Run `db/003-cake-orders.sql`, then `db/004-cake-order-numbers.sql`, once in Supabase (SQL editor). 004 gives orders sequential numbers (#1001, #1002, ...); run it before deploying code that uses them. Then run `db/005-custom-cake-orders.sql` and `db/007-kitchen-tracking.sql` (in that order; 007 adds the `checking_kitchen` and `hold_expired` statuses and the kitchen asked/sent times, and must run before deploying the Oct 31, 2026 admin app). For notifications, also run `db/008-push-notifications.sql` (see `docs/ADMIN_GUIDE.md` → Notifications).
+4. Run `db/003-cake-orders.sql`, then `db/004-cake-order-numbers.sql`, once in Supabase (SQL editor). 004 gives orders sequential numbers (#1001, #1002, ...); run it before deploying code that uses them. Then run `db/005-custom-cake-orders.sql` and `db/007-kitchen-tracking.sql` (in that order; 007 adds the `checking_kitchen` and `hold_expired` statuses and the kitchen asked/sent times, and must run before deploying the Oct 31, 2026 admin app). For notifications, also run `db/008-push-notifications.sql` (see `docs/ADMIN_GUIDE.md` → Notifications), and `db/009-cake-order-events.sql` for the order history (orders still work without it; history just stays empty). Set `KITCHEN_PHONE` in Vercel for the kitchen texts.
 
 5. **Apple Pay** (one time, owner): Square Developer Dashboard → your application → **Apple Pay** (Production) → **Add domain** `sunvillebakerylv.com`. Square gives you a verification file; it must be served at `https://sunvillebakerylv.com/.well-known/apple-developer-merchantid-domain-association`, it is in `public/.well-known/` (no file extension; done Oct 31, 2026). If Square ever issues a new file, replace it there and deploy, then press **Verify** in Square. Until then the Apple Pay button simply doesn't show. Google Pay needs no setup.
 

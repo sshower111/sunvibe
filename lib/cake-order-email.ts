@@ -98,7 +98,7 @@ async function send(
   }
 }
 
-/** New order: to the bakery (with the Chinese copy for the kitchen) and to the customer. */
+/** New order: to the bakery (with the Chinese copy for the kitchen) and to the customer. Every online order is held. */
 export async function sendNewOrderEmails(o: StoredCakeOrder) {
   const ref = orderRef(o)
   const held = o.status === 'awaiting_approval'
@@ -131,7 +131,7 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
     ),
     paragraphs: held
       ? [
-          `Hi ${o.name}, thanks for your order! Because of the timing, we need to check that we can make it.`,
+          `Hi ${o.name}, thanks for your order! We'll check with our kitchen and confirm it.`,
           `We have placed a hold of ${money(o.price)} on your card but have not charged it. We will confirm by ${formatVegasTime(o.approveBy!)} (Las Vegas time). If we can't make it, the hold is released and you won't be charged.`,
         ]
       : [`Hi ${o.name}, thanks for your order! It is confirmed and paid.`],
@@ -165,7 +165,8 @@ export const sendNotAcceptedEmail = (o: StoredCakeOrder) =>
     rows: cakeRows(o).filter(([label]) => label !== 'Total'),
   })
 
-// Custom cake orders (made in admin from an inquiry, paid through a link).
+// Orders paid through a link: custom cakes (made in admin from an inquiry), and online orders approved after
+// their card hold ended.
 
 export const payLink = (o: Pick<StoredCakeOrder, 'id'>) => `${SITE_URL}/pay/${o.id}`
 
@@ -174,9 +175,14 @@ export const sendPaymentRequestEmail = (o: StoredCakeOrder) =>
   send(`cake-order-pay-request-${o.id}-${o.payBy}`, {
     to: customerEmail(o),
     replyTo: bakeryInbox(),
-    subject: tag(o, `Your custom cake ${orderRef(o)} is confirmed — payment link inside`),
+    subject: tag(
+      o,
+      `Your ${o.kind === 'custom' ? 'custom cake' : 'cake order'} ${orderRef(o)} is confirmed — payment link inside`,
+    ),
     paragraphs: [
-      `Hi ${o.name}, thank you for choosing Sunville Bakery! Here are the final details of your cake.`,
+      o.kind === 'custom'
+        ? `Hi ${o.name}, thank you for choosing Sunville Bakery! Here are the final details of your cake.`
+        : `Hi ${o.name}, good news: we can make your cake! The hold on your card ended before we confirmed, so it was not charged.`,
       `To reserve it, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time):`,
       payLink(o),
     ],
@@ -192,7 +198,10 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
     send(`cake-order-custom-paid-${o.id}`, {
       to: customerEmail(o),
       replyTo: bakeryInbox(),
-      subject: tag(o, `Payment received for your custom cake ${orderRef(o)} — Sunville Bakery`),
+      subject: tag(
+        o,
+        `Payment received for your ${o.kind === 'custom' ? 'custom cake' : 'cake order'} ${orderRef(o)} — Sunville Bakery`,
+      ),
       paragraphs: [`Hi ${o.name}, we've received your ${what}. Your cake is booked!`],
       rows: cakeRows(o),
       after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
@@ -200,7 +209,10 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
     send(`cake-order-custom-paid-bakery-${o.id}`, {
       to: bakeryInbox(),
       replyTo: o.email,
-      subject: tag(o, `${SUBJECT_TAG.order}Paid: custom cake ${orderRef(o)} · ${o.name} · ${pickup(o)}`),
+      subject: tag(
+        o,
+        `${SUBJECT_TAG.order}Paid: ${o.kind === 'custom' ? 'custom cake' : 'cake order'} ${orderRef(o)} · ${o.name} · ${pickup(o)}`,
+      ),
       paragraphs: [`${o.name} paid the ${what} online. Admin → Cake orders: ${SITE_URL}/admin/orders`],
       rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
       kitchen: kitchenText(o),

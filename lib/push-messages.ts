@@ -42,7 +42,7 @@ const cakeLine = (o: StoredCakeOrder, now: Date) =>
   `🎂 ${shortSize(o.size)} ${o.flavor.toLowerCase()}/${o.filling.toLowerCase()} · ${shortWhen(o.pickupDate, o.pickupTime, now)} · ${shortName(o.name)}`
 export const orderUrl = (o: Pick<StoredCakeOrder, 'id'>) => `/admin/orders/${o.id}`
 
-/** New online cake order. Orders held for approval say "Needs approval"; same-day and next-day ones are URGENT. */
+/** New online cake order: "Needs approval" (every online order is held); same-day and next-day ones are URGENT. */
 export function newOrderPush(o: StoredCakeOrder, now = new Date()): PushText {
   const held = o.status === 'awaiting_approval'
   return {
@@ -95,7 +95,8 @@ export function dueReminders(orders: StoredCakeOrder[], now = new Date()): Remin
       })
     const deadline = o.approveBy ? Date.parse(o.approveBy) : NaN
     if (deadline > t) {
-      if (isUrgent(o, now)) {
+      // Same-day and next-day orders are cancelled at the deadline; later ones only lose the card hold.
+      if (o.shortHold !== false) {
         const placed = Date.parse(o.createdAt)
         if (deadline - t <= 15 * MINUTE) add('answer-final', 'Cancels in 15 min')
         else if (t >= placed + (deadline - placed) / 2) add('answer-half', 'Still needs an answer')

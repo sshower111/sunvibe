@@ -21,12 +21,15 @@ import { createPayment, squareEnvironment } from './square'
 
 // Custom cake orders: a confirmed custom cake inquiry becomes a cake order with a pay link (/pay/<order id>).
 // The customer pays the full price or a deposit; the order then shows in admin → Cake orders like any other.
+// Online orders approved after their card hold ended use the same pay link (lib/cake-order-actions.ts).
 
 const payByFrom = (now: Date) => new Date(now.getTime() + PAY_LINK_DAYS * 86_400_000).toISOString()
 
 /** Pay link is usable: waiting for payment and not past its time. */
 export const canPay = (o: StoredCakeOrder | null, now = new Date()): o is StoredCakeOrder =>
-  !!o && o.kind === 'custom' && o.status === 'awaiting_payment' && !!o.payBy && Date.parse(o.payBy) > now.getTime()
+  !!o && o.status === 'awaiting_payment' && !!o.payBy && Date.parse(o.payBy) > now.getTime()
+/** Orders paid through a link: custom cakes, and online orders approved after their card hold ended. */
+export const hasPayLink = (o: Pick<StoredCakeOrder, 'kind' | 'payBy'>) => o.kind === 'custom' || !!o.payBy
 
 export async function createOrderFromInquiry(input: CustomOrderInput, now = new Date()) {
   const inquiry = await getCakeInquiry(input.inquiryId)
@@ -57,7 +60,7 @@ export async function createOrderFromInquiry(input: CustomOrderInput, now = new 
 /** Sends the pay link again with a fresh 3 days (also reopens a link that ran out). */
 export async function resendPayLink(id: string, now = new Date()) {
   const order = await getCakeOrder(id)
-  if (!order || order.kind !== 'custom') throw new Error('Only custom cake orders have a pay link.')
+  if (!order || !hasPayLink(order)) throw new Error('This order has no pay link.')
   if (order.status === 'expired' && !(await moveCakeOrder(id, 'expired', 'awaiting_payment')))
     throw new Error('This order changed. Refresh the list.')
   else if (order.status !== 'expired' && order.status !== 'awaiting_payment')
@@ -70,7 +73,7 @@ export async function resendPayLink(id: string, now = new Date()) {
 /** Marks pay links that ran out as expired (no email; resend from admin if still wanted). */
 export async function expirePayLinks(orders: StoredCakeOrder[], now = new Date()) {
   for (const o of orders)
-    if (o.kind === 'custom' && o.status === 'awaiting_payment' && o.payBy && Date.parse(o.payBy) <= now.getTime())
+    if (o.status === 'awaiting_payment' && o.payBy && Date.parse(o.payBy) <= now.getTime())
       if (await moveCakeOrder(o.id, 'awaiting_payment', 'expired')) o.status = 'expired'
 }
 
@@ -91,12 +94,12 @@ export async function payCustomOrder(id: string, cardToken: string | undefined, 
       : await createPayment({
           sourceId: cardToken!,
           idempotencyKey: createHash('sha256')
-            .update(id + ':' + cardToken)
+            .update('pay:' + id + ':' + cardToken) // never the same key as the order's original card hold
             .digest('base64url'),
           amountCents: Math.round(amountDueNow(order) * 100),
           autocomplete: true,
           referenceId: orderRef(order),
-          note: `Custom cake ${orderRef(order)}${order.deposit ? ' (deposit)' : ''}: ${sizeLabel(order.size)}, ${order.pickupDate} ${order.pickupTime}`,
+          note: `${order.kind === 'custom' ? 'Custom cake' : 'Cake'} ${orderRef(order)}${order.deposit ? ' (deposit)' : ''}: ${sizeLabel(order.size)}, ${order.pickupDate} ${order.pickupTime}`,
           email: order.email,
         })
   } catch (error) {

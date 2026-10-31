@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { SITE } from '@/lib/site-info'
 import { squareClientConfig } from '@/lib/square'
 import { getCakeOrder } from '@/lib/cake-orders-store'
-import { canPay, payWithoutCard } from '@/lib/custom-cake-orders'
+import { canPay, hasPayLink, payWithoutCard } from '@/lib/custom-cake-orders'
 import {
   amountDueNow,
   formatPickupDate,
@@ -26,7 +26,7 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
   const { id } = await params
   const order = /^[0-9a-f-]{36}$/i.test(id) ? await getCakeOrder(id).catch(() => null) : null
   const square = squareClientConfig()
-  const custom = order?.kind === 'custom' ? order : null
+  const custom = order && hasPayLink(order) ? order : null
   const paid = custom && ['paid', 'deposit_paid', 'picked_up'].includes(custom.status)
   const open = canPay(custom)
   const due = custom ? amountDueNow(custom) : 0
@@ -39,7 +39,14 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
     <div className="min-h-screen bg-background">
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        <PageBand id="pay-heading" title={custom ? `Your custom cake ${orderRef(custom)}` : 'Payment link'}>
+        <PageBand
+          id="pay-heading"
+          title={
+            custom
+              ? `Your ${custom.kind === 'custom' ? 'custom cake' : 'cake order'} ${orderRef(custom)}`
+              : 'Payment link'
+          }
+        >
           {custom && <p>Thank you, {custom.name}! Please check the details and pay below.</p>}
         </PageBand>
         <section className="site-container section-space">
@@ -62,7 +69,7 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
                             'Pickup',
                             `${formatPickupDate(custom.pickupDate)}, ${formatPickupTime(custom.pickupTime)} at ${SITE.address}`,
                           ],
-                      ...(custom.notes ? [['Design notes', custom.notes]] : []),
+                      ...(custom.notes ? [[custom.kind === 'custom' ? 'Design notes' : 'Notes', custom.notes]] : []),
                       ['Total', money(custom.price)],
                       ...(custom.deposit
                         ? [

@@ -16,7 +16,7 @@ import { Input } from './ui/input'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 
-// "Create order" on a custom cake inquiry: enter the agreed details and price, and the customer is emailed a pay link.
+// "Approve & send pay link" on a custom cake inquiry: enter the agreed details and price, and the customer is emailed a pay link.
 const pick = (value: string, skip: string[]) => (skip.includes(value) ? '' : value)
 /** Different flavor per tier: 'Top: Vanilla · Bottom: Chocolate'. */
 const byTier = (inquiry: StoredCakeInquiry, key: 'flavor' | 'filling') =>
@@ -80,10 +80,10 @@ export function AdminCustomOrderForm({
     }
   }
 
-  if (!open) return <Button onClick={() => setOpen(true)}>Create order &amp; send pay link</Button>
+  if (!open) return <Button onClick={() => setOpen(true)}>Approve &amp; send pay link</Button>
   return (
     <form onSubmit={submit} className="space-y-3 rounded-lg border bg-background p-3" noValidate>
-      <h4 className="font-semibold">Create order (agreed details)</h4>
+      <h4 className="font-semibold">Approve: final details and price</h4>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={id('size')} className={label}>
@@ -256,7 +256,7 @@ export function AdminCustomOrderForm({
       </p>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={busy}>
-          {busy ? 'Creating…' : 'Create order & email pay link'}
+          {busy ? 'Sending…' : 'Approve & email pay link'}
         </Button>
         <Button type="button" variant="outline" onClick={() => setOpen(false)}>
           Cancel

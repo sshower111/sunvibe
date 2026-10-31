@@ -77,7 +77,7 @@ test('reminders: urgent orders halfway and 15 minutes before cancelling', () => 
 })
 
 test('reminders: card hold ending within 24 hours, for orders that are not urgent', () => {
-  const held = order({ pickupDate: '2026-11-20', approveBy: minutes(7 * 24 * 60).toISOString() })
+  const held = order({ pickupDate: '2026-11-20', shortHold: false, approveBy: minutes(7 * 24 * 60).toISOString() })
   assert.deepEqual(msg.dueReminders([held], minutes(5 * 24 * 60)), [])
   assert.deepEqual(
     msg.dueReminders([held], minutes(6 * 24 * 60 + 60)).map(r => r.kind),
@@ -87,7 +87,12 @@ test('reminders: card hold ending within 24 hours, for orders that are not urgen
 })
 
 test('reminders: still checking with kitchen every 3 hours, 9 AM to 8 PM only', () => {
-  const checking = order({ status: 'checking_kitchen', pickupDate: '2026-11-20', kitchenAskedAt: now.toISOString() })
+  const checking = order({
+    status: 'checking_kitchen',
+    pickupDate: '2026-11-20',
+    shortHold: false,
+    kitchenAskedAt: now.toISOString(),
+  })
   const kinds = at => msg.dueReminders([checking], at).map(r => r.kind)
   assert.deepEqual(kinds(minutes(170)), [])
   assert.deepEqual(kinds(minutes(185)), ['kitchen-1']) // 1:05 PM

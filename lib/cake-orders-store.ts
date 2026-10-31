@@ -75,6 +75,8 @@ export async function finishCakeOrder(
   const sql = await contentDatabase()
   await sql`UPDATE bakery_cake_orders SET status=${change.status},payment_id=COALESCE(${change.paymentId ?? null},payment_id),
     approve_by=${change.approveBy ?? null},updated_at=now() WHERE id=${id}`
+  const action = { failed: 'payment_failed', awaiting_approval: 'placed' }[change.status as string] ?? change.status
+  await logOrderEvent(id, action, 'processing', change.status)
 }
 
 /** Records that the order details were texted to the kitchen (the latest time is kept). */
@@ -82,7 +84,48 @@ export async function markKitchenSent(id: string) {
   const sql = await contentDatabase()
   const rows =
     await sql`UPDATE bakery_cake_orders SET kitchen_sent_at=now(),updated_at=now() WHERE id=${id} RETURNING id`
+  if (rows.length) await logOrderEvent(id, 'kitchen_sent')
   return rows.length > 0
+}
+
+/** Ask Kitchen: the order waits as "Checking with kitchen", with its new answer deadline. */
+export async function markKitchenAsked(id: string, approveBy: string | undefined) {
+  const sql = await contentDatabase()
+  const rows = await sql`UPDATE bakery_cake_orders
+    SET status='checking_kitchen',kitchen_asked_at=now(),approve_by=${approveBy ?? null},updated_at=now()
+    WHERE id=${id} AND status='awaiting_approval' RETURNING id`
+  if (rows.length) await logOrderEvent(id, 'ask_kitchen', 'awaiting_approval', 'checking_kitchen')
+  return rows.length > 0
+}
+
+export type OrderEvent = { at: string; action: string; from?: string; to?: string; detail: string }
+
+/** Adds a line to the order's history. Never fails the action itself (e.g. before db/009 has been run). */
+export async function logOrderEvent(id: string, action: string, from?: string, to?: string, detail = '') {
+  try {
+    const sql = await contentDatabase()
+    await sql`INSERT INTO bakery_cake_order_events(order_id,action,from_status,to_status,detail)
+      VALUES(${id},${action},${from ?? null},${to ?? null},${detail})`
+  } catch (error) {
+    console.error('Order history not saved', { id, action, error: (error as Error).message })
+  }
+}
+
+export async function listOrderEvents(id: string): Promise<OrderEvent[]> {
+  try {
+    const sql = await contentDatabase()
+    const rows =
+      await sql`SELECT at,action,from_status,to_status,detail FROM bakery_cake_order_events WHERE order_id=${id} ORDER BY at, id`
+    return rows.map(r => ({
+      at: new Date(r.at as string).toISOString(),
+      action: r.action as string,
+      from: (r.from_status as string | null) ?? undefined,
+      to: (r.to_status as string | null) ?? undefined,
+      detail: r.detail as string,
+    }))
+  } catch {
+    return []
+  }
 }
 
 /** Deletes an order made with admin "Test order". Real orders can't be deleted. */
@@ -93,11 +136,15 @@ export async function deleteTestOrder(id: string) {
   await sql`DELETE FROM bakery_cake_orders WHERE id=${id}`
 }
 
-/** Moves an order on only if it is still in the expected status; returns whether it changed. */
-export async function moveCakeOrder(id: string, from: CakeOrderStatus, to: CakeOrderStatus) {
+/**
+ * Moves an order on only if it is still in the expected status; returns whether it changed. Only one of two
+ * taps (or a tap and Square's webhook) can win, so emails and charges that follow happen once. Logged in its history.
+ */
+export async function moveCakeOrder(id: string, from: CakeOrderStatus, to: CakeOrderStatus, action: string = to) {
   const sql = await contentDatabase()
   const rows =
     await sql`UPDATE bakery_cake_orders SET status=${to},updated_at=now() WHERE id=${id} AND status=${from} RETURNING id`
+  if (rows.length) await logOrderEvent(id, action, from, to)
   return rows.length > 0
 }
 

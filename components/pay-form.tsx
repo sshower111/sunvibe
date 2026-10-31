@@ -5,7 +5,7 @@ import { SquareCard, type SquareCardHandle, type SquareConfig } from './square-c
 import { Button } from './ui/button'
 import { FormAlert } from './ui/form-message'
 
-// Card payment for a custom cake pay link (/pay/<id>).
+// Card payment for a pay link (/pay/<id>): custom cakes, and online orders approved after their card hold ended.
 export function PayForm({
   id,
   amount,

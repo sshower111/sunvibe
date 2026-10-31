@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isAdminRequest } from '@/lib/admin-auth'
-import { deleteTestOrder, getCakeOrder, markKitchenSent, moveCakeOrder } from '@/lib/cake-orders-store'
-import { approveOrder, createTestOrder, declineOrder, listCakeOrdersSettled } from '@/lib/cake-order-actions'
+import { deleteTestOrder, getCakeOrder, listOrderEvents, markKitchenSent, moveCakeOrder } from '@/lib/cake-orders-store'
+import {
+  approveOrder,
+  askKitchen,
+  createTestOrder,
+  declineOrder,
+  listCakeOrdersSettled,
+} from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
 
 const actionSchema = z.object({
   action: z.enum([
+    'get',
     'approve',
     'decline',
+    'ask_kitchen',
     'paid_offline',
     'picked_up',
     'not_picked_up',
@@ -18,7 +26,13 @@ const actionSchema = z.object({
     'kitchen_sent',
   ]),
   id: z.string().uuid(),
+  /** Decline: email the customer that we can't make it. */
+  notify: z.boolean().optional(),
 })
+
+/** The kitchen's mobile number for the Send to Kitchen / Ask Kitchen texts (Vercel env KITCHEN_PHONE). */
+const kitchenPhone = () => process.env.KITCHEN_PHONE?.trim() ?? ''
+const noStore = { headers: { 'Cache-Control': 'no-store' } }
 
 export async function POST(req: NextRequest) {
   let body
@@ -30,9 +44,9 @@ export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     if (body.action === 'list')
-      return NextResponse.json({ orders: await listCakeOrdersSettled() }, { headers: { 'Cache-Control': 'no-store' } })
+      return NextResponse.json({ orders: await listCakeOrdersSettled(), kitchenPhone: kitchenPhone() }, noStore)
     if (body.action === 'test') {
-      if (body.scenario !== 'paid' && body.scenario !== 'approval')
+      if (body.scenario !== 'urgent' && body.scenario !== 'later')
         return NextResponse.json({ error: 'Invalid test' }, { status: 400 })
       if (!process.env.RESEND_API_KEY)
         return NextResponse.json({ error: 'Email is not set up (RESEND_API_KEY).' }, { status: 503 })
@@ -41,14 +55,25 @@ export async function POST(req: NextRequest) {
     const parsed = actionSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     const { action, id } = parsed.data
-    if (action === 'approve') await approveOrder(id)
-    else if (action === 'decline') await declineOrder(id)
+    if (action === 'get') {
+      // Settles it first if its answer time passed, like the list.
+      const order = (await listCakeOrdersSettled()).find(o => o.id === id) ?? (await getCakeOrder(id))
+      if (!order) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+      return NextResponse.json({ order, events: await listOrderEvents(id), kitchenPhone: kitchenPhone() }, noStore)
+    }
+    if (action === 'approve') return NextResponse.json({ success: true, ...(await approveOrder(id)) })
+    if (action === 'decline') await declineOrder(id, parsed.data.notify ?? true)
+    else if (action === 'ask_kitchen') await askKitchen(id)
     else if (action === 'delete') await deleteTestOrder(id)
     else if (action === 'kitchen_sent') {
       if (!(await markKitchenSent(id))) throw new Error('Order not found. Refresh the list.')
     } else if (action === 'paid_offline') {
       // Not approved in time, declined or pay link expired, but the customer paid another way (phone, in store).
-      if (!(await moveCakeOrder(id, 'expired', 'paid')) && !(await moveCakeOrder(id, 'declined', 'paid')))
+      if (
+        !(await moveCakeOrder(id, 'expired', 'paid', 'paid_offline')) &&
+        !(await moveCakeOrder(id, 'declined', 'paid', 'paid_offline')) &&
+        !(await moveCakeOrder(id, 'hold_expired', 'paid', 'paid_offline'))
+      )
         throw new Error('This order changed. Refresh the list.')
     } else if (action === 'resend_link') {
       if (!(await resendPayLink(id))) throw new Error('The email could not be sent. Please retry.')
@@ -58,7 +83,7 @@ export async function POST(req: NextRequest) {
         throw new Error('This order changed. Refresh the list.')
     } else {
       const order = await getCakeOrder(id)
-      if (!(await moveCakeOrder(id, 'picked_up', order?.deposit ? 'deposit_paid' : 'paid')))
+      if (!(await moveCakeOrder(id, 'picked_up', order?.deposit ? 'deposit_paid' : 'paid', 'not_picked_up')))
         throw new Error('This order changed. Refresh the list.')
     }
     return NextResponse.json({ success: true })
