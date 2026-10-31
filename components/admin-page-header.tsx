@@ -24,7 +24,7 @@ export function AdminPageHeader({
           aria-label={`Refresh ${title.toLowerCase()}`}
           onClick={onRefresh}
           disabled={busy}
-          className="inline-flex size-10 items-center justify-center rounded-md border bg-card text-foreground hover:bg-secondary disabled:opacity-60"
+          className="inline-flex size-10 items-center justify-center rounded-full text-foreground hover:bg-secondary active:bg-muted disabled:opacity-60"
         >
           <RefreshCw aria-hidden="true" className={'size-5 ' + (busy ? 'animate-spin' : '')} />
         </button>

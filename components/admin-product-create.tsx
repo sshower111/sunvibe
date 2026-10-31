@@ -1,19 +1,40 @@
 'use client'
-import { useState, useRef, useId } from 'react'
+import { useEffect, useState, useRef, useId } from 'react'
 import { Button } from './ui/button'
 import { adminPost } from '@/lib/admin-api'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { MenuPhotoField } from './menu-photo-field'
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from './ui/dialog'
-export function AdminProductCreate({ onSaved }: { onSaved: () => void }) {
-  const [open, setOpen] = useState(false),
+/** With `open`/`onOpenChange` the dialog is opened from elsewhere (e.g. a menu) and has no button of its own. */
+export function AdminProductCreate({
+  onSaved,
+  open: openProp,
+  onOpenChange,
+}: {
+  onSaved: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const [ownOpen, setOwnOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [image, setImage] = useState('/placeholder.svg'),
     [uploading, setUploading] = useState(false)
   const requestId = useRef(''),
     id = useId()
+  const open = openProp ?? ownOpen
+  const setOpen = (next: boolean) => {
+    setOwnOpen(next)
+    onOpenChange?.(next)
+  }
+  // Start fresh every time it opens.
+  useEffect(() => {
+    if (!open) return
+    requestId.current = ''
+    setError('')
+    setImage('/placeholder.svg')
+  }, [open])
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (busy || uploading) return
@@ -41,19 +62,14 @@ export function AdminProductCreate({ onSaved }: { onSaved: () => void }) {
     <Dialog
       open={open}
       onOpenChange={v => {
-        if (!busy) {
-          setOpen(v)
-          if (v) {
-            requestId.current = ''
-            setError('')
-            setImage('/placeholder.svg')
-          }
-        }
+        if (!busy) setOpen(v)
       }}
     >
-      <DialogTrigger asChild>
-        <Button>Add menu item</Button>
-      </DialogTrigger>
+      {openProp === undefined && (
+        <DialogTrigger asChild>
+          <Button>Add menu item</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogTitle>Add menu item</DialogTitle>
         <DialogDescription>Add a photo, name, price and description to your menu.</DialogDescription>

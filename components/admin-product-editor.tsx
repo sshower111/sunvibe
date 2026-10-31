@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { adminPost } from '@/lib/admin-api'
@@ -22,13 +22,19 @@ export function AdminProductEditor({
   product,
   onSaved,
   disabled = false,
+  open: openProp,
+  onOpenChange,
 }: {
   product: EditableProduct
   onSaved: (product: EditableProduct) => void
   disabled?: boolean
+  /** With `open`/`onOpenChange` the dialog is opened from elsewhere (e.g. a menu) and has no button of its own. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }) {
   const id = useId()
-  const [open, setOpen] = useState(false)
+  const [ownOpen, setOwnOpen] = useState(false)
+  const open = openProp ?? ownOpen
   const [name, setName] = useState(product.name)
   const [description, setDescription] = useState(product.description || '')
   const [price, setPrice] = useState(product.price)
@@ -44,18 +50,21 @@ export function AdminProductEditor({
     description.trim() !== (product.description || '') ||
     Number(price) !== Number(product.price) ||
     image !== (product.image || PLACEHOLDER)
+  // Start from the saved item every time it opens.
+  useEffect(() => {
+    if (!open) return
+    setName(product.name)
+    setDescription(product.description || '')
+    setPrice(product.price)
+    setImage(product.image || PLACEHOLDER)
+    setError('')
+    setSaved(false)
+    attempt.current = null
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
   function changeOpen(next: boolean) {
     if (inFlight.current) return
-    if (next) {
-      setName(product.name)
-      setDescription(product.description || '')
-      setPrice(product.price)
-      setImage(product.image || PLACEHOLDER)
-      setError('')
-      setSaved(false)
-      attempt.current = null
-    }
-    setOpen(next)
+    setOwnOpen(next)
+    onOpenChange?.(next)
   }
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -81,7 +90,8 @@ export function AdminProductEditor({
         requestId: attempt.current.id,
       })
       onSaved(data.product)
-      setOpen(false)
+      setOwnOpen(false)
+      onOpenChange?.(false)
       setSaved(true)
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Unable to save this item. Please try again.')
@@ -93,12 +103,14 @@ export function AdminProductEditor({
   return (
     <div>
       <Dialog open={open} onOpenChange={changeOpen}>
-        <DialogTrigger asChild>
-          <Button size="sm" variant="outline" disabled={disabled} aria-label={'Edit item: ' + product.name}>
-            <Pencil aria-hidden="true" />
-            Edit item
-          </Button>
-        </DialogTrigger>
+        {openProp === undefined && (
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline" disabled={disabled} aria-label={'Edit item: ' + product.name}>
+              <Pencil aria-hidden="true" />
+              Edit item
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent
           className="max-h-[90dvh] overflow-y-auto bg-white"
           showCloseButton={!saving}

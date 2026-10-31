@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AdminSegmented } from '@/components/admin-segmented'
 import { AdminProductCreate } from '@/components/admin-product-create'
@@ -11,6 +10,8 @@ import { AdminProductEditor } from '@/components/admin-product-editor'
 import { MenuPhotoThumb } from '@/components/menu-photo-field'
 import { NoticeBar, type Notice } from '@/components/admin-notice'
 import { useAdmin } from '@/components/admin-shell'
+import { AdminPageHeader } from '@/components/admin-page-header'
+import { AdminActionMenu } from '@/components/admin-action-menu'
 import { adminPost, SignedOutError } from '@/lib/admin-api'
 
 interface Product {
@@ -32,6 +33,8 @@ export function AdminMenu() {
   const [menuQuery, setMenuQuery] = useState('')
   const [menuFilter, setMenuFilter] = useState<'all' | 'visible' | 'hidden'>('all')
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const fetchProducts = useCallback(async () => {
     setMenuLoading(true)
@@ -78,12 +81,13 @@ export function AdminMenu() {
 
   return (
     <section aria-labelledby="menu-admin-heading" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="menu-admin-heading" className="heading-2">
-          Menu <span className="text-base font-normal text-muted-foreground">({products.length} items)</span>
-        </h2>
-        <AdminProductCreate onSaved={fetchProducts} />
-      </div>
+      <AdminPageHeader
+        title="Menu"
+        onRefresh={() => void fetchProducts()}
+        busy={menuLoading}
+        menu={[{ label: 'Add menu item', onSelect: () => setAdding(true) }]}
+      />
+      <AdminProductCreate onSaved={fetchProducts} open={adding} onOpenChange={setAdding} />
       <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
         <div className="relative">
           <label htmlFor="admin-menu-search" className="sr-only">
@@ -133,48 +137,44 @@ export function AdminMenu() {
           {products.length ? 'No items match.' : 'No menu items yet.'}
         </p>
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid gap-2 md:grid-cols-2">
           {shownProducts.map(product => (
-            <li key={product.id} className="flex flex-col gap-3 rounded-xl border bg-white p-4">
-              <div className="flex items-start justify-between gap-3">
+            <li key={product.id} className="space-y-1.5 rounded-xl border bg-white p-3 text-sm">
+              <div className="flex items-start gap-3">
                 <MenuPhotoThumb url={product.image} />
                 <div className="min-w-0 flex-1">
                   <p className="break-words font-semibold">{product.name}</p>
-                  {product.category && <p className="text-xs text-muted-foreground">{product.category}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-semibold tabular-nums text-primary">${product.price}</span>
+                    {product.category && <> · {product.category}</>}
+                    {' · '}
+                    <span className={product.active ? 'text-green-800' : 'font-semibold'}>
+                      {togglingId === product.id ? 'Saving…' : product.active ? 'Visible' : 'Hidden'}
+                    </span>
+                  </p>
                 </div>
-                <p className="shrink-0 font-semibold tabular-nums text-primary">${product.price}</p>
+                <AdminActionMenu
+                  label={'More actions for ' + product.name}
+                  items={[
+                    { label: 'Edit item', onSelect: () => setEditingId(product.id) },
+                    {
+                      label: product.active ? 'Hide from menu' : 'Show on menu',
+                      onSelect: () => void toggleProduct(product),
+                    },
+                  ]}
+                />
               </div>
-              <p className="line-clamp-2 break-words text-sm text-muted-foreground">
-                {product.description || 'No description'}
-              </p>
-              <div className="mt-auto flex flex-wrap items-center gap-2">
-                <span
-                  className={
-                    'rounded px-2 py-1 text-xs font-medium ' +
-                    (product.active ? 'bg-green-100 text-green-900' : 'bg-gray-100 text-gray-700')
-                  }
-                >
-                  {product.active ? 'Visible' : 'Hidden'}
-                </span>
-                <div className="ml-auto flex gap-2">
-                  <AdminProductEditor
-                    product={product}
-                    onSaved={updated => {
-                      setProducts(current =>
-                        current.map(item => (item.id === updated.id ? { ...item, ...updated } : item)),
-                      )
-                    }}
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={togglingId === product.id}
-                    onClick={() => toggleProduct(product)}
-                  >
-                    {togglingId === product.id ? 'Saving…' : product.active ? 'Hide' : 'Show'}
-                  </Button>
-                </div>
-              </div>
+              {product.description && (
+                <p className="line-clamp-2 break-words text-muted-foreground">{product.description}</p>
+              )}
+              <AdminProductEditor
+                product={product}
+                open={editingId === product.id}
+                onOpenChange={next => setEditingId(next ? product.id : null)}
+                onSaved={updated => {
+                  setProducts(current => current.map(item => (item.id === updated.id ? { ...item, ...updated } : item)))
+                }}
+              />
             </li>
           ))}
         </ul>

@@ -95,7 +95,7 @@ export function AdminActionMenu({ label, items }: { label: string; items: MenuIt
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen(o => !o)}
-        className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border bg-card text-foreground hover:bg-secondary"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-secondary active:bg-muted"
       >
         <Ellipsis aria-hidden="true" className="size-5" />
       </button>

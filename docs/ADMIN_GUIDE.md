@@ -16,7 +16,7 @@ Each section has its own address (`/admin/orders`, `/admin/inquiries`, `/admin/m
 
 ## Menu
 
-- Search items, filter Visible / Hidden.
+- Search items, filter Visible / Hidden. Each item is a compact card (photo, name, price, category, Visible/Hidden); its **⋯** (top-right) has **Edit item** and **Hide from menu** / **Show on menu**. The ↻ icon refreshes the list and the **⋯** next to it has **Add menu item**.
 - Each item shows a small photo, or "No photo" if it has none. Photos marked **Blurry** are too small (under 600 pixels) to look sharp on the menu; replace them with a larger photo.
 - The menu shows every photo as a square, so take photos with the whole item in the middle and some space around it.
 - **Edit item**: photo, name, description, price. Changes appear on the public menu right away.
