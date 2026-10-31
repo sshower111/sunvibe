@@ -39,7 +39,7 @@ const received = (iso: string) =>
     minute: '2-digit',
   })
 
-export function AdminCakeInquiries() {
+export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
   const [inquiries, setInquiries] = useState<StoredCakeInquiry[]>([])
   const [filter, setFilter] = useState<Filter>('open')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -68,6 +68,17 @@ export function AdminCakeInquiries() {
   useEffect(() => {
     void load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Opened from a notification (/admin/inquirys/<id>): show it and scroll to it once the list has loaded.
+  useEffect(() => {
+    if (!loaded || !focusId) return
+    setFilter('all')
+    requestAnimationFrame(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-inquiry-id="' + CSS.escape(focusId) + '"]')]
+        .find(el => el.offsetParent !== null)
+        ?.scrollIntoView({ block: 'center' }),
+    )
+  }, [loaded, focusId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const patch = (id: string, change: Partial<StoredCakeInquiry>) =>
     setInquiries(current => current.map(i => (i.id === id ? { ...i, ...change } : i)))
@@ -166,7 +177,14 @@ export function AdminCakeInquiries() {
               : []),
           ]
           return (
-            <article key={i.id} className="min-w-0 space-y-2 rounded-xl border bg-card p-3 text-sm">
+            <article
+              key={i.id}
+              data-inquiry-id={i.id}
+              className={
+                'min-w-0 space-y-2 rounded-xl border bg-card p-3 text-sm ' +
+                (i.id === focusId ? 'ring-2 ring-primary' : '')
+              }
+            >
               <div className="flex items-center gap-2">
                 <h3 className="heading-3 min-w-0 flex-1 break-words">
                   {i.name} <span className="text-sm font-normal text-muted-foreground">{inquiryRef(i.id)}</span>

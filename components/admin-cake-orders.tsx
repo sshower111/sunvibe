@@ -44,7 +44,7 @@ const statusTone: Record<CakeOrderStatus, BadgeTone> = {
 }
 type SortKey = 'created' | 'pickup'
 
-export function AdminCakeOrders() {
+export function AdminCakeOrders({ focusId }: { focusId?: string } = {}) {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
   const [filter, setFilter] = useState<Filter | 'all'>('all')
   const [sort, setSort] = useState<{ by: SortKey; asc: boolean }>({ by: 'pickup', asc: true })
@@ -75,6 +75,17 @@ export function AdminCakeOrders() {
   useEffect(() => {
     void load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Opened from a notification (/admin/orders/<id>): show it and scroll to it once the list has loaded.
+  useEffect(() => {
+    if (!loaded || !focusId) return
+    setFilter('all')
+    requestAnimationFrame(() =>
+      [...document.querySelectorAll<HTMLElement>('[data-order-id="' + CSS.escape(focusId) + '"]')]
+        .find(el => el.offsetParent !== null)
+        ?.scrollIntoView({ block: 'center' }),
+    )
+  }, [loaded, focusId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendTest = (scenario: 'paid' | 'approval') =>
     run(async () => {
@@ -274,7 +285,13 @@ export function AdminCakeOrders() {
           {/* Phones and tablets: one compact card per order. */}
           <ul className="grid gap-2 md:grid-cols-2 xl:hidden">
             {shown.map(o => (
-              <li key={o.id} className="space-y-1.5 rounded-xl border bg-card p-3 text-sm">
+              <li
+                key={o.id}
+                data-order-id={o.id}
+                className={
+                  'space-y-1.5 rounded-xl border bg-card p-3 text-sm ' + (o.id === focusId ? 'ring-2 ring-primary' : '')
+                }
+              >
                 <div className="flex items-center gap-2">
                   <p className="flex-1 font-semibold">
                     {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
@@ -316,7 +333,11 @@ export function AdminCakeOrders() {
               </thead>
               <tbody>
                 {shown.map(o => (
-                  <tr key={o.id} className="border-b align-top last:border-0">
+                  <tr
+                    key={o.id}
+                    data-order-id={o.id}
+                    className={'border-b align-top last:border-0 ' + (o.id === focusId ? 'bg-amber-50' : '')}
+                  >
                     <td className="px-3 py-2">{formatVegasTime(o.createdAt)}</td>
                     <td className="px-3 py-2">
                       {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}

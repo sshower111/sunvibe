@@ -1,0 +1,111 @@
+import { formatPickupDate, LAS_VEGAS, type StoredCakeOrder } from './cake-order'
+import { isUrgent } from './admin-order-board'
+import { addDays, storeDate } from './occasion-dates'
+import type { StoredCakeInquiry } from './cake-inquiry'
+
+// What the admin app's notifications say. Short enough for a phone lock screen:
+// title "URGENT · Needs approval", body "🎂 8" vanilla/strawberry · Sat 2 PM · Jane D".
+
+export type PushText = { title: string; body: string; url: string; tag: string }
+
+const SHORT_SIZES: Record<string, string> = {
+  '6-inch': '6"',
+  '8-inch': '8"',
+  '10-inch': '10"',
+  '12-inch': '12"',
+  'quarter-sheet': '¼ sheet',
+  'half-sheet': '½ sheet',
+  'full-sheet': 'Full sheet',
+}
+const shortSize = (size: string) => SHORT_SIZES[size] ?? size
+/** "Jane Doe" → "Jane D" */
+export const shortName = (name: string) => {
+  const [first, ...rest] = name.trim().split(/\s+/)
+  const last = rest.at(-1)
+  return last ? `${first} ${last[0].toUpperCase()}` : first
+}
+/** "Today 2 PM", "Tomorrow 9:30 AM" or "Sat 2 PM" (Las Vegas time). */
+export function shortWhen(date: string, time: string, now = new Date()) {
+  const [h, m] = time.split(':').map(Number)
+  const clock = `${h % 12 || 12}${m ? ':' + String(m).padStart(2, '0') : ''} ${h < 12 ? 'AM' : 'PM'}`
+  const today = storeDate(now)
+  const day =
+    date === today
+      ? 'Today'
+      : date === addDays(today, 1)
+        ? 'Tomorrow'
+        : new Date(date + 'T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short' })
+  return `${day} ${clock}`
+}
+const prefix = (test: boolean | undefined, urgent: boolean) => (test ? 'TEST · ' : '') + (urgent ? 'URGENT · ' : '')
+const cakeLine = (o: StoredCakeOrder, now: Date) =>
+  `🎂 ${shortSize(o.size)} ${o.flavor.toLowerCase()}/${o.filling.toLowerCase()} · ${shortWhen(o.pickupDate, o.pickupTime, now)} · ${shortName(o.name)}`
+export const orderUrl = (o: Pick<StoredCakeOrder, 'id'>) => `/admin/orders/${o.id}`
+
+/** New online cake order. Orders held for approval say "Needs approval"; same-day and next-day ones are URGENT. */
+export function newOrderPush(o: StoredCakeOrder, now = new Date()): PushText {
+  const held = o.status === 'awaiting_approval'
+  return {
+    title: prefix(o.test, held && isUrgent(o, now)) + (held ? 'Needs approval' : 'New paid cake order'),
+    body: cakeLine(o, now),
+    url: orderUrl(o),
+    tag: 'order-' + o.id,
+  }
+}
+
+export function newInquiryPush(i: StoredCakeInquiry): PushText {
+  const when = i.eventDate ? formatPickupDate(i.eventDate) : 'date not set'
+  return {
+    title: prefix(i.test, false) + 'Custom cake inquiry',
+    body: `🎂 ${i.eventType} · ${when} · ${i.servings} servings · ${shortName(i.name)}`,
+    url: `/admin/inquiries/${i.id}`,
+    tag: 'inquiry-' + i.id,
+  }
+}
+
+const MINUTE = 60_000
+const HOUR = 60 * MINUTE
+const vegasHour = (now: Date) =>
+  Number(new Intl.DateTimeFormat('en-US', { timeZone: LAS_VEGAS, hour: 'numeric', hourCycle: 'h23' }).format(now))
+
+export type Reminder = { orderId: string; kind: string; push: PushText }
+
+/**
+ * Reminder pushes due now. Each has a `kind` so it is sent only once per order (lib/push.ts claimReminder).
+ * - Urgent order still waiting: halfway to its answer deadline, and 15 minutes before it is cancelled.
+ * - Other held orders: 24 hours before the card hold ends.
+ * - Checking with kitchen: every 3 hours after asking, between 9 AM and 8 PM Las Vegas time.
+ */
+export function dueReminders(orders: StoredCakeOrder[], now = new Date()): Reminder[] {
+  const due: Reminder[] = []
+  const t = now.getTime()
+  for (const o of orders) {
+    const waiting = o.status === 'awaiting_approval' || o.status === 'checking_kitchen'
+    if (!waiting) continue
+    const add = (kind: string, title: string) =>
+      due.push({
+        orderId: o.id,
+        kind,
+        push: {
+          title: prefix(o.test, isUrgent(o, now)) + title,
+          body: cakeLine(o, now),
+          url: orderUrl(o),
+          tag: 'order-' + o.id,
+        },
+      })
+    const deadline = o.approveBy ? Date.parse(o.approveBy) : NaN
+    if (deadline > t) {
+      if (isUrgent(o, now)) {
+        const placed = Date.parse(o.createdAt)
+        if (deadline - t <= 15 * MINUTE) add('answer-final', 'Cancels in 15 min')
+        else if (t >= placed + (deadline - placed) / 2) add('answer-half', 'Still needs an answer')
+      } else if (deadline - t <= 24 * HOUR) add('hold-24h', 'Card hold ends in 24 hours')
+    }
+    if (o.status === 'checking_kitchen' && o.kitchenAskedAt) {
+      const rounds = Math.floor((t - Date.parse(o.kitchenAskedAt)) / (3 * HOUR))
+      const hour = vegasHour(now)
+      if (rounds >= 1 && hour >= 9 && hour < 20) add('kitchen-' + rounds, 'Still checking with kitchen')
+    }
+  }
+  return due
+}

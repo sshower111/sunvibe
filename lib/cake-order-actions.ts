@@ -15,6 +15,8 @@ import { cakePrice, decideOrder, orderRef, type StoredCakeOrder } from './cake-o
 import { addDays, storeDate } from './occasion-dates'
 import { SITE } from './site-info'
 import { expirePayLinks } from './custom-cake-orders'
+import { notifyAdmins } from './push'
+import { newOrderPush } from './push-messages'
 
 // Approving, declining and expiring held orders. Used by admin and by the Square webhook.
 // Test orders made in production have a made-up payment ID (no card was used), so Square is skipped for them.
@@ -139,5 +141,6 @@ export async function createTestOrder(scenario: 'paid' | 'approval', now = new D
   const status = held ? 'awaiting_approval' : 'paid'
   await finishCakeOrder(id, { status, paymentId, approveBy: order.approveBy })
   await sendNewOrderEmails({ ...order, status, paymentId })
+  await notifyAdmins(() => newOrderPush({ ...order, status, paymentId }))
   return { ref: orderRef(order), held, viaSquare: !paymentId.startsWith(FAKE_PAYMENT_PREFIX) }
 }

@@ -14,6 +14,43 @@ The app has four tabs at the bottom: **Orders**, **Inquiries**, **Menu** and **M
 
 Each section has its own address (`/admin/orders`, `/admin/inquiries`, `/admin/menu`, `/admin/more`, `/admin/gallery`, ...). Old links such as `/admin?tab=cake-orders` still open the right section.
 
+### Notifications on the iPhone
+
+iPhones only allow notifications for apps added to the Home Screen, so install the app first (above).
+
+1. Open **Sunville Admin** from the Home Screen → **More** → **Settings** → **Notifications**.
+2. Tap **Turn on notifications**, then **Allow**.
+3. Tap **Send test notification**. It should arrive within a few seconds.
+
+What you get (each one, when tapped, opens that order or inquiry, scrolled into view and outlined):
+
+- **New cake order**: "Needs approval" (or "New paid cake order"), e.g. `🎂 8" vanilla/strawberry · Sat 2 PM · Jane D`. **URGENT** when pickup is today or tomorrow.
+- **New custom cake inquiry**: e.g. `🎂 Birthday · Sun, Nov 8 · 20 servings · Linda P`.
+- **Reminders** (each sent once): an urgent order still waiting halfway to its answer time, and again 15 minutes before it is cancelled; any other held order 24 hours before its card hold ends; an order "Checking with kitchen" every 3 hours (9 AM–8 PM).
+- Test orders and inquiries start with **TEST**.
+
+Notifications are extra: the emails still go out as before, and a notification problem never stops a customer's order or inquiry. The device list under Notifications shows every phone or computer that turned them on; **Remove** stops them on that device. Devices that are reset or uninstall the app drop off the list on their own. If notifications were blocked, turn them on in iPhone **Settings → Notifications → Sunville Admin**.
+
+#### One-time setup (owner)
+
+1. Make the keys on any computer with Node: `npx web-push generate-vapid-keys`. Keep the private key secret; never put it in the repo.
+2. In Vercel → Settings → Environment Variables (Production), add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (type Secret) and `VAPID_SUBJECT` = `mailto:` + the bakery email. Also add `CRON_SECRET` (32+ random characters, e.g. `openssl rand -base64 32`, type Secret). Redeploy.
+3. In Supabase → SQL Editor, run `db/008-push-notifications.sql` once.
+4. Reminders: in Supabase → Database → Extensions, turn on **pg_cron** and **pg_net**. Then in the SQL Editor run this once, with your `CRON_SECRET` in place of `YOUR_CRON_SECRET` (it runs the reminder check every 15 minutes):
+
+   ```sql
+   select cron.schedule('sunville-reminders', '*/15 * * * *', $
+     select net.http_get(
+       url := 'https://sunvillebakerylv.com/api/cron/reminders',
+       headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET')
+     )
+   $);
+   ```
+
+   To stop it: `select cron.unschedule('sunville-reminders');`. If `CRON_SECRET` changes, unschedule and schedule again with the new value. The job also settles held orders whose answer time passed (as opening Cake orders does).
+
+Changing the VAPID keys turns notifications off on every device; turn them on again in Settings.
+
 ## Menu
 
 - Search items, filter Visible / Hidden. Each item is a compact card (photo, name, price, category, Visible/Hidden); its **⋯** (top-right) has **Edit item** and **Hide from menu** / **Show on menu**. The ↻ icon refreshes the list and the **⋯** next to it has **Add menu item**.

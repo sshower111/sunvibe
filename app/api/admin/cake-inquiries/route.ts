@@ -12,6 +12,8 @@ import {
 import { cakeCatalog } from '@/lib/cake-catalog'
 import { bakeryInbox } from '@/lib/email'
 import { sendBakeryEmail, sendCustomerCopy } from '@/lib/cake-inquiry-email'
+import { notifyAdmins } from '@/lib/push'
+import { newInquiryPush } from '@/lib/push-messages'
 import { customOrderSchema } from '@/lib/cake-order'
 import { createOrderFromInquiry } from '@/lib/custom-cake-orders'
 import { listCakeOrders } from '@/lib/cake-orders-store'
@@ -119,6 +121,8 @@ async function sendTestInquiry() {
     return NextResponse.json({ error: 'The test email could not be sent. Check Resend.' }, { status: 502 })
   await sendCustomerCopy(sample, { requestId, test: true })
   const { acknowledged: _, ...details } = sample
-  await saveCakeInquiry({ ...details, id: requestId, createdAt: new Date().toISOString(), photoCount: 0, test: true })
+  const inquiry = { ...details, id: requestId, createdAt: new Date().toISOString(), photoCount: 0, test: true }
+  await saveCakeInquiry(inquiry)
+  await notifyAdmins(() => newInquiryPush({ ...inquiry, status: 'new', staffNotes: '' }))
   return NextResponse.json({ success: true, sentTo: bakeryInbox() })
 }

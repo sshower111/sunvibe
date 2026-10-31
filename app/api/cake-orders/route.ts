@@ -5,6 +5,8 @@ import { SITE } from '@/lib/site-info'
 import { cakeOrderSchema, cakePrice, decideOrder, orderRef, sizeLabel, type StoredCakeOrder } from '@/lib/cake-order'
 import { finishCakeOrder, startCakeOrder } from '@/lib/cake-orders-store'
 import { sendNewOrderEmails } from '@/lib/cake-order-email'
+import { notifyAdmins } from '@/lib/push'
+import { newOrderPush } from '@/lib/push-messages'
 import { cardErrorMessage, createPayment, squareClientConfig, SquareError } from '@/lib/square'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { getClientIp, rateLimiter } from '@/lib/security'
@@ -98,6 +100,7 @@ export async function POST(request: NextRequest) {
     // The payment exists in Square with this order's reference; the bakery email below still goes out.
   }
   await sendNewOrderEmails(saved)
+  await notifyAdmins(() => newOrderPush(saved))
   return NextResponse.json({
     success: true,
     held,

@@ -6,6 +6,8 @@ import { saveCakeInquiry } from '@/lib/cake-inquiries-store'
 import { saveInquiryPhotos } from '@/lib/inquiry-photos'
 import { sendBakeryEmail, sendCustomerCopy } from '@/lib/cake-inquiry-email'
 import { verifyTurnstile } from '@/lib/turnstile'
+import { notifyAdmins } from '@/lib/push'
+import { newInquiryPush } from '@/lib/push-messages'
 import { getClientIp, rateLimiter } from '@/lib/security'
 
 export const runtime = 'nodejs'
@@ -63,19 +65,20 @@ export async function POST(request: NextRequest) {
     if (!sent)
       return fail('Your inquiry could not be sent. Your details are still here; please retry or call the bakery.', 502)
     // The email is the primary record; a tracker outage must not fail an inquiry that was delivered.
+    const { acknowledged: _, ...details } = parsed.data
+    const inquiry = {
+      ...details,
+      id: requestId,
+      createdAt: new Date().toISOString(),
+      photoCount: attachments.length,
+    }
     try {
-      const { acknowledged: _, ...details } = parsed.data
       const photos = attachments.length ? await saveInquiryPhotos(requestId, attachments) : []
-      await saveCakeInquiry({
-        ...details,
-        id: requestId,
-        createdAt: new Date().toISOString(),
-        photoCount: attachments.length,
-        ...(photos.length ? { photos } : {}),
-      })
+      await saveCakeInquiry({ ...inquiry, ...(photos.length ? { photos } : {}) })
     } catch (error) {
       console.error('Cake inquiry emailed but not saved to the tracker', requestId, error)
     }
+    await notifyAdmins(() => newInquiryPush({ ...inquiry, status: 'new', staffNotes: '' }))
     // Copy for the customer. Replies go to the bakery, so changes arrive in one thread instead of a second form.
     await sendCustomerCopy(parsed.data, { requestId })
     return NextResponse.json({ success: true })
