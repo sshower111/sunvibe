@@ -340,7 +340,6 @@ export function PreOrderForm({
                   {busy ? 'Sending…' : 'Request reservation'}
                 </Button>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Protected by Cloudflare Turnstile.{' '}
                   <a
                     href="/privacy"
                     className="inline-flex min-h-11 items-center rounded underline focus-visible:outline-2 focus-visible:outline-primary"

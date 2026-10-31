@@ -360,9 +360,6 @@ export default function MenuPage({
                   <a href="/order-cake">Plan your cake</a>
                 </Button>
               </div>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Availability and your final design are confirmed by the bakery.
-              </p>
             </section>
           ) : loading ? (
             <div role="status" aria-label="Loading menu">

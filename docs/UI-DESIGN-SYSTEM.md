@@ -69,7 +69,8 @@ Cards and popovers are white. Dark mode is not used.
 - Home hero: full-bleed bakery photo with a dark shade behind the words (left on 768px+, bottom on phones) and the gold ribbon edge.
 - Home photo strip (`components/bakery-marquee.tsx`): every gallery photo, square with a thin gold frame, moving about 35px a second. Stops on hover and keyboard focus; reduced-motion visitors get a still, swipeable strip. Photos come from the same gallery data as `/gallery`.
 - Contact: the form comes first on phones; visit details move beside it from 1024px.
-- Cake planner (`components/cake-order-flow.tsx`): no card frame on phones, and the Next button sticks to the bottom of the screen. `<CakePreview>` (`components/cake-preview.tsx`) draws the cake from the answers; it is the page's one rich element, so its food colors (sponge, fillings, roses) live in that file, not in the tokens. Beside the steps from 1024px, a small strip above the steps below that.
+- Cake planner (`components/cake-order-flow.tsx`): no card frame on phones, and the Next button sticks to the bottom of the screen. `<CakePreview>` (`components/cake-preview.tsx`) draws the cake from the answers; it is the page's one rich element, so its food colors (sponge, fillings, roses) live in that file, not in the tokens. Beside the steps from 1024px, a small strip above the steps below that (from step 2 on, so it doesn't push the size suggestions down). Below 1024px each step scrolls so the progress bar sits right under the header (the page title stays above, out of the way), and picking or typing a guest count scrolls the size suggestions into view. Scroll offsets come from `scroll-padding-top` on `html` only; don't add `scroll-mt` on top of it.
+- Gallery photo viewer (`components/gallery-view.tsx`): with a mouse, arrows on the photo's edges and arrow keys. On touch screens no arrows on the photo; pinch or double-tap to zoom, drag to look around, swipe (only when not zoomed) or the small buttons under the photo for the next one. No how-to hint text: customers know these gestures.
 
 ## Header
 
@@ -81,3 +82,4 @@ Cards and popovers are white. Dark mode is not used.
 - No raw colors (`bg-white`, `text-red-600`, `#hex`) in components; use the tokens. Older pages still have some, and later steps replace them.
 - Page titles do not set their own color; heading utilities own it.
 - Inputs keep 16px text on phones so iOS does not zoom.
+- No hint or how-to lines (gesture hints, "pick a size for each tier", "confirmed by the bakery" fine print). Short labels speak for themselves. Keep only text the customer needs: prices, deadlines, payment and hold notices, real errors, privacy links.

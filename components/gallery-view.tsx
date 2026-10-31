@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Navigation } from '@/components/navigation'
 import { PageBand } from '@/components/page-band'
 import { Footer } from '@/components/footer'
@@ -17,7 +17,7 @@ function GalleryPhoto({ src, index, expanded = false }: { src: string; index: nu
     <span
       className={
         'relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-secondary ' +
-        (expanded ? 'h-[55dvh]' : 'aspect-square')
+        (expanded ? 'h-[65dvh] sm:h-[55dvh]' : 'aspect-square')
       }
     >
       {failed ? (
@@ -60,11 +60,149 @@ function GalleryPhoto({ src, index, expanded = false }: { src: string; index: nu
   )
 }
 
+type View = { scale: number; x: number; y: number }
+const FIT: View = { scale: 1, x: 0, y: 0 }
+const MAX_ZOOM = 4
+
+/**
+ * The enlarged photo. Pinch or double-tap (double-click) to zoom, drag to look around a zoomed photo,
+ * and swipe sideways on a touch screen for the next photo, only when not zoomed in, so zooming never flips photos.
+ */
+function ZoomablePhoto({ children, onSwipe }: { children: ReactNode; onSwipe: (direction: number) => void }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [view, setViewState] = useState(FIT)
+  const viewRef = useRef(FIT)
+  const [dragging, setDragging] = useState(false)
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  // One touch-down to the last lift. Re-based whenever a finger is added or lifted.
+  const gesture = useRef<{
+    startX: number
+    startY: number
+    dist: number
+    from: View
+    moved: boolean
+    pinched: boolean
+    touch: boolean
+  } | null>(null)
+  const lastTap = useRef(0)
+
+  function setView(next: View) {
+    const rect = box.current!.getBoundingClientRect()
+    const scale = Math.min(MAX_ZOOM, Math.max(1, next.scale))
+    const maxX = (rect.width * (scale - 1)) / 2
+    const maxY = (rect.height * (scale - 1)) / 2
+    const clamped = {
+      scale,
+      x: Math.min(maxX, Math.max(-maxX, next.x)),
+      y: Math.min(maxY, Math.max(-maxY, next.y)),
+    }
+    viewRef.current = clamped
+    setViewState(clamped)
+  }
+  const spread = () => {
+    const [a, b] = [...pointers.current.values()]
+    return Math.hypot(a.x - b.x, a.y - b.y)
+  }
+  function rebase(touch: boolean) {
+    const [first] = pointers.current.values()
+    gesture.current = {
+      startX: first.x,
+      startY: first.y,
+      dist: pointers.current.size > 1 ? spread() : 0,
+      from: viewRef.current,
+      moved: gesture.current?.moved ?? false,
+      pinched: (gesture.current?.pinched ?? false) || pointers.current.size > 1,
+      touch,
+    }
+  }
+  /** Double tap: zoom in on that spot, or back out. */
+  function toggleZoom(x: number, y: number) {
+    if (viewRef.current.scale > 1) return setView(FIT)
+    const rect = box.current!.getBoundingClientRect()
+    const scale = 2.5
+    setView({
+      scale,
+      x: -(x - rect.left - rect.width / 2) * (scale - 1),
+      y: -(y - rect.top - rect.height / 2) * (scale - 1),
+    })
+  }
+
+  return (
+    <div
+      ref={box}
+      className="touch-none overflow-hidden rounded-xl select-none"
+      onPointerDown={event => {
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId)
+        } catch {}
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+        setDragging(true)
+        rebase(event.pointerType === 'touch')
+      }}
+      onPointerMove={event => {
+        const g = gesture.current
+        if (!g || !pointers.current.has(event.pointerId)) return
+        pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+        if (pointers.current.size > 1 && g.dist) {
+          const scale = (g.from.scale * spread()) / g.dist
+          setView({ scale, x: (g.from.x * scale) / g.from.scale, y: (g.from.y * scale) / g.from.scale })
+          g.moved = true
+          return
+        }
+        const dx = event.clientX - g.startX
+        const dy = event.clientY - g.startY
+        if (Math.hypot(dx, dy) > 8) g.moved = true
+        if (g.from.scale > 1) setView({ ...g.from, x: g.from.x + dx, y: g.from.y + dy })
+      }}
+      onPointerUp={event => {
+        const g = gesture.current
+        pointers.current.delete(event.pointerId)
+        if (!g) return
+        if (pointers.current.size) return rebase(g.touch)
+        gesture.current = null
+        setDragging(false)
+        const dx = event.clientX - g.startX
+        const dy = event.clientY - g.startY
+        if (!g.moved) {
+          const now = Date.now()
+          if (now - lastTap.current < 300) {
+            lastTap.current = 0
+            toggleZoom(event.clientX, event.clientY)
+          } else lastTap.current = now
+        } else if (
+          g.touch &&
+          !g.pinched &&
+          viewRef.current.scale === 1 &&
+          Math.abs(dx) > 50 &&
+          Math.abs(dx) > Math.abs(dy)
+        )
+          onSwipe(dx > 0 ? -1 : 1)
+      }}
+      onPointerCancel={event => {
+        pointers.current.delete(event.pointerId)
+        if (!pointers.current.size) {
+          gesture.current = null
+          setDragging(false)
+        }
+      }}
+    >
+      <div
+        style={{
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+          transition: dragging ? 'none' : 'transform 200ms ease-out',
+        }}
+        className={view.scale > 1 ? 'cursor-grab' : 'cursor-zoom-in'}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
 // Photos arrive from the server (app/gallery/page.tsx); no extra request per visit.
 export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
   const [selected, setSelected] = useState<number | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
-  const touchX = useRef<number | null>(null)
   const count = galleryImages.length
   const move = (direction: number) =>
     setSelected(index => (index === null ? null : (index + direction + count) % count))
@@ -152,31 +290,18 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
           >
             <DialogTitle className="sr-only">Sunville Bakery gallery</DialogTitle>
             <DialogDescription className="sr-only">
-              Use the arrow buttons or arrow keys to browse photos. Swipe on touch screens.
+              Use the arrow buttons or arrow keys to browse photos. Double-tap or pinch to zoom; swipe on touch screens.
             </DialogDescription>
-            {/* Arrows sit on the photo's left and right edges; swipe also works on phones. */}
-            <div
-              className="relative"
-              onTouchStart={event => {
-                touchX.current = event.touches[0].clientX
-              }}
-              onTouchEnd={event => {
-                if (touchX.current === null) return
-                const distance = event.changedTouches[0].clientX - touchX.current
-                touchX.current = null
-                if (Math.abs(distance) > 40) move(distance > 0 ? -1 : 1)
-              }}
-            >
+            {/* Mouse: arrows on the photo's edges. Touch screens: no arrows on the photo (they got in the way of
+                zooming); swipe, or use the small buttons under it. */}
+            <div className="relative">
               {selected !== null && (
-                <GalleryPhoto
-                  key={galleryImages[selected] + selected}
-                  src={galleryImages[selected]}
-                  index={selected}
-                  expanded
-                />
+                <ZoomablePhoto key={galleryImages[selected] + selected} onSwipe={move}>
+                  <GalleryPhoto src={galleryImages[selected]} index={selected} expanded />
+                </ZoomablePhoto>
               )}
               {count > 1 && (
-                <>
+                <div className="[@media(pointer:coarse)]:hidden">
                   <button
                     type="button"
                     aria-label="Previous photo"
@@ -193,12 +318,34 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
                   >
                     <ChevronRight aria-hidden="true" className="h-6 w-6" />
                   </button>
-                </>
+                </div>
               )}
             </div>
-            <p role="status" className="text-center text-sm text-muted-foreground">
-              {(selected ?? 0) + 1} / {count}
-            </p>
+            <div className="flex items-center justify-center gap-4">
+              {count > 1 && (
+                <button
+                  type="button"
+                  aria-label="Previous photo"
+                  onClick={() => move(-1)}
+                  className="hidden size-11 items-center justify-center rounded-full text-primary [@media(pointer:coarse)]:flex"
+                >
+                  <ChevronLeft aria-hidden="true" className="size-6" />
+                </button>
+              )}
+              <p role="status" className="text-center text-sm text-muted-foreground">
+                {(selected ?? 0) + 1} / {count}
+              </p>
+              {count > 1 && (
+                <button
+                  type="button"
+                  aria-label="Next photo"
+                  onClick={() => move(1)}
+                  className="hidden size-11 items-center justify-center rounded-full text-primary [@media(pointer:coarse)]:flex"
+                >
+                  <ChevronRight aria-hidden="true" className="size-6" />
+                </button>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       </main>

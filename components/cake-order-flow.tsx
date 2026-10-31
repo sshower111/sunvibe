@@ -35,7 +35,6 @@ import {
   ORDER_FLAVORS,
   ORDER_SIZES,
   pickupSlots,
-  SAME_DAY_NOTICE_HOURS,
 } from '@/lib/cake-order'
 import { deliveryFee, largestServings, priceRange, recommend, startingPrice } from '@/lib/cake-finder'
 import { formatPhone } from '@/lib/form-helpers'
@@ -73,6 +72,8 @@ const fromPrice = (cake: CakeSpec) => {
   const range = priceRange(cake)
   return range ? `from ${money(range[0])}` : 'price quoted'
 }
+/** Phones and tablets: the one-column layout (the cake drawing beside the steps starts at lg). */
+const narrow = () => window.matchMedia('(max-width: 1023px)').matches
 /** Tier sizes the builder starts with, top first. */
 const startTiers = (count: number) => (count === 3 ? [8, 10, 12] : [6, 10])
 
@@ -122,7 +123,7 @@ function Choice({
       onClick={onClick}
       className={cn(
         'relative flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border bg-card px-3 text-center transition-colors hover:border-foreground/40 hover:bg-secondary',
-        big ? 'min-h-28 py-5' : 'min-h-16 py-3',
+        big ? 'min-h-24 py-4 sm:min-h-28 sm:py-5' : 'min-h-16 py-3',
         selected && 'border-primary ring-1 ring-primary hover:border-primary',
         selected && (big ? 'bg-card hover:bg-card' : 'bg-primary text-primary-foreground hover:bg-primary'),
       )}
@@ -222,9 +223,16 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     requestAnimationFrame(() => {
       heading.current?.focus({ preventScroll: true })
       const box = top.current?.getBoundingClientRect()
-      if (box && box.top < 0) top.current?.scrollIntoView({ block: 'start' })
+      // Phones and tablets: every step starts with the progress bar just under the header, past the page title.
+      if (box && (box.top < 0 || (narrow() && box.top > 1))) top.current?.scrollIntoView({ block: 'start' })
     })
   }
+  // Step 1 on phones: bring the size suggestions into view once there is a guest count.
+  const suggestions = useRef<HTMLFieldSetElement>(null)
+  const showSuggestions = () =>
+    requestAnimationFrame(() => {
+      if (narrow()) suggestions.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    })
 
   // Step 1: size choices for the guest count, best fit first.
   const guests = /^\d{1,3}$/.test(data.guests) ? Number(data.guests) : 0
@@ -409,7 +417,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
 
   if (done)
     return (
-      <div ref={top} role="status" className="scroll-mt-32 space-y-4 rounded-lg border bg-card card-pad">
+      <div ref={top} role="status" className="space-y-4 rounded-lg border bg-card card-pad">
         {done.kind === 'paid' ? (
           <>
             <h2 className="heading-2">{done.held ? 'Order received' : 'Order confirmed'}</h2>
@@ -496,7 +504,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     .join(' · ')
 
   return (
-    <div ref={top} className="mx-auto grid max-w-6xl scroll-mt-32 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div ref={top} className="mx-auto grid max-w-6xl items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       {/* Wide screens: the cake stays in view beside the questions. */}
       <aside
         aria-label="Your cake"
@@ -514,7 +522,8 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         className="relative min-w-0 sm:rounded-lg sm:border sm:bg-card sm:card-pad"
       >
         {/* Phones and tablets: a small drawing of the cake above the steps, once there is a size. */}
-        {cake && (
+        {/* Not on the first step: the size suggestions already show the cake, and the strip would push them down. */}
+        {cake && step > 0 && (
           <div className="mb-6 flex items-center gap-4 rounded-lg bg-surface p-3 lg:hidden">
             <div className="w-32 shrink-0">{preview}</div>
             <div className="min-w-0">
@@ -588,6 +597,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                       setData(d => ({ ...d, guests: String(value), size: '' }))
                       setShowAll(false)
                       setBuilder(null)
+                      showSuggestions()
                     }}
                   />
                 ))}
@@ -603,7 +613,15 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                   min={1}
                   max={999}
                   placeholder="e.g., 24"
+                  enterKeyHint="done"
                   value={data.guests}
+                  // Done / Enter closes the keyboard and shows the suggestions instead of skipping ahead.
+                  onKeyDown={e => {
+                    if (e.key !== 'Enter') return
+                    e.preventDefault()
+                    e.currentTarget.blur()
+                  }}
+                  onBlur={() => guests > 0 && showSuggestions()}
                   onChange={e => {
                     setData(d => ({ ...d, guests: e.target.value, size: '' }))
                     setShowAll(false)
@@ -614,9 +632,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
               {result &&
                 !showAll &&
                 (result.best ? (
-                  <fieldset>
+                  // scroll-mb keeps the cards clear of the Next bar pinned to the bottom on phones.
+                  <fieldset ref={suggestions} className="scroll-mb-28">
                     <legend className="mb-5 w-full text-center text-sm text-muted-foreground">We suggest</legend>
-                    <div className="grid gap-x-3 gap-y-5 sm:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3">
                       {sizeOptions.map(item => (
                         <Choice
                           key={item.value}
@@ -643,9 +662,6 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                 <fieldset className="rounded-lg border bg-surface p-4 sm:p-5">
                   <legend className="sr-only">Build your own tiered cake</legend>
                   <p className="font-semibold">Your own tiered cake</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Pick a size for each tier. Each one sits on a bigger one below it.
-                  </p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     {[2, MAX_TIERS].map(count => (
                       <Choice
@@ -824,13 +840,6 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                   onClick={() => set('design', 'custom')}
                 />
               </div>
-              <p className="rounded-md bg-surface px-4 py-3 text-sm empty:hidden">
-                {!square
-                  ? ''
-                  : everyday
-                    ? `Need it today? A classic cake can be picked up the same day with ${SAME_DAY_NOTICE_HOURS} hours’ notice. A custom cake needs at least 3 days.`
-                    : 'Same-day pickup is for a classic single cake (round or sheet) in one of our listed flavors and fillings. This cake needs at least 3 days.'}
-              </p>
               {data.design && (
                 <div>
                   <label htmlFor="flow-message" className={label}>
@@ -849,11 +858,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
               {data.design === 'custom' && (
                 <>
                   <div className="rounded-lg border border-dashed border-primary/40 bg-surface p-4 sm:p-5">
-                    <p className="font-semibold">Have a picture? We’d love to see it</p>
-                    <p className="mt-1 mb-4 text-sm text-muted-foreground">
-                      A photo, screenshot or sketch of a cake you like is the quickest way to show us your idea, so we
-                      can agree on the details before we bake. Up to {MAX_PHOTOS}.
-                    </p>
+                    <p className="mb-4 font-semibold">Have a picture? We’d love to see it</p>
                     <input
                       id="flow-photos"
                       type="file"
