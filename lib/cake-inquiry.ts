@@ -28,9 +28,9 @@ export const fillings = [
 // The bakery accommodates fillings it doesn't list; the customer describes them in the notes.
 export const CUSTOM_FILLING = fillings[fillings.length - 1]
 export const MAX_CAKE_MESSAGE = 60
-// 5 × 800 KB keeps the whole upload under Vercel's 4.5 MB request limit.
-export const MAX_PHOTO_BYTES = 800 * 1024
-export const MAX_PHOTOS = 5
+// 10 × 400 KB keeps the whole upload under Vercel’s 4.5 MB request limit (photos are resized to 1400px in the browser).
+export const MAX_PHOTO_BYTES = 400 * 1024
+export const MAX_PHOTOS = 10
 export function earliestCakeDate(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Los_Angeles',

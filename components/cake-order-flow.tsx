@@ -145,6 +145,7 @@ function Choice({
 
 /** Flavor or filling: a grid of tap tiles under a label. */
 function Pills({
+  name,
   legend,
   options,
   value,
@@ -157,7 +158,7 @@ function Pills({
   onChange: (value: string) => void
 }) {
   return (
-    <fieldset>
+    <fieldset id={name}>
       <legend className="mb-3 text-sm font-semibold">{legend}</legend>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {options.map(option => (
@@ -227,6 +228,21 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
       if (box && (box.top < 0 || (narrow() && box.top > 1))) top.current?.scrollIntoView({ block: 'start' })
     })
   }
+  // Phones and tablets: after an answer, bring the next question up just under the header and the cake strip.
+  const strip = useRef<HTMLDivElement>(null)
+  const reveal = (id: string) =>
+    requestAnimationFrame(() => {
+      const target = document.getElementById(id)
+      if (!narrow() || !target) return
+      const cover =
+        (document.querySelector('header')?.getBoundingClientRect().bottom ?? 0) +
+        (strip.current?.offsetHeight ?? 0) +
+        12
+      const box = target.getBoundingClientRect()
+      // Already fully in view above the pinned Next bar: leave the page where it is.
+      if (box.top >= cover && box.bottom <= window.innerHeight - 96) return
+      window.scrollBy({ top: box.top - cover, behavior: 'smooth' })
+    })
   // Step 1 on phones: bring the size suggestions into view once there is a guest count.
   const suggestions = useRef<HTMLFieldSetElement>(null)
   const showSuggestions = () =>
@@ -521,15 +537,20 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         aria-busy={busy}
         className="relative min-w-0 sm:rounded-lg sm:border sm:bg-card sm:card-pad"
       >
-        {/* Phones and tablets: a small drawing of the cake above the steps, once there is a size. */}
-        {/* Not on the first step: the size suggestions already show the cake, and the strip would push them down. */}
-        {cake && step > 0 && (
-          <div className="mb-6 flex items-center gap-4 rounded-lg bg-surface p-3 lg:hidden">
-            <div className="w-32 shrink-0">{preview}</div>
-            <div className="min-w-0">
-              <p className="heading-3 text-base">Your cake</p>
-              <p className="text-sm text-ink-muted">{chosen}</p>
-              <p className="text-sm text-ink-muted">Serves {cake.servings}</p>
+        {/* Phones and tablets: a small drawing of the cake pinned under the header while answering, so each choice
+            (a tier's flavor, the writing) shows as it is made. Not on the first step (the size suggestions already
+            show the cake) nor the summary (it has a big drawing). */}
+        {cake && step > 0 && step !== REVIEW && (
+          <div
+            ref={strip}
+            className="sticky top-[var(--header-height)] z-20 -mx-[var(--gutter)] mb-4 bg-background px-[var(--gutter)] py-2 sm:mx-0 sm:px-0 lg:hidden"
+          >
+            <div className="flex items-center gap-3 rounded-lg bg-surface p-2">
+              <div className="w-24 shrink-0">{preview}</div>
+              <div className="min-w-0 text-sm text-ink-muted">
+                <p className="line-clamp-2">{chosen}</p>
+                <p>Serves {cake.servings}</p>
+              </div>
             </div>
           </div>
         )}
@@ -769,17 +790,27 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             <>
               {tierCount > 1 && (
                 <div className="grid grid-cols-2 gap-3">
-                  <Choice title="Same in every tier" selected={data.sameTiers} onClick={() => set('sameTiers', true)} />
+                  <Choice
+                    title="Same in every tier"
+                    selected={data.sameTiers}
+                    onClick={() => {
+                      set('sameTiers', true)
+                      reveal('flow-flavor')
+                    }}
+                  />
                   <Choice
                     title="Different for each tier"
                     selected={!data.sameTiers}
-                    onClick={() => setData(d => ({ ...d, sameTiers: false, tierFlavors: tierChoices }))}
+                    onClick={() => {
+                      setData(d => ({ ...d, sameTiers: false, tierFlavors: tierChoices }))
+                      reveal('flow-tier-flavors-0')
+                    }}
                   />
                 </div>
               )}
               {perTier ? (
                 tierChoices.map((tier, index) => (
-                  <section key={index} className="space-y-5 border-t pt-5">
+                  <section key={index} id={`flow-tier-flavors-${index}`} className="space-y-5 border-t pt-5">
                     <h4 className="heading-3">
                       {tierNames(tierCount)[index]} tier · {tierSizes(size)![index]}-inch
                     </h4>
@@ -788,14 +819,20 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                       legend="Cake flavor"
                       options={notSureLast(flavors)}
                       value={tier.flavor}
-                      onChange={value => setTier(index, 'flavor', value)}
+                      onChange={value => {
+                        setTier(index, 'flavor', value)
+                        reveal(`flow-filling-${index}`)
+                      }}
                     />
                     <Pills
                       name={`flow-filling-${index}`}
                       legend="Filling"
                       options={notSureLast(fillings)}
                       value={tier.filling}
-                      onChange={value => setTier(index, 'filling', value)}
+                      onChange={value => {
+                        setTier(index, 'filling', value)
+                        if (index < tierCount - 1) reveal(`flow-tier-flavors-${index + 1}`)
+                      }}
                     />
                   </section>
                 ))
@@ -806,7 +843,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     legend="Cake flavor"
                     options={notSureLast(flavors)}
                     value={data.flavor}
-                    onChange={value => set('flavor', value)}
+                    onChange={value => {
+                      set('flavor', value)
+                      reveal('flow-filling')
+                    }}
                   />
                   <Pills
                     name="flow-filling"
@@ -831,17 +871,23 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                       : 'Cream finish, piped border and your writing'
                   }
                   selected={data.design === 'simple'}
-                  onClick={() => set('design', 'simple')}
+                  onClick={() => {
+                    set('design', 'simple')
+                    reveal('flow-writing')
+                  }}
                 />
                 <Choice
                   title="Custom cake"
                   sub="Your theme, colors and decorations. We’ll quote it."
                   selected={data.design === 'custom'}
-                  onClick={() => set('design', 'custom')}
+                  onClick={() => {
+                    set('design', 'custom')
+                    reveal('flow-writing')
+                  }}
                 />
               </div>
               {data.design && (
-                <div>
+                <div id="flow-writing">
                   <label htmlFor="flow-message" className={label}>
                     Writing on the cake (optional)
                   </label>
@@ -876,7 +922,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                         try {
                           const prepared: File[] = []
                           for (const file of selected)
-                            prepared.push(await prepareGalleryPhoto(file, { maxSide: 1600, maxBytes: MAX_PHOTO_BYTES }))
+                            prepared.push(await prepareGalleryPhoto(file, { maxSide: 1400, maxBytes: MAX_PHOTO_BYTES }))
                           setPhotos(current => [...current, ...prepared])
                           requestId.current = ''
                         } catch (e) {
@@ -947,13 +993,16 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                       title={title}
                       sub={option === PICKUP ? SITE.street : cost}
                       selected={data.fulfillment === option}
-                      onClick={() => set('fulfillment', option)}
+                      onClick={() => {
+                        set('fulfillment', option)
+                        reveal(option === PICKUP ? 'flow-when' : 'flow-address-box')
+                      }}
                     />
                   )
                 })}
               </div>
               {data.fulfillment !== PICKUP && (
-                <div>
+                <div id="flow-address-box">
                   <label htmlFor="flow-address" className={label}>
                     Delivery address or hotel
                   </label>
@@ -966,7 +1015,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                   />
                 </div>
               )}
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div id="flow-when" className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="flow-date" className={label}>
                     Date
@@ -1025,6 +1074,8 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
 
           {step === REVIEW && (
             <div className="space-y-6">
+              {/* Phones and tablets: the finished cake, big enough to read the writing. */}
+              {cake && <div className="mx-auto max-w-xs rounded-lg bg-surface p-4 lg:hidden">{preview}</div>}
               <dl className="divide-y rounded-lg border">
                 {summary
                   .filter(([, value]) => value)
