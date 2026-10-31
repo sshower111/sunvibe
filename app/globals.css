@@ -648,3 +648,10 @@ body:has([data-admin-ui]) [data-variant='link'] {
     text-decoration: underline;
   }
 }
+
+/* Apple's own Apple Pay button (Safari draws it); components/square-card.tsx. */
+.apple-pay-button {
+  -webkit-appearance: -apple-pay-button;
+  -apple-pay-button-type: plain;
+  -apple-pay-button-style: black;
+}

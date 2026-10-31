@@ -1,13 +1,15 @@
 import 'server-only'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
-import { type CakeInquiry, inquiryRef, formatEventTime } from '@/lib/cake-inquiry'
+import { type CakeInquiry, inquiryRef, formatEventTime, tierFlavorLines } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { escapeHtml } from '@/lib/security'
 
 // The two custom cake inquiry emails: one to the bakery (English + Chinese), one copy to the customer.
 // Used by the public form and by the admin "Send test inquiry" button, so a test looks exactly like the real thing.
+
+const TIER_ZH: Record<string, string> = { 'Top tier': '頂層', 'Middle tier': '中層', 'Bottom tier': '底層' }
 
 type Attachment = { filename: string; content: Buffer }
 type Options = {
@@ -19,11 +21,17 @@ type Options = {
 
 /** Sends the bakery email. Returns false if it could not be sent. */
 export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachments = [], test }: Options) {
+  const { tierFlavors, ...rest } = data
   const values = {
-    ...data,
+    ...rest,
     size: cakeLabel(data.size),
     eventTime: formatEventTime(data.eventTime) || 'Not decided yet',
     deliveryAddress: data.fulfillment === 'Pickup' ? 'Bakery pickup' : data.deliveryAddress,
+    // Different flavor per tier: one line per tier under Flavor.
+    ...(tierFlavors && {
+      flavor: tierFlavorLines(data.size, tierFlavors).join('\n'),
+      filling: 'By tier, see flavor',
+    }),
   }
   const labels: Record<string, string> = {
     name: 'Name',
@@ -49,13 +57,19 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     const zh =
       key === 'deliveryAddress' && data.fulfillment === 'Pickup'
         ? ZH.bakeryPickup
-        : key === 'eventTime' && !data.eventTime
-          ? ZH.notDecided
-          : !value
-            ? ZH.none
-            : translated.has(key)
-              ? zhOption(value)
-              : value
+        : tierFlavors && key === 'flavor'
+          ? tierFlavorLines(data.size, tierFlavors, zhOption)
+              .map(line => line.replace(/^(Top|Middle|Bottom) tier/, name => TIER_ZH[name]))
+              .join('\n')
+          : tierFlavors && key === 'filling'
+            ? '按層，見口味'
+            : key === 'eventTime' && !data.eventTime
+              ? ZH.notDecided
+              : !value
+                ? ZH.none
+                : translated.has(key)
+                  ? zhOption(value)
+                  : value
     return [ZH[key as keyof typeof ZH], zh] as [string, string]
   })
   const text = Object.entries(labels)
@@ -93,10 +107,12 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
 
 /** Sends the customer's copy. Never throws: a missing copy must not fail a delivered inquiry. */
 export async function sendCustomerCopy(data: CakeInquiry, { requestId, test }: Options) {
+  const { tierFlavors, ...rest } = data
   const values = {
-    ...data,
+    ...rest,
     size: cakeLabel(data.size),
     eventTime: formatEventTime(data.eventTime) || 'Not decided yet',
+    flavors: tierFlavors ? tierFlavorLines(data.size, tierFlavors).join('; ') : `${data.flavor} / ${data.filling}`,
   }
   try {
     const copy = await mailer().emails.send(
@@ -120,7 +136,7 @@ function customerCopy(values: Record<string, string>) {
   const rows: [string, string][] = [
     ['Event', [values.eventType, values.eventDate, values.eventTime].filter(Boolean).join(' · ')],
     ['Cake', `${values.servings} servings · ${values.size}`],
-    ['Flavor / filling', `${values.flavor} / ${values.filling}`],
+    ['Flavor / filling', values.flavors],
     ['Writing on cake', values.cakeMessage || 'None'],
     ['Budget', values.budget],
     ['Pickup / delivery', values.fulfillment],

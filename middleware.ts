@@ -11,17 +11,20 @@ const isStrict = (pathname: string) =>
 const SQUARE_WEB = 'https://web.squarecdn.com https://sandbox.web.squarecdn.com'
 const SQUARE_CONNECT =
   'https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://o160250.ingest.sentry.io'
-const SQUARE_FONTS = 'https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net'
+// Google Pay button and payment sheet (loaded by Square's SDK). Apple Pay is built into Safari and needs no host.
+const GOOGLE_PAY = 'https://pay.google.com https://google.com'
+const SQUARE_FONTS =
+  'https://cash-f.squarecdn.com https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net'
 
 function policy(scriptSources: string, development: boolean) {
   return [
     "default-src 'self'",
-    `script-src 'self' ${scriptSources} https://challenges.cloudflare.com https://va.vercel-scripts.com https://www.googletagmanager.com ${SQUARE_WEB} ${development ? "'unsafe-eval'" : ''}`,
+    `script-src 'self' ${scriptSources} https://challenges.cloudflare.com https://va.vercel-scripts.com https://www.googletagmanager.com ${SQUARE_WEB} ${GOOGLE_PAY} ${development ? "'unsafe-eval'" : ''}`,
     `style-src 'self' 'unsafe-inline' ${SQUARE_WEB}`,
     "img-src 'self' https: data: blob:",
     `font-src 'self' data: ${SQUARE_FONTS}`,
-    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com ${SQUARE_CONNECT} ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
-    `frame-src https://challenges.cloudflare.com ${SQUARE_WEB}`,
+    `connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com ${SQUARE_CONNECT} ${GOOGLE_PAY} ${development ? 'ws://127.0.0.1:* ws://localhost:*' : ''}`,
+    `frame-src https://challenges.cloudflare.com ${SQUARE_WEB} ${GOOGLE_PAY}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

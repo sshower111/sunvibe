@@ -6,6 +6,7 @@ import {
   inquiryStatuses,
   inquiryStatusLabels,
   MAX_STAFF_NOTES,
+  tierFlavorLines,
   type InquiryStatus,
   type StoredCakeInquiry,
 } from '@/lib/cake-inquiry'
@@ -143,7 +144,10 @@ export function AdminCakeInquiries() {
           const rows: [string, ReactNode][] = [
             ['Event', [i.eventType, i.eventDate, formatEventTime(i.eventTime)].filter(Boolean).join(' · ')],
             ['Cake', `${i.servings} servings · ${cakeLabel(i.size)}`],
-            ['Flavor / filling', `${i.flavor} / ${i.filling}`],
+            [
+              'Flavor / filling',
+              i.tierFlavors ? tierFlavorLines(i.size, i.tierFlavors).join('\n') : `${i.flavor} / ${i.filling}`,
+            ],
             ['Writing on cake', i.cakeMessage || 'None'],
             ['Budget', i.budget],
             [

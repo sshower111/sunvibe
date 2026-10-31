@@ -5,7 +5,16 @@ import { ImagePlus } from 'lucide-react'
 import { SITE } from '@/lib/site-info'
 import { cn } from '@/lib/utils'
 import { storeDate } from '@/lib/occasion-dates'
-import { cakeCatalog, deliveryOptions, type CakeSpec } from '@/lib/cake-catalog'
+import {
+  cakeCatalog,
+  deliveryOptions,
+  findCake,
+  MAX_TIERS,
+  TIER_SIZES,
+  tierSizes,
+  tierValue,
+  type CakeSpec,
+} from '@/lib/cake-catalog'
 import {
   earliestCakeDate,
   fillings,
@@ -14,6 +23,9 @@ import {
   MAX_CAKE_MESSAGE,
   MAX_PHOTO_BYTES,
   MAX_PHOTOS,
+  tierFlavorLines,
+  tierNames,
+  type TierFlavor,
 } from '@/lib/cake-inquiry'
 import {
   decideOrder,
@@ -23,6 +35,7 @@ import {
   ORDER_FLAVORS,
   ORDER_SIZES,
   pickupSlots,
+  SAME_DAY_NOTICE_HOURS,
 } from '@/lib/cake-order'
 import { deliveryFee, largestServings, priceRange, recommend, startingPrice } from '@/lib/cake-finder'
 import { formatPhone } from '@/lib/form-helpers'
@@ -51,12 +64,26 @@ const guestPresets = [10, 20, 30, 50, 75, 100]
 const money = (n: number) => '$' + (Number.isInteger(n) ? n : n.toFixed(2))
 const showOption = (value: string) =>
   value === 'Please recommend' ? 'Not sure' : value.startsWith('Something else') ? 'Something else' : value
+/** Real choices first; "Not sure" (stored as 'Please recommend') goes last. */
+const notSureLast = (options: readonly string[]) => [
+  ...options.filter(o => o !== 'Please recommend'),
+  'Please recommend',
+]
+const fromPrice = (cake: CakeSpec) => {
+  const range = priceRange(cake)
+  return range ? `from ${money(range[0])}` : 'price quoted'
+}
+/** Tier sizes the builder starts with, top first. */
+const startTiers = (count: number) => (count === 3 ? [8, 10, 12] : [6, 10])
 
 const empty = {
   guests: '',
   size: '',
   flavor: '',
   filling: '',
+  // Tiered cakes: the same flavor throughout, or one per tier (top first).
+  sameTiers: true,
+  tierFlavors: [] as TierFlavor[],
   design: '' as '' | 'simple' | 'custom',
   cakeMessage: '',
   notes: '',
@@ -162,6 +189,8 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   const [photos, setPhotos] = useState<File[]>([])
   // Step 1: show every size instead of only the suggestions.
   const [showAll, setShowAll] = useState(false)
+  // Step 1: the customer's own tiers (sizes top first), while building them.
+  const [builder, setBuilder] = useState<number[] | null>(null)
   const [preparing, setPreparing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [cardReady, setCardReady] = useState(false)
@@ -207,18 +236,37 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     )
   }, [result])
   // A size the customer picked (from suggestions or all sizes) wins; otherwise the best fit.
-  const picked = cakeCatalog.find(c => c.value === data.size)
+  const picked = findCake(data.size)
   const size = picked ? data.size : (result?.best?.value ?? (guests > 0 ? 'Not sure' : ''))
-  const cake = cakeCatalog.find(c => c.value === size) ?? null
+  const cake = findCake(size)
+  const builtValid = !builder || !!tierSizes(tierValue(builder))
+  function build(sizes: number[]) {
+    setBuilder(sizes)
+    set('size', tierSizes(tierValue(sizes)) ? tierValue(sizes) : '')
+  }
+
+  // Step 2: a tiered cake can have a different flavor and filling in each tier.
+  const tierCount = tierSizes(size)?.length ?? 1
+  const perTier = tierCount > 1 && !data.sameTiers
+  const tierChoices: TierFlavor[] = Array.from(
+    { length: tierCount },
+    (_, i) => data.tierFlavors[i] ?? ({ flavor: data.flavor, filling: data.filling } as TierFlavor),
+  )
+  const setTier = (index: number, key: keyof TierFlavor, value: string) =>
+    set(
+      'tierFlavors',
+      tierChoices.map((t, i) => (i === index ? { ...t, [key]: value } : t)),
+    )
+  const flavorLines = perTier ? tierFlavorLines(size, tierChoices, showOption) : []
 
   // Pay now only for an everyday cake picked up at a time we offer; everything else is quoted.
-  const payNow =
+  // A classic look on one of these can be ready the same day; the design step says so.
+  const everyday =
     !!square &&
-    data.design === 'simple' &&
     (ORDER_SIZES as readonly string[]).includes(size) &&
     ORDER_FLAVORS.includes(data.flavor as never) &&
-    ORDER_FILLINGS.includes(data.filling as never) &&
-    data.fulfillment === PICKUP
+    ORDER_FILLINGS.includes(data.filling as never)
+  const payNow = everyday && data.design === 'simple' && data.fulfillment === PICKUP
   const minDate = payNow ? storeDate(now) : earliestCakeDate(now)
   const slots = useMemo(() => (payNow && data.date ? pickupSlots(data.date, now) : []), [payNow, data.date, now])
   const decision = payNow && data.date && data.time ? decideOrder(size, data.date, data.time, now) : null
@@ -237,18 +285,27 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         ? `${money(cakePrice)} + delivery`
         : money(cakePrice + fee)
       : cake
-        ? money(priceRange(cake)[0] + (fee ?? 0))
+        ? priceRange(cake)
+          ? money(priceRange(cake)![0] + (fee ?? 0))
+          : 'We’ll quote'
         : ''
 
   function check(): string {
     if (step === 0) {
+      if (!builtValid) return 'Each tier needs to be smaller than the one below it.'
       if (!guests && !picked) return 'Enter how many guests, or pick a size.'
     }
     if (step === 1) {
-      if (!data.flavor) return 'Choose a flavor.'
-      if (!data.filling) return 'Choose a filling.'
+      if (perTier) {
+        const missing = tierChoices.findIndex(t => !t.flavor || !t.filling)
+        if (missing >= 0)
+          return `Choose a flavor and filling for the ${tierNames(tierCount)[missing].toLowerCase()} tier.`
+      } else {
+        if (!data.flavor) return 'Choose a flavor.'
+        if (!data.filling) return 'Choose a filling.'
+      }
     }
-    if (step === 2 && !data.design) return 'Choose simple or custom design.'
+    if (step === 2 && !data.design) return 'Choose a classic look or a custom cake.'
     if (step === 3) {
       if (!data.date) return 'Choose a date.'
       if (payNow && !data.time) return 'Choose a pickup time.'
@@ -271,15 +328,17 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     else void submit()
   }
 
-  async function submit() {
+  /** wallet: Apple Pay or Google Pay instead of the card; it must be called before the first await. */
+  async function submit(wallet?: () => Promise<string>) {
     if (busy) return
     setBusy(true)
     setError('')
     requestId.current ||= crypto.randomUUID()
     try {
       if (payNow) {
-        if (!card.current || !cardReady || cakePrice === null) throw new Error('Please wait for the card form to load.')
-        const cardToken = await card.current.tokenize(cakePrice, data)
+        if (cakePrice === null || (!wallet && (!card.current || !cardReady)))
+          throw new Error('Please wait for the card form to load.')
+        const cardToken = await (wallet ? wallet() : card.current!.tokenize(cakePrice, data))
         const captchaToken = await captcha.current?.verify()
         if (!captchaToken) throw new Error('Please try verification again.')
         const response = await fetch('/api/cake-orders', {
@@ -315,8 +374,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           eventType: 'Other',
           servings: String(guests || cake?.servings || 1),
           size,
-          flavor: data.flavor,
-          filling: data.filling,
+          // Different tiers: flavor and filling hold the top tier, and every tier is sent as well.
+          flavor: perTier ? tierChoices[0].flavor : data.flavor,
+          filling: perTier ? tierChoices[0].filling : data.filling,
+          tierFlavors: perTier ? JSON.stringify(tierChoices) : '',
           cakeMessage: data.cakeMessage,
           budget: 'Not sure — please advise',
           fulfillment: data.fulfillment,
@@ -398,9 +459,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   const summary: [string, string, number][] = [
     ['Guests', data.guests || (cake ? 'Not sure yet' : ''), 0],
     ['Cake', cake?.label ?? (size === 'Not sure' ? 'We’ll suggest' : ''), 0],
-    ['Flavor', data.flavor && showOption(data.flavor), 1],
-    ['Filling', data.filling && showOption(data.filling), 1],
-    ['Design', data.design === 'custom' ? 'Custom design' : data.design === 'simple' ? 'Simple' : '', 2],
+    ['Flavor', perTier ? flavorLines.join('\n') : data.flavor && showOption(data.flavor), 1],
+    ['Filling', perTier ? '' : data.filling && showOption(data.filling), 1],
+    ['Design', data.design === 'custom' ? 'Custom cake' : data.design === 'simple' ? 'Classic look' : '', 2],
+    ['Photos', data.design === 'custom' ? (photos.length ? `${photos.length} added` : 'None yet, add one?') : '', 2],
     [
       data.fulfillment === PICKUP ? 'Pickup' : 'Delivery',
       data.date
@@ -417,6 +479,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
       size={cake ? size : ''}
       flavor={data.flavor}
       fillingName={data.filling}
+      tiers={perTier ? tierChoices : undefined}
       design={data.design}
       message={data.cakeMessage}
       className="h-auto w-full"
@@ -425,8 +488,9 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
   // One line under the drawing: what has been chosen so far.
   const chosen = [
     cake?.label,
-    data.flavor && data.flavor !== 'Please recommend' && data.flavor,
-    data.filling && showOption(data.filling) !== 'Not sure' && showOption(data.filling) + ' filling',
+    perTier && 'A different flavor in each tier',
+    !perTier && data.flavor && data.flavor !== 'Please recommend' && data.flavor,
+    !perTier && data.filling && showOption(data.filling) !== 'Not sure' && showOption(data.filling) + ' filling',
   ]
     .filter(Boolean)
     .join(' · ')
@@ -501,7 +565,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             [
               'How many guests?',
               'Flavor & filling',
-              'Writing or a custom design?',
+              'Classic look or custom cake?',
               'When, and pickup or delivery?',
               'Here’s your cake',
               payNow ? 'Your details & payment' : 'Your details',
@@ -523,6 +587,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     onClick={() => {
                       setData(d => ({ ...d, guests: String(value), size: '' }))
                       setShowAll(false)
+                      setBuilder(null)
                     }}
                   />
                 ))}
@@ -542,6 +607,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                   onChange={e => {
                     setData(d => ({ ...d, guests: e.target.value, size: '' }))
                     setShowAll(false)
+                    setBuilder(null)
                   }}
                 />
               </div>
@@ -555,11 +621,14 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                         <Choice
                           key={item.value}
                           title={item.label}
-                          sub={`Serves ${item.servings} · from ${money(priceRange(item)[0])}`}
+                          sub={`Serves ${item.servings} · ${fromPrice(item)}`}
                           badge={item === result.best ? 'Best fit' : undefined}
                           big
                           selected={size === item.value}
-                          onClick={() => set('size', item.value)}
+                          onClick={() => {
+                            set('size', item.value)
+                            setBuilder(null)
+                          }}
                         />
                       ))}
                     </div>
@@ -570,8 +639,52 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     plan it with you.
                   </p>
                 ))}
+              {builder && (
+                <fieldset className="rounded-lg border bg-surface p-4 sm:p-5">
+                  <legend className="sr-only">Build your own tiered cake</legend>
+                  <p className="font-semibold">Your own tiered cake</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Pick a size for each tier. Each one sits on a bigger one below it.
+                  </p>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {[2, MAX_TIERS].map(count => (
+                      <Choice
+                        key={count}
+                        title={`${count} tiers`}
+                        selected={builder.length === count}
+                        onClick={() => build(startTiers(count))}
+                      />
+                    ))}
+                  </div>
+                  <div className={cn('mt-4 grid gap-3', builder.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+                    {builder.map((inches, index) => (
+                      <div key={index}>
+                        <label htmlFor={`flow-tier-${index}`} className={label}>
+                          {tierNames(builder.length)[index]} tier
+                        </label>
+                        <NativeSelect
+                          id={`flow-tier-${index}`}
+                          value={inches}
+                          onChange={e => build(builder.map((n, i) => (i === index ? Number(e.target.value) : n)))}
+                        >
+                          {TIER_SIZES.map(n => (
+                            <option key={n} value={n}>
+                              {n}-inch
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-sm" role="status">
+                    {builtValid && cake
+                      ? `${cake.label} · serves ${cake.servings} · ${fromPrice(cake)}`
+                      : 'Each tier needs to be smaller than the one below it.'}
+                  </p>
+                </fieldset>
+              )}
               {!showAll ? (
-                <div className="text-center">
+                <div className="flex flex-wrap justify-center gap-x-6">
                   <button
                     type="button"
                     onClick={() => setShowAll(true)}
@@ -579,6 +692,15 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                   >
                     {guests ? 'See all sizes' : 'Not sure yet? Pick a size instead'}
                   </button>
+                  {!builder && (
+                    <button
+                      type="button"
+                      onClick={() => build(startTiers(2))}
+                      className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-primary underline underline-offset-4"
+                    >
+                      Build your own tiered cake
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-5">
@@ -596,9 +718,20 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                               title={item.label.replace(' round', '')}
                               sub={`Serves ${item.servings}`}
                               selected={size === item.value}
-                              onClick={() => set('size', item.value)}
+                              onClick={() => {
+                                set('size', item.value)
+                                setBuilder(null)
+                              }}
                             />
                           ))}
+                        {category === 'Multi-tier' && (
+                          <Choice
+                            title="Your own tiers"
+                            sub="Pick each size"
+                            selected={!!builder}
+                            onClick={() => build(builder ?? startTiers(2))}
+                          />
+                        )}
                       </div>
                     </fieldset>
                   ))}
@@ -618,20 +751,56 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
 
           {step === 1 && (
             <>
-              <Pills
-                name="flow-flavor"
-                legend="Cake flavor"
-                options={flavors}
-                value={data.flavor}
-                onChange={value => set('flavor', value)}
-              />
-              <Pills
-                name="flow-filling"
-                legend="Filling"
-                options={fillings}
-                value={data.filling}
-                onChange={value => set('filling', value)}
-              />
+              {tierCount > 1 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Choice title="Same in every tier" selected={data.sameTiers} onClick={() => set('sameTiers', true)} />
+                  <Choice
+                    title="Different for each tier"
+                    selected={!data.sameTiers}
+                    onClick={() => setData(d => ({ ...d, sameTiers: false, tierFlavors: tierChoices }))}
+                  />
+                </div>
+              )}
+              {perTier ? (
+                tierChoices.map((tier, index) => (
+                  <section key={index} className="space-y-5 border-t pt-5">
+                    <h4 className="heading-3">
+                      {tierNames(tierCount)[index]} tier · {tierSizes(size)![index]}-inch
+                    </h4>
+                    <Pills
+                      name={`flow-flavor-${index}`}
+                      legend="Cake flavor"
+                      options={notSureLast(flavors)}
+                      value={tier.flavor}
+                      onChange={value => setTier(index, 'flavor', value)}
+                    />
+                    <Pills
+                      name={`flow-filling-${index}`}
+                      legend="Filling"
+                      options={notSureLast(fillings)}
+                      value={tier.filling}
+                      onChange={value => setTier(index, 'filling', value)}
+                    />
+                  </section>
+                ))
+              ) : (
+                <>
+                  <Pills
+                    name="flow-flavor"
+                    legend="Cake flavor"
+                    options={notSureLast(flavors)}
+                    value={data.flavor}
+                    onChange={value => set('flavor', value)}
+                  />
+                  <Pills
+                    name="flow-filling"
+                    legend="Filling"
+                    options={notSureLast(fillings)}
+                    value={data.filling}
+                    onChange={value => set('filling', value)}
+                  />
+                </>
+              )}
             </>
           )}
 
@@ -639,18 +808,29 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Choice
-                  title="Simple, with writing"
-                  sub="Our classic look"
+                  title="Classic look"
+                  sub={
+                    everyday
+                      ? 'Cream finish, piped border and your writing. Can be ready today.'
+                      : 'Cream finish, piped border and your writing'
+                  }
                   selected={data.design === 'simple'}
                   onClick={() => set('design', 'simple')}
                 />
                 <Choice
-                  title="Custom design"
-                  sub="Theme, colors, decorations"
+                  title="Custom cake"
+                  sub="Your theme, colors and decorations. We’ll quote it."
                   selected={data.design === 'custom'}
                   onClick={() => set('design', 'custom')}
                 />
               </div>
+              <p className="rounded-md bg-surface px-4 py-3 text-sm empty:hidden">
+                {!square
+                  ? ''
+                  : everyday
+                    ? `Need it today? A classic cake can be picked up the same day with ${SAME_DAY_NOTICE_HOURS} hours’ notice. A custom cake needs at least 3 days.`
+                    : 'Same-day pickup is for a classic single cake (round or sheet) in one of our listed flavors and fillings. This cake needs at least 3 days.'}
+              </p>
               {data.design && (
                 <div>
                   <label htmlFor="flow-message" className={label}>
@@ -668,8 +848,12 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
               )}
               {data.design === 'custom' && (
                 <>
-                  <div>
-                    <span className={label}>Inspiration photos (optional)</span>
+                  <div className="rounded-lg border border-dashed border-primary/40 bg-surface p-4 sm:p-5">
+                    <p className="font-semibold">Have a picture? We’d love to see it</p>
+                    <p className="mt-1 mb-4 text-sm text-muted-foreground">
+                      A photo, screenshot or sketch of a cake you like is the quickest way to show us your idea, so we
+                      can agree on the details before we bake. Up to {MAX_PHOTOS}.
+                    </p>
                     <input
                       id="flow-photos"
                       type="file"
@@ -700,7 +884,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     <label
                       htmlFor="flow-photos"
                       className={cn(
-                        'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed bg-surface px-4 py-3 text-sm font-semibold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:bg-secondary',
+                        'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md border bg-card px-4 py-3 text-sm font-semibold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:bg-secondary',
                         (preparing || photos.length >= MAX_PHOTOS) && 'cursor-not-allowed opacity-50',
                       )}
                     >
@@ -709,7 +893,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                         ? 'Preparing photo…'
                         : photos.length
                           ? `Add more (${photos.length} of ${MAX_PHOTOS})`
-                          : 'Add photos'}
+                          : 'Add your photos'}
                     </label>
                     {photos.length > 0 && (
                       <ul className="mt-3 flex flex-wrap gap-3">
@@ -843,7 +1027,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     <div key={name} className="flex items-center justify-between gap-4 px-4 py-2">
                       <div className="min-w-0 py-1">
                         <dt className="text-sm text-muted-foreground">{name}</dt>
-                        <dd className="font-semibold">{value}</dd>
+                        <dd className="font-semibold whitespace-pre-line">{value}</dd>
                       </div>
                       <button
                         type="button"
@@ -928,6 +1112,13 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     square={square}
                     onReady={() => setCardReady(true)}
                     onError={message => setError(`${message} Or call ${SITE.phone}.`)}
+                    amount={cakePrice ?? 0}
+                    disabled={busy}
+                    onWallet={tokenize => {
+                      const problem = check()
+                      if (problem) return setError(problem)
+                      void submit(tokenize)
+                    }}
                   />
                   {!cardReady && <p className="text-sm text-muted-foreground">Loading secure card form…</p>}
                 </>

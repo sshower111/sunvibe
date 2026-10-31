@@ -26,12 +26,13 @@ export function PayForm({
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ ref: string; receiptUrl?: string } | null>(null)
 
-  async function pay() {
+  /** wallet: Apple Pay or Google Pay instead of the card; it must be called before the first await. */
+  async function pay(wallet?: () => Promise<string>) {
     if (busy) return
     setBusy(true)
     setError('')
     try {
-      const cardToken = noCard ? undefined : await card.current!.tokenize(amount, contact)
+      const cardToken = noCard ? undefined : await (wallet ? wallet() : card.current!.tokenize(amount, contact))
       const response = await fetch(`/api/pay/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,10 +82,13 @@ export function PayForm({
           square={square}
           onReady={() => setReady(true)}
           onError={message => setError(`${message} Or call ${SITE.phone}.`)}
+          amount={amount}
+          disabled={busy}
+          onWallet={tokenize => void pay(tokenize)}
         />
       )}
       {error && <FormAlert type="error">{error}</FormAlert>}
-      <Button className="w-full sm:w-auto" disabled={busy || !ready} onClick={pay}>
+      <Button className="w-full sm:w-auto" disabled={busy || !ready} onClick={() => pay()}>
         {busy ? 'Processing…' : noCard ? `Record test payment ($${amount.toFixed(2)})` : `Pay $${amount.toFixed(2)}`}
       </Button>
       <p className="text-xs text-muted-foreground">

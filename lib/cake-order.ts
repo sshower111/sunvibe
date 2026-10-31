@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { cakeCatalog, deliveryOptions } from './cake-catalog'
+import { cakeCatalog, cakeLabel, deliveryOptions } from './cake-catalog'
 import { flavors, fillings, MAX_CAKE_MESSAGE } from './cake-inquiry'
 import { addDays, storeDate } from './occasion-dates'
 import { zhOption } from './email-zh'
@@ -31,7 +31,6 @@ export const FILLING_PRICE_GROUP: Record<string, number> = {
   'Mixed Fresh Fruit': 1,
   Strawberry: 1,
   Banana: 1,
-  'Strawberry Banana': 1,
   Mango: 2,
   Taro: 2,
   Coconut: 3,
@@ -227,7 +226,7 @@ export type CustomOrderInput = z.infer<typeof customOrderSchema>
 /** Order code shown to customers, in emails and in Square: #1001. Orders saved before numbering show their old 4-character code. */
 export const orderRef = (o: Pick<StoredCakeOrder, 'id' | 'orderNo'>) =>
   '#' + (o.orderNo ?? o.id.slice(0, 4).toUpperCase())
-export const sizeLabel = (size: string) => cakeCatalog.find(c => c.value === size)?.label || size
+export const sizeLabel = cakeLabel
 
 export function formatPickupTime(time: string) {
   const t = minutes(time)

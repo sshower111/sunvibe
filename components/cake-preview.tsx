@@ -1,8 +1,9 @@
 import { useId } from 'react'
-import { cakeCatalog } from '@/lib/cake-catalog'
+import { findCake } from '@/lib/cake-catalog'
 
 // A drawing of the cake being planned on /order-cake. It follows the choices as they are made:
-// size and tiers, sponge color for the flavor, a filling stripe, writing and (for custom designs) flowers on top.
+// size and tiers, sponge color for the flavor (per tier when the tiers differ), a filling stripe,
+// writing and (for custom designs) flowers on top. Round cakes sit on a plate, sheet cakes on a board.
 // Colors are the food's own; the page chrome stays in the design tokens.
 
 const sponge: Record<string, string> = {
@@ -17,7 +18,6 @@ const filling: Record<string, string> = {
   'Mixed Fresh Fruit': '#e4695a',
   Strawberry: '#e2707e',
   Banana: '#f4e1a0',
-  'Strawberry Banana': '#ec9a94',
   Mango: '#f5a83a',
   Taro: '#b49ac8',
   Custard: '#f6d77a',
@@ -61,6 +61,7 @@ export function CakePreview({
   size,
   flavor,
   fillingName,
+  tiers,
   design,
   message,
   className,
@@ -68,15 +69,28 @@ export function CakePreview({
   size: string
   flavor: string
   fillingName: string
+  /** Tiered cakes with a different flavor per tier, top tier first. */
+  tiers?: { flavor: string; filling: string }[]
   design: '' | 'simple' | 'custom'
   message: string
   className?: string
 }) {
   const shadeId = useId()
-  const known = cakeCatalog.some(c => c.value === size)
+  const cake = findCake(size)
+  const known = !!cake
   const shape = shapeOf(known ? size : '8-inch')
   const spongeColor = sponge[flavor] ?? PLAIN_SPONGE
   const fillColor = filling[fillingName] ?? CREAM
+  // Bottom tier first, like the drawing.
+  const tierColors =
+    shape.kind === 'round'
+      ? shape.tiers.map((_, i) => {
+          const t = tiers?.[shape.tiers.length - 1 - i]
+          return t
+            ? { sponge: sponge[t.flavor] ?? PLAIN_SPONGE, fill: filling[t.filling] ?? CREAM }
+            : { sponge: spongeColor, fill: fillColor }
+        })
+      : []
   // Zoom so the cake fills the frame (never closer than 200 units wide, so sizes still compare).
   const { top, half } = bounds(shape)
   const plate = half + 14
@@ -84,7 +98,7 @@ export function CakePreview({
   const viewWidth = Math.min(W, Math.max(200, 2 * plate + 12, ((bottom - (top - 16)) * W) / H))
   const viewHeight = (viewWidth * H) / W
   const label = known
-    ? `Drawing of your cake: ${cakeCatalog.find(c => c.value === size)?.label}` +
+    ? `Drawing of your cake: ${cake.label}` +
       (flavor && sponge[flavor] ? `, ${flavor.toLowerCase()} sponge` : '') +
       (filling[fillingName] ? ` with ${fillingName.toLowerCase()} filling` : '') +
       (message.trim() ? `, reading “${message.trim()}”` : '')
@@ -98,15 +112,12 @@ export function CakePreview({
       className={className}
       style={{ opacity: known ? 1 : 0.45 }}
     >
-      {/* Plate and its shadow */}
-      <ellipse cx={W / 2} cy={PLATE_Y + 6} rx={plate + 2} ry={14} fill="#2b1a14" opacity={0.08} />
-      <ellipse cx={W / 2} cy={PLATE_Y} rx={plate} ry={16} fill="#ffffff" stroke={CREAM_EDGE} />
       {shape.kind === 'round' ? (
         <RoundCake
           shadeId={shadeId}
           tiers={shape.tiers}
-          spongeColor={spongeColor}
-          fillColor={fillColor}
+          plate={plate}
+          colors={tierColors}
           design={design}
           message={message}
         />
@@ -136,15 +147,16 @@ const LAYERS: [kind: 'sponge' | 'fill', from: number, to: number][] = [
 function RoundCake({
   shadeId,
   tiers,
-  spongeColor,
-  fillColor,
+  plate,
+  colors,
   design,
   message,
 }: {
   shadeId: string
   tiers: number[]
-  spongeColor: string
-  fillColor: string
+  plate: number
+  /** Sponge and filling color of each tier, bottom first. */
+  colors: { sponge: string; fill: string }[]
   design: '' | 'simple' | 'custom'
   message: string
 }) {
@@ -160,6 +172,9 @@ function RoundCake({
   const last = drawn[drawn.length - 1]
   return (
     <g>
+      {/* Plate and its shadow */}
+      <ellipse cx={cx} cy={PLATE_Y + 6} rx={plate + 2} ry={14} fill="#2b1a14" opacity={0.08} />
+      <ellipse cx={cx} cy={PLATE_Y} rx={plate} ry={16} fill="#ffffff" stroke={CREAM_EDGE} />
       {drawn.map((t, index) => {
         const x0 = cx - t.rx
         const x1 = cx + t.rx
@@ -172,7 +187,11 @@ function RoundCake({
         return (
           <g key={index}>
             {LAYERS.map(([kind, from, to]) => (
-              <path key={from} d={band(from, to)} fill={kind === 'sponge' ? spongeColor : fillColor} />
+              <path
+                key={from}
+                d={band(from, to)}
+                fill={kind === 'sponge' ? colors[index].sponge : colors[index].fill}
+              />
             ))}
             {/* Soft shade on the right side gives the tier its roundness. */}
             <path d={band(0, 1)} fill={`url(#${shadeId})`} />
@@ -217,8 +236,31 @@ function SheetCake({
   const dx = depth * 0.6
   const dy = depth * 0.7
   const rowY = (f: number) => yb - height * f
+  // Cake board drawn in the same slant as the cake, a little larger all round, with a thin front and side edge.
+  const mx = 10
+  const mz = 9
+  const board = {
+    fl: [x0 - mx - mz * 0.6, yb + mz * 0.7],
+    fr: [x1 + mx - mz * 0.6, yb + mz * 0.7],
+    br: [x1 + mx + dx + mz * 0.6, yb - dy - mz * 0.7],
+    bl: [x0 - mx + dx + mz * 0.6, yb - dy - mz * 0.7],
+  }
+  const edge = 4
+  const pt = ([x, y]: number[], down = 0) => `${x},${y + down}`
   return (
     <g>
+      <path
+        d={`M${pt(board.fl, edge + 3)} L${pt(board.fr, edge + 3)} L${pt(board.br, edge + 3)} L${pt(board.bl, edge + 3)} Z`}
+        fill="#2b1a14"
+        opacity={0.08}
+      />
+      <path d={`M${pt(board.fl)} L${pt(board.fr)} L${pt(board.fr, edge)} L${pt(board.fl, edge)} Z`} fill={CREAM_EDGE} />
+      <path d={`M${pt(board.fr)} L${pt(board.br)} L${pt(board.br, edge)} L${pt(board.fr, edge)} Z`} fill="#dcc6ae" />
+      <path
+        d={`M${pt(board.fl)} L${pt(board.fr)} L${pt(board.br)} L${pt(board.bl)} Z`}
+        fill="#ffffff"
+        stroke={CREAM_EDGE}
+      />
       {/* Right side face, in shade */}
       {LAYERS.map(([kind, from, to]) => (
         <path

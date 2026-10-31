@@ -4,9 +4,10 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 
 ## Customer experience
 
-- One page, `/order-cake`, runs the order (`/custom-cakes` redirects there) (`components/cake-order-flow.tsx`): party size (best-fit size suggested, `lib/cake-finder.ts`) → flavor and filling → simple or custom design → pickup or delivery and date → "Here's your cake" summary with an estimated price → contact (and card, when paying). Contact fields appear only after the customer presses "Order & pay" or "Request a quote" on the summary.
-- It ends as a paid online order (`docs/CAKE-ORDERS.md`) for an everyday size, listed flavor and filling, simple design and pickup at an offered time. Everything else is sent here as an inquiry for a quote, with at least 3 days' notice.
-- Custom design adds inspiration photos and design/dietary notes; delivery adds the address. Occasion is sent as "Other" and budget as "Not sure — please advise".
+- One page, `/order-cake`, runs the order (`/custom-cakes` redirects there) (`components/cake-order-flow.tsx`): party size (best-fit size suggested, `lib/cake-finder.ts`) → flavor and filling → classic look or custom cake → pickup or delivery and date → "Here's your cake" summary with an estimated price → contact (and card, when paying). Contact fields appear only after the customer presses "Order & pay" or "Request a quote" on the summary.
+- It ends as a paid online order (`docs/CAKE-ORDERS.md`) for an everyday size, listed flavor and filling, classic look and pickup at an offered time (this is the only way to get a cake the same day, and the design step says so). Everything else is sent here as an inquiry for a quote, with at least 3 days' notice.
+- In the flavor lists, "Not sure" is the last choice, after the real flavors and fillings.
+- Custom cake asks for inspiration photos first ("Have a picture? We'd love to see it"), then design/dietary notes; the summary shows how many photos were added, or "None yet, add one?". Delivery adds the address. Occasion is sent as "Other" and budget as "Not sure — please advise".
 - The email to the bakery has a Traditional Chinese copy under the English (labels and options translated, customer text as written). Contact and pre-order emails do the same. To change a translation, edit `lib/email-zh.ts`.
 - Problems (missing or invalid fields, unticked acknowledgement, could not send) are listed in one box right above the Continue / Send button, and the fields with problems turn red, the same as the contact form. A photo that cannot be added shows its message under the photo picker.
 - Event date uses Las Vegas calendar time and requires at least three days' notice. The visible guidance requests 3–5 days and explains that availability must be confirmed.
@@ -41,11 +42,17 @@ PDF update validation: every catalog price and serving figure matched the source
 
 The online guide and inquiry accept 2- and 3-tier combinations only. Four- and five-tier options from the PDF are intentionally excluded at the owner’s request. Customers are directed to call 702-889-9887 for 4+ tiers. The public catalog now has 23 entries (8 round, 3 sheet, 12 tiered); server validation also rejects the removed sizes.
 
+Tier labels use "+" between the sizes ("2-Tier · 8" + 12"").
+
+**Your own tiers** (Oct 31, 2026): in the party-size step, "Build your own tiered cake" (or "Your own tiers" under all sizes) lets the customer pick 2 or 3 tiers and a round size (6"–20") for each, top to bottom; each tier must be smaller than the one below. A combination on the price sheet is that catalog cake with its price; any other (e.g. 8" + 10") serves the sum of its rounds and is always a quote request ("price quoted"). Size value: `tier-8-10` (`tierSizes`, `findCake` in `lib/cake-catalog.ts`).
+
+**A flavor per tier**: for any tiered cake the flavor step asks "Same in every tier" or "Different for each tier". With different tiers, the inquiry stores `tierFlavors` (top tier first) and keeps the top tier in flavor/filling. The bakery email shows one line per tier ("Top tier (8"): Vanilla / Mango", Chinese 頂層／中層／底層), as do the customer copy and the admin inquiry card; "Create order" fills flavor and filling as "Top: Vanilla · Bottom: Chocolate".
+
 ## Writing on the cake and custom fillings
 
 - Optional "Writing on the cake" field (60 characters) in the cake step, shown on the review step and in both the English and Chinese email. It is customer text, so it is never translated.
 - The last filling option is "Something else (e.g., passion fruit)"; choosing it asks the customer to describe the filling in the notes.
-- Strawberry, Banana and Strawberry Banana are separate filling choices, all priced in the Mixed Fruit / Strawberry / Banana / Tiramisu group (owner, Oct 2026).
+- Strawberry and Banana are separate filling choices, priced in the Mixed Fruit / Strawberry / Banana / Tiramisu group (owner, Oct 2026). "Strawberry Banana" was removed on Oct 31, 2026: customers who want it pick "Something else" and describe it. Old inquiries and orders that say Strawberry Banana still display and translate.
 
 ## Inquiry tracker (admin → Cake inquiries)
 

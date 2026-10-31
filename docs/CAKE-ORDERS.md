@@ -5,9 +5,14 @@ Customers order one of the everyday chiffon cakes, pay by card through Square, a
 ## What customers can order
 
 - Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet. Orders go through the shared order (`components/cake-order-flow.tsx`), which suggests a size from the guest count and only takes payment when the order qualifies; otherwise it sends a custom cake inquiry.
-- Any listed flavor and filling. The price comes from the pricing sheet column for the filling (`lib/cake-catalog.ts`): Custard; Mixed Fruit / Strawberry / Banana / Strawberry Banana; Mango / Taro; Coconut / Durian.
+- Any listed flavor and filling. The price comes from the pricing sheet column for the filling (`lib/cake-catalog.ts`): Custard; Mixed Fruit / Strawberry / Banana; Mango / Taro; Coconut / Durian.
+- The design must be the "Classic look" (cream finish, piped border, writing). Only this kind of order can be picked up the same day; the design step tells the customer when their cake qualifies.
 - Optional writing on the cake (60 characters) and notes.
 - Pickup only. No tax is added.
+
+## Apple Pay and Google Pay
+
+The payment step (and the custom cake pay link, `/pay/<id>`) shows **Apple Pay** (Safari on iPhone, iPad and Mac) and **Google Pay** (Chrome, Android) buttons above the card form, only on devices that support them (`components/square-card.tsx`). They charge or hold the card exactly like a typed card, including approval holds. Samsung Pay isn't offered: Square doesn't support it online. Apple Pay needs the domain set up once (Setup step 5). The site's security policy allows `pay.google.com` and `google.com` for Google Pay (`middleware.ts`).
 
 ## Pickup times and approval (`lib/cake-order.ts`)
 
@@ -64,6 +69,8 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
    - `SQUARE_WEBHOOK_URL` — exactly that URL
    - `SQUARE_WEBHOOK_SIGNATURE_KEY` — the subscription's signature key
 4. Run `db/003-cake-orders.sql`, then `db/004-cake-order-numbers.sql`, once in Supabase (SQL editor). 004 gives orders sequential numbers (#1001, #1002, ...); run it before deploying code that uses them.
+
+5. **Apple Pay** (one time, owner): Square Developer Dashboard → your application → **Apple Pay** (Production) → **Add domain** `sunvillebakerylv.com`. Square gives you a verification file; it must be served at `https://sunvillebakerylv.com/.well-known/apple-developer-merchantid-domain-association`, so put it in `public/.well-known/` (no file extension) and deploy, then press **Verify** in Square. Until then the Apple Pay button simply doesn't show. Google Pay needs no setup.
 
 Until the first four variables are set, `/order-cake` shows "coming soon" with the phone number.
 

@@ -48,11 +48,25 @@ test('switches shape when the chosen one does not go that big, and gives up past
 
 test('prices follow the filling column; tiered has one price; open fillings have no exact price', () => {
   assert.equal(startingPrice(spec('8-inch'), 'Custard'), 36)
-  assert.equal(startingPrice(spec('8-inch'), 'Strawberry Banana'), 40)
+  assert.equal(startingPrice(spec('8-inch'), 'Strawberry'), 40)
   assert.equal(startingPrice(spec('8-inch'), 'Taro'), 42)
   assert.equal(startingPrice(spec('8-inch'), 'Durian'), 60)
   assert.equal(startingPrice(spec('8-inch'), 'Please recommend'), null)
   assert.equal(startingPrice(spec('tier-8-12'), 'Please recommend'), 238)
+})
+
+test('customers can build their own 2- or 3-tier cake; unlisted combinations are quoted', () => {
+  const { findCake, tierSizes } = createLoader().load('lib/cake-catalog.ts')
+  const own = findCake('tier-8-10')
+  assert.equal(own.label, '2-Tier · 8" + 10"')
+  assert.equal(own.servings, 14 + 25)
+  assert.equal(startingPrice(own, 'Custard'), null)
+  assert.equal(findCake('tier-6-10').prices[0], 168)
+  assert.deepEqual(tierSizes('tier-6-8-10'), [6, 8, 10])
+  assert.equal(tierSizes('tier-10-8'), null)
+  assert.equal(tierSizes('tier-8-8'), null)
+  assert.equal(tierSizes('tier-7-10'), null)
+  assert.equal(tierSizes('tier-6-8-10-12'), null)
 })
 
 test('delivery fees come from the delivery options', () => {

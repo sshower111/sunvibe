@@ -21,14 +21,15 @@ export function smallestFit(guests: number, shape: CakeSpec['category']) {
   return bySize(shape).find(cake => cake.servings >= guests) ?? null
 }
 
-/** Starting price for a cake and filling. Tiered cakes have one price; unpriced fillings give null. */
+/** Starting price for a cake and filling. Tiered cakes have one price; unpriced fillings and the customer's own tiers give null. */
 export function startingPrice(cake: CakeSpec, filling: string) {
-  if (cake.category === 'Multi-tier') return cake.prices[0]
+  if (cake.category === 'Multi-tier') return cake.prices[0] ?? null
   const group = FILLING_PRICE_GROUP[filling]
   return group === undefined ? null : cake.prices[group]
 }
-/** Lowest and highest price across fillings, for "Please recommend" or a custom filling. */
-export const priceRange = (cake: CakeSpec) => [Math.min(...cake.prices), Math.max(...cake.prices)] as const
+/** Lowest and highest price across fillings, for "Please recommend" or a custom filling. Null when the bakery quotes it. */
+export const priceRange = (cake: CakeSpec) =>
+  cake.prices.length ? ([Math.min(...cake.prices), Math.max(...cake.prices)] as const) : null
 
 /** Delivery fee for a fulfillment option: 0 for pickup, null when the bakery quotes it. */
 export function deliveryFee(fulfillment: string) {
@@ -52,7 +53,7 @@ export function recommend(guests: number, shape: FinderShape, filling: string): 
   const shapes: CakeSpec['category'][] = ['Round', 'Sheet', 'Multi-tier']
   const fits = shapes.map(s => smallestFit(guests, s)).filter((cake): cake is CakeSpec => !!cake)
   // Sort key: price for the chosen filling (or the cheapest filling), so "Not sure" picks the best value.
-  const cost = (cake: CakeSpec) => startingPrice(cake, filling) ?? priceRange(cake)[0]
+  const cost = (cake: CakeSpec) => startingPrice(cake, filling) ?? priceRange(cake)![0]
   let best: CakeSpec | null
   if (shape === 'Any') {
     // Tiered only when nothing else fits. Same price: the cake that serves more wins.

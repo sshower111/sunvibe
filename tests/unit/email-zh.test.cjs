@@ -16,7 +16,7 @@ test('every form option has a Chinese translation', () => {
 test('customer text and price ranges are returned unchanged', () => {
   assert.equal(zhOption('Happy 5th birthday Mia!'), 'Happy 5th birthday Mia!')
   assert.equal(zhOption('$100–$200'), '$100–$200')
-  assert.equal(zhOption('2-Tier · 6" / 10"'), '兩層 · 6" / 10"')
+  assert.equal(zhOption('2-Tier · 6" + 10"'), '兩層 · 6" + 10"')
 })
 
 test('plain-text block starts on its own line', () => {

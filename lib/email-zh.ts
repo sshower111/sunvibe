@@ -86,7 +86,7 @@ const options: Record<string, string> = {
 }
 
 /** Chinese for one of the site's own option values; anything else (customer text, prices) is returned unchanged. */
-export const zhOption = (value: string) => options[value] ?? value
+export const zhOption = (value: string) => options[value] ?? (/^[23]-Tier · /.test(value) ? sizeZh(value) : value)
 
 /** Every option the forms offer, so tests can check none is missing a translation. */
 export const translatableOptions = [

@@ -92,7 +92,27 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal((await post({ size: 'tier-8-10-12-14' })).status, 400)
   assert.equal((await post({ size: 'tier-6-10-12-16-18' })).status, 400)
   assert.equal((await post({ acknowledged: '' })).status, 400)
-  assert.equal((await post({ filling: 'Strawberry Banana' })).status, 200)
+  assert.equal((await post({ filling: 'Strawberry' })).status, 200)
+  assert.equal((await post({ filling: 'Strawberry Banana' })).status, 400)
+  // The customer's own tiers, with a different flavor in each tier (top first).
+  assert.equal((await post({ size: 'tier-10-8' })).status, 400)
+  const tiers = [
+    { flavor: 'Vanilla', filling: 'Mango' },
+    { flavor: 'Chocolate', filling: 'Custard' },
+  ]
+  assert.equal((await post({ size: 'tier-8-10', tierFlavors: JSON.stringify([tiers[0]]) })).status, 400)
+  assert.equal((await post({ size: 'tier-8-10', tierFlavors: '[{"flavor":"Bacon","filling":"Mango"}]' })).status, 400)
+  mail.length = 0
+  assert.equal((await post({ size: 'tier-8-10', tierFlavors: JSON.stringify(tiers) })).status, 200)
+  assert(mail[0].body.text.includes('Cake size: 2-Tier · 8" + 10"'))
+  assert(mail[0].body.text.includes('Top tier (8"): Vanilla / Mango\nBottom tier (10"): Chocolate / Custard'))
+  assert(mail[0].body.text.includes('頂層 (8"): 香草 / 芒果\n底層 (10"): 朱古力 / 吉士'))
+  assert(
+    mail[1].body.text.includes(
+      'Flavor / filling: Top tier (8"): Vanilla / Mango; Bottom tier (10"): Chocolate / Custard',
+    ),
+  )
+  assert.deepEqual(saved.at(-1).tierFlavors, tiers)
   mail.length = 0
   saved.length = 0
   assert.equal((await post({ cakeMessage: 'x'.repeat(schema.MAX_CAKE_MESSAGE + 1) })).status, 400)

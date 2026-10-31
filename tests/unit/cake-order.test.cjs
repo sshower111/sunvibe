@@ -119,7 +119,7 @@ test('approval: same day always; next day only for 6", 10", 12" and 1/2 sheet', 
 
 test('prices follow the pricing sheet column for the filling', () => {
   assert.equal(rules.cakePrice('8-inch', 'Custard'), 36)
-  assert.equal(rules.cakePrice('8-inch', 'Strawberry Banana'), 40)
+  assert.equal(rules.cakePrice('8-inch', 'Strawberry'), 40)
   assert.equal(rules.cakePrice('10-inch', 'Mango'), 78)
   assert.equal(rules.cakePrice('half-sheet', 'Durian'), 158)
   assert.equal(rules.cakePrice('full-sheet', 'Custard'), 188)

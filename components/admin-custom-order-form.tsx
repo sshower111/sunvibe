@@ -1,7 +1,14 @@
 'use client'
 import { useId, useState } from 'react'
-import { cakeCatalog, deliveryOptions } from '@/lib/cake-catalog'
-import { CUSTOM_FILLING, flavors, fillings, MAX_CAKE_MESSAGE, type StoredCakeInquiry } from '@/lib/cake-inquiry'
+import { cakeCatalog, deliveryOptions, findCake } from '@/lib/cake-catalog'
+import {
+  CUSTOM_FILLING,
+  flavors,
+  fillings,
+  MAX_CAKE_MESSAGE,
+  tierNames,
+  type StoredCakeInquiry,
+} from '@/lib/cake-inquiry'
 import { customOrderSchema, PAY_LINK_DAYS } from '@/lib/cake-order'
 import { adminPost } from '@/lib/admin-api'
 import { Button } from './ui/button'
@@ -11,6 +18,12 @@ import { Textarea } from './ui/textarea'
 
 // "Create order" on a custom cake inquiry: enter the agreed details and price, and the customer is emailed a pay link.
 const pick = (value: string, skip: string[]) => (skip.includes(value) ? '' : value)
+/** Different flavor per tier: 'Top: Vanilla · Bottom: Chocolate'. */
+const byTier = (inquiry: StoredCakeInquiry, key: 'flavor' | 'filling') =>
+  inquiry.tierFlavors
+    ?.map((t, i) => `${tierNames(inquiry.tierFlavors!.length)[i]}: ${t[key]}`)
+    .join(' · ')
+    .slice(0, 100)
 
 export function AdminCustomOrderForm({
   inquiry,
@@ -26,8 +39,8 @@ export function AdminCustomOrderForm({
   const [withDeposit, setWithDeposit] = useState(false)
   const [data, setData] = useState({
     size: pick(inquiry.size, ['Not sure']),
-    flavor: pick(inquiry.flavor, ['Please recommend']),
-    filling: pick(inquiry.filling, ['Please recommend', CUSTOM_FILLING]),
+    flavor: byTier(inquiry, 'flavor') ?? pick(inquiry.flavor, ['Please recommend']),
+    filling: byTier(inquiry, 'filling') ?? pick(inquiry.filling, ['Please recommend', CUSTOM_FILLING]),
     cakeMessage: inquiry.cakeMessage || '',
     pickupDate: inquiry.eventDate,
     pickupTime: inquiry.eventTime || '',
@@ -78,11 +91,14 @@ export function AdminCustomOrderForm({
           </label>
           <NativeSelect id={id('size')} value={data.size} onChange={e => update('size', e.target.value)}>
             <option value="">Choose…</option>
-            {cakeCatalog.map(c => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
+            {/* The customer's own tier combination is not on the price sheet; keep it choosable. */}
+            {[...cakeCatalog, ...(cakeCatalog.some(c => c.value === inquiry.size) ? [] : [findCake(inquiry.size)])]
+              .filter(c => c !== null)
+              .map(c => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
           </NativeSelect>
         </div>
         <div>

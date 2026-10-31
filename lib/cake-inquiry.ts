@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { cakeCatalog, deliveryOptions } from './cake-catalog'
+import { deliveryOptions, findCake, tierSizes } from './cake-catalog'
 
 export const eventTypes = ['Birthday', 'Wedding', 'Anniversary', 'Character / Theme', 'Other'] as const
 export const budgets = [
@@ -18,7 +18,6 @@ export const fillings = [
   'Mixed Fresh Fruit',
   'Strawberry',
   'Banana',
-  'Strawberry Banana',
   'Mango',
   'Taro',
   'Custard',
@@ -51,57 +50,80 @@ export function formatEventTime(value: string) {
   const hour = Number(match[1])
   return `${hour % 12 || 12}:${match[2]} ${hour < 12 ? 'AM' : 'PM'}`
 }
-export const cakeInquirySchema = z.object({
-  name: z.string().trim().min(1, 'Enter your name.').max(100),
-  email: z.string().trim().email('Enter a valid email address.').max(100),
-  phone: z
-    .string()
-    .trim()
-    .min(7, 'Enter a phone number.')
-    .max(30)
-    .regex(/^[+\d\s().-]+$/, 'Enter a valid phone number.')
-    .refine(v => {
-      const n = v.replace(/\D/g, '').length
-      return n >= 7 && n <= 10
-    }, 'Enter a phone number with up to 10 digits.'),
-  eventDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose an event date.')
-    .refine(v => {
-      const d = new Date(v + 'T12:00:00Z')
-      return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= earliestCakeDate()
-    }, 'Please allow at least 3 days (Las Vegas time).'),
-  eventTime: z
-    .string()
-    .trim()
-    .regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d)?$/, 'Choose a time, or leave it blank if not decided.')
-    .default(''),
-  eventType: z.enum(eventTypes),
-  servings: z
-    .string()
-    .regex(/^\d{1,3}$/, 'Enter a guest count from 1 to 999.')
-    .refine(v => Number(v) >= 1, 'Enter at least 1 serving.'),
-  size: z
-    .string()
-    .refine(
-      value => value === 'Not sure' || cakeCatalog.some(cake => cake.value === value),
-      'Choose a listed cake size.',
-    ),
-  flavor: z.enum(flavors),
-  filling: z.enum(fillings),
-  cakeMessage: z
-    .string()
-    .trim()
-    .max(MAX_CAKE_MESSAGE, `Please keep the cake message under ${MAX_CAKE_MESSAGE} characters.`)
-    .default(''),
-  budget: z.enum(budgets),
-  fulfillment: z.enum(deliveryOptions),
-  deliveryAddress: z.string().trim().max(500, 'Please keep the delivery address under 500 characters.'),
-  notes: z.string().trim().max(3000, 'Please keep notes under 3,000 characters.'),
-  acknowledged: z.literal('yes', {
-    errorMap: () => ({ message: 'Please acknowledge this is an inquiry, not a confirmed order.' }),
-  }),
-})
+
+/** Tiered cakes with a different flavor or filling per tier, from the top tier down. */
+const tierFlavor = z.object({ flavor: z.enum(flavors), filling: z.enum(fillings) })
+export type TierFlavor = z.infer<typeof tierFlavor>
+export const tierNames = (count: number) => (count === 3 ? ['Top', 'Middle', 'Bottom'] : ['Top', 'Bottom'])
+/** One line per tier, e.g. 'Top tier (6"): Vanilla / Mango'. */
+export function tierFlavorLines(size: string, tiers: TierFlavor[], show: (value: string) => string = v => v) {
+  const sizes = tierSizes(size) ?? []
+  return tiers.map(
+    (t, i) =>
+      `${tierNames(tiers.length)[i]} tier${sizes[i] ? ` (${sizes[i]}")` : ''}: ${show(t.flavor)} / ${show(t.filling)}`,
+  )
+}
+
+export const cakeInquirySchema = z
+  .object({
+    name: z.string().trim().min(1, 'Enter your name.').max(100),
+    email: z.string().trim().email('Enter a valid email address.').max(100),
+    phone: z
+      .string()
+      .trim()
+      .min(7, 'Enter a phone number.')
+      .max(30)
+      .regex(/^[+\d\s().-]+$/, 'Enter a valid phone number.')
+      .refine(v => {
+        const n = v.replace(/\D/g, '').length
+        return n >= 7 && n <= 10
+      }, 'Enter a phone number with up to 10 digits.'),
+    eventDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose an event date.')
+      .refine(v => {
+        const d = new Date(v + 'T12:00:00Z')
+        return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= earliestCakeDate()
+      }, 'Please allow at least 3 days (Las Vegas time).'),
+    eventTime: z
+      .string()
+      .trim()
+      .regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d)?$/, 'Choose a time, or leave it blank if not decided.')
+      .default(''),
+    eventType: z.enum(eventTypes),
+    servings: z
+      .string()
+      .regex(/^\d{1,3}$/, 'Enter a guest count from 1 to 999.')
+      .refine(v => Number(v) >= 1, 'Enter at least 1 serving.'),
+    size: z.string().refine(value => value === 'Not sure' || !!findCake(value), 'Choose a listed cake size.'),
+    flavor: z.enum(flavors),
+    filling: z.enum(fillings),
+    // Sent as JSON from the order flow only when the tiers differ; flavor and filling then hold the top tier.
+    tierFlavors: z.preprocess(value => {
+      if (typeof value !== 'string' || !value) return undefined
+      try {
+        return JSON.parse(value)
+      } catch {
+        return value
+      }
+    }, z.array(tierFlavor).min(2).max(3).optional()),
+    cakeMessage: z
+      .string()
+      .trim()
+      .max(MAX_CAKE_MESSAGE, `Please keep the cake message under ${MAX_CAKE_MESSAGE} characters.`)
+      .default(''),
+    budget: z.enum(budgets),
+    fulfillment: z.enum(deliveryOptions),
+    deliveryAddress: z.string().trim().max(500, 'Please keep the delivery address under 500 characters.'),
+    notes: z.string().trim().max(3000, 'Please keep notes under 3,000 characters.'),
+    acknowledged: z.literal('yes', {
+      errorMap: () => ({ message: 'Please acknowledge this is an inquiry, not a confirmed order.' }),
+    }),
+  })
+  .refine(v => !v.tierFlavors || v.tierFlavors.length === tierSizes(v.size)?.length, {
+    message: 'Choose a flavor and filling for each tier.',
+    path: ['tierFlavors'],
+  })
 export type CakeInquiry = z.infer<typeof cakeInquirySchema>
 
 // Tracking in admin. Each open status says whose turn it is.
