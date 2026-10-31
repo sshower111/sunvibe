@@ -59,6 +59,9 @@ export function middleware(request: NextRequest) {
   return response
 }
 
+// .well-known holds the Apple Pay domain file (public/.well-known), which must load even in maintenance mode.
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|xml)$).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|\\.well-known|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|xml)$).*)',
+  ],
 }

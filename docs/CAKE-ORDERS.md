@@ -70,7 +70,7 @@ Made in admin → Cake inquiries → **Create order & send pay link** (`lib/cust
    - `SQUARE_WEBHOOK_SIGNATURE_KEY` — the subscription's signature key
 4. Run `db/003-cake-orders.sql`, then `db/004-cake-order-numbers.sql`, once in Supabase (SQL editor). 004 gives orders sequential numbers (#1001, #1002, ...); run it before deploying code that uses them.
 
-5. **Apple Pay** (one time, owner): Square Developer Dashboard → your application → **Apple Pay** (Production) → **Add domain** `sunvillebakerylv.com`. Square gives you a verification file; it must be served at `https://sunvillebakerylv.com/.well-known/apple-developer-merchantid-domain-association`, so put it in `public/.well-known/` (no file extension) and deploy, then press **Verify** in Square. Until then the Apple Pay button simply doesn't show. Google Pay needs no setup.
+5. **Apple Pay** (one time, owner): Square Developer Dashboard → your application → **Apple Pay** (Production) → **Add domain** `sunvillebakerylv.com`. Square gives you a verification file; it must be served at `https://sunvillebakerylv.com/.well-known/apple-developer-merchantid-domain-association`, it is in `public/.well-known/` (no file extension; done Oct 31, 2026). If Square ever issues a new file, replace it there and deploy, then press **Verify** in Square. Until then the Apple Pay button simply doesn't show. Google Pay needs no setup.
 
 Until the first four variables are set, `/order-cake` shows "coming soon" with the phone number.
 
