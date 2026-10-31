@@ -37,6 +37,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   ...pageMetadata('/'),
   robots: { index: true, follow: true },
+  // The admin pages use their own Home Screen icon instead (app/admin/layout.tsx).
+  icons: { apple: '/logo-mark.png' },
 }
 
 // Google Analytics 4 loads only when the Measurement ID (G-…) is set in Vercel.
@@ -57,7 +59,6 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/logo-mark.png" />
-        <link rel="apple-touch-icon" href="/logo-mark.png" />
         <meta name="theme-color" content="#a3201c" />
         <StructuredData data={bakerySchema} />
       </head>

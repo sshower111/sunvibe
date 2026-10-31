@@ -102,7 +102,7 @@ async function send(
 export async function sendNewOrderEmails(o: StoredCakeOrder) {
   const ref = orderRef(o)
   const held = o.status === 'awaiting_approval'
-  const admin = `${SITE_URL}/admin?tab=cake-orders`
+  const admin = `${SITE_URL}/admin/orders`
   const bakery = send(`cake-order-new-${o.id}`, {
     to: bakeryInbox(),
     replyTo: o.email,
@@ -201,7 +201,7 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
       to: bakeryInbox(),
       replyTo: o.email,
       subject: tag(o, `${SUBJECT_TAG.order}Paid: custom cake ${orderRef(o)} · ${o.name} · ${pickup(o)}`),
-      paragraphs: [`${o.name} paid the ${what} online. Admin → Cake orders: ${SITE_URL}/admin?tab=cake-orders`],
+      paragraphs: [`${o.name} paid the ${what} online. Admin → Cake orders: ${SITE_URL}/admin/orders`],
       rows: [['Name', o.name], ['Phone', o.phone], ['Email', o.email], ...cakeRows(o)],
       kitchen: kitchenText(o),
     }),

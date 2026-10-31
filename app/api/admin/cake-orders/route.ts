@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isAdminRequest } from '@/lib/admin-auth'
-import { deleteTestOrder, getCakeOrder, moveCakeOrder } from '@/lib/cake-orders-store'
+import { deleteTestOrder, getCakeOrder, markKitchenSent, moveCakeOrder } from '@/lib/cake-orders-store'
 import { approveOrder, createTestOrder, declineOrder, listCakeOrdersSettled } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
 
 const actionSchema = z.object({
-  action: z.enum(['approve', 'decline', 'paid_offline', 'picked_up', 'not_picked_up', 'delete', 'resend_link']),
+  action: z.enum([
+    'approve',
+    'decline',
+    'paid_offline',
+    'picked_up',
+    'not_picked_up',
+    'delete',
+    'resend_link',
+    'kitchen_sent',
+  ]),
   id: z.string().uuid(),
 })
 
@@ -35,7 +44,9 @@ export async function POST(req: NextRequest) {
     if (action === 'approve') await approveOrder(id)
     else if (action === 'decline') await declineOrder(id)
     else if (action === 'delete') await deleteTestOrder(id)
-    else if (action === 'paid_offline') {
+    else if (action === 'kitchen_sent') {
+      if (!(await markKitchenSent(id))) throw new Error('Order not found. Refresh the list.')
+    } else if (action === 'paid_offline') {
       // Not approved in time, declined or pay link expired, but the customer paid another way (phone, in store).
       if (!(await moveCakeOrder(id, 'expired', 'paid')) && !(await moveCakeOrder(id, 'declined', 'paid')))
         throw new Error('This order changed. Refresh the list.')

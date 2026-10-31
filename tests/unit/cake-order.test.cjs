@@ -192,6 +192,8 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   await db.exec(fs.readFileSync(path.join(root, 'db/003-cake-orders.sql'), 'utf8')) // re-runnable
   await db.exec(fs.readFileSync(path.join(root, 'db/004-cake-order-numbers.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/004-cake-order-numbers.sql'), 'utf8')) // re-runnable
+  await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8')) // re-runnable
   await db.exec(
     "INSERT INTO bakery_migrations(scope,record_count) VALUES('menu',0),('content',0) ON CONFLICT DO NOTHING",
   )
@@ -398,6 +400,8 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   await db.exec(fs.readFileSync(path.join(root, 'db/002-cake-inquiries.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/005-custom-cake-orders.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/005-custom-cake-orders.sql'), 'utf8')) // re-runnable
+  await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8')) // re-runnable
   const inquiries = load('lib/cake-inquiries-store.ts')
   const store = load('lib/cake-orders-store.ts')
   const custom = load('lib/custom-cake-orders.ts')

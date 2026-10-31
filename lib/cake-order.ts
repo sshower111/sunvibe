@@ -151,6 +151,8 @@ export const cakeOrderStatuses = [
   'failed',
   'awaiting_payment',
   'deposit_paid',
+  'checking_kitchen',
+  'hold_expired',
 ] as const
 export type CakeOrderStatus = (typeof cakeOrderStatuses)[number]
 export const cakeOrderStatusLabels: Record<CakeOrderStatus, string> = {
@@ -163,6 +165,8 @@ export const cakeOrderStatusLabels: Record<CakeOrderStatus, string> = {
   failed: 'Payment failed',
   awaiting_payment: 'Awaiting payment',
   deposit_paid: 'Deposit paid',
+  checking_kitchen: 'Checking with kitchen',
+  hold_expired: 'Card hold ended',
 }
 
 export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId' | 'size'> & {
@@ -190,6 +194,10 @@ export type StoredCakeOrder = Omit<CakeOrderInput, 'requestId' | 'size'> & {
   deposit?: number
   /** Custom orders: the pay link works until this time. */
   payBy?: string
+  /** When the kitchen was asked whether it can make the cake. */
+  kitchenAskedAt?: string
+  /** When the final order details were texted to the kitchen. */
+  kitchenSentAt?: string
 }
 
 /** Amount the customer pays online now. */

@@ -13,12 +13,13 @@ import {
   type StoredCakeOrder,
 } from '@/lib/cake-order'
 import { adminPost } from '@/lib/admin-api'
+import { isUrgent, orderBoard } from '@/lib/admin-order-board'
 import { Button } from './ui/button'
 import { AdminSegmented } from './admin-segmented'
 import { AdminStatusBadge, type BadgeTone } from './admin-status-badge'
 
 const filters = {
-  approval: { label: 'Needs approval', statuses: ['awaiting_approval'] },
+  approval: { label: 'Needs approval', statuses: ['awaiting_approval', 'checking_kitchen', 'hold_expired'] },
   payment: { label: 'Awaiting payment (custom)', statuses: ['awaiting_payment'] },
   upcoming: { label: 'To make', statuses: ['paid', 'deposit_paid', 'processing'] },
   done: { label: 'Picked up', statuses: ['picked_up'] },
@@ -27,6 +28,8 @@ const filters = {
 type Filter = keyof typeof filters
 const statusTone: Record<CakeOrderStatus, BadgeTone> = {
   awaiting_approval: 'amber',
+  checking_kitchen: 'amber',
+  hold_expired: 'red',
   processing: 'blue',
   awaiting_payment: 'blue',
   paid: 'green',
@@ -88,7 +91,15 @@ export function AdminCakeOrders() {
     })
   const act = (
     id: string,
-    action: 'approve' | 'decline' | 'paid_offline' | 'picked_up' | 'not_picked_up' | 'delete' | 'resend_link',
+    action:
+      | 'approve'
+      | 'decline'
+      | 'paid_offline'
+      | 'picked_up'
+      | 'not_picked_up'
+      | 'delete'
+      | 'resend_link'
+      | 'kitchen_sent',
     confirmText?: string,
   ) => {
     if (confirmText && !window.confirm(confirmText)) return
@@ -158,6 +169,7 @@ export function AdminCakeOrders() {
           </Button>
         </div>
       </div>
+      <PinnedOrders orders={orders} busy={busy} act={act} />
       <AdminSegmented
         label="Show orders"
         value={filter}
@@ -384,5 +396,91 @@ export function AdminCakeOrders() {
         the customer's name.
       </p>
     </section>
+  )
+}
+
+type Act = (id: string, action: 'approve' | 'decline' | 'kitchen_sent', confirmText?: string) => void
+const smsToKitchen = (o: StoredCakeOrder) => 'sms:?&body=' + encodeURIComponent(kitchenText(o))
+
+// Pinned at the top: orders waiting on the bakery. Empty lists are not shown.
+function PinnedOrders({ orders, busy, act }: { orders: StoredCakeOrder[]; busy: boolean; act: Act }) {
+  const board = orderBoard(orders)
+  const groups = [
+    { id: 'approve', title: 'Needs approval', list: board.needsApproval },
+    { id: 'kitchen', title: 'Checking with kitchen', list: board.checkingKitchen },
+    { id: 'send', title: 'Approved — not sent to kitchen', list: board.notSentToKitchen },
+  ].filter(g => g.list.length)
+  if (!groups.length) return null
+  return (
+    <div className="space-y-4">
+      {groups.map(group => (
+        <section key={group.id} aria-labelledby={'pinned-' + group.id} className="space-y-2">
+          <h3 id={'pinned-' + group.id} className="heading-3">
+            {group.title} <span className="font-normal text-muted-foreground">({group.list.length})</span>
+          </h3>
+          <ul className="grid gap-2 md:grid-cols-2">
+            {group.list.map(o => (
+              <li key={o.id} className="space-y-2 rounded-xl border bg-card p-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  {group.id !== 'send' && isUrgent(o) && (
+                    <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">URGENT</span>
+                  )}
+                  {o.test && (
+                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
+                      TEST
+                    </span>
+                  )}
+                  <span>
+                    {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
+                  </span>
+                </div>
+                <p className="text-sm">
+                  {sizeLabel(o.size)} · {o.flavor} · {o.filling}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {o.name} · {orderRef(o)} · ${o.price.toFixed(2)}
+                  {o.status === 'awaiting_approval' && o.approveBy && <> · approve by {formatVegasTime(o.approveBy)}</>}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {o.status === 'awaiting_approval' && (
+                    <>
+                      <Button
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => act(o.id, 'approve', `Approve and charge $${o.price.toFixed(2)}?`)}
+                      >
+                        Approve &amp; charge
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() =>
+                          act(o.id, 'decline', 'Decline this order? The hold is released and the customer is emailed.')
+                        }
+                      >
+                        Decline
+                      </Button>
+                    </>
+                  )}
+                  {group.id === 'send' && (
+                    <>
+                      <Button asChild size="sm" className="sm:hidden">
+                        <a href={smsToKitchen(o)} onClick={() => act(o.id, 'kitchen_sent')}>
+                          Send to kitchen
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'kitchen_sent')}>
+                        Mark sent
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   )
 }

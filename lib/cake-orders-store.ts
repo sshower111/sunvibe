@@ -10,6 +10,8 @@ type Row = {
   payment_id: string | null
   approve_by: Date | string | null
   order_no: number | string | null
+  kitchen_asked_at: Date | string | null
+  kitchen_sent_at: Date | string | null
 }
 const toOrder = (r: Row): StoredCakeOrder => ({
   ...(decode(r.payload) as StoredCakeOrder),
@@ -17,6 +19,8 @@ const toOrder = (r: Row): StoredCakeOrder => ({
   paymentId: r.payment_id ?? undefined,
   approveBy: r.approve_by ? new Date(r.approve_by).toISOString() : undefined,
   orderNo: r.order_no == null ? undefined : Number(r.order_no),
+  kitchenAskedAt: r.kitchen_asked_at ? new Date(r.kitchen_asked_at).toISOString() : undefined,
+  kitchenSentAt: r.kitchen_sent_at ? new Date(r.kitchen_sent_at).toISOString() : undefined,
 })
 
 export async function listCakeOrders(): Promise<StoredCakeOrder[]> {
@@ -24,20 +28,21 @@ export async function listCakeOrders(): Promise<StoredCakeOrder[]> {
   // Failed payment attempts are kept 2 days for reference (nothing was charged), then deleted.
   await sql`DELETE FROM bakery_cake_orders WHERE status='failed' AND created_at < now() - interval '2 days'`
   const rows =
-    await sql`SELECT payload,status,payment_id,approve_by,order_no FROM bakery_cake_orders WHERE status <> 'failed' OR created_at > now() - interval '2 days' ORDER BY created_at DESC LIMIT 500`
+    await sql`SELECT payload,status,payment_id,approve_by,order_no,kitchen_asked_at,kitchen_sent_at FROM bakery_cake_orders WHERE status <> 'failed' OR created_at > now() - interval '2 days' ORDER BY created_at DESC LIMIT 500`
   return rows.map(r => toOrder(r as unknown as Row))
 }
 
 export async function getCakeOrder(id: string) {
   const sql = await contentDatabase()
-  const rows = await sql`SELECT payload,status,payment_id,approve_by,order_no FROM bakery_cake_orders WHERE id=${id}`
+  const rows =
+    await sql`SELECT payload,status,payment_id,approve_by,order_no,kitchen_asked_at,kitchen_sent_at FROM bakery_cake_orders WHERE id=${id}`
   return rows.length ? toOrder(rows[0] as unknown as Row) : null
 }
 
 export async function findCakeOrderByPayment(paymentId: string) {
   const sql = await contentDatabase()
   const rows =
-    await sql`SELECT payload,status,payment_id,approve_by,order_no FROM bakery_cake_orders WHERE payment_id=${paymentId}`
+    await sql`SELECT payload,status,payment_id,approve_by,order_no,kitchen_asked_at,kitchen_sent_at FROM bakery_cake_orders WHERE payment_id=${paymentId}`
   return rows.length ? toOrder(rows[0] as unknown as Row) : null
 }
 
@@ -72,6 +77,14 @@ export async function finishCakeOrder(
     approve_by=${change.approveBy ?? null},updated_at=now() WHERE id=${id}`
 }
 
+/** Records that the order details were texted to the kitchen (the latest time is kept). */
+export async function markKitchenSent(id: string) {
+  const sql = await contentDatabase()
+  const rows =
+    await sql`UPDATE bakery_cake_orders SET kitchen_sent_at=now(),updated_at=now() WHERE id=${id} RETURNING id`
+  return rows.length > 0
+}
+
 /** Deletes an order made with admin "Test order". Real orders can't be deleted. */
 export async function deleteTestOrder(id: string) {
   const order = await getCakeOrder(id)
@@ -100,7 +113,15 @@ export async function createCustomOrder(order: StoredCakeOrder) {
 /** Replaces the stored details of an order (e.g. a new pay-by time when the link is sent again). */
 export async function saveCakeOrderDetails(order: StoredCakeOrder) {
   const sql = await contentDatabase()
-  const { status: _status, paymentId: _paymentId, approveBy: _approveBy, orderNo: _orderNo, ...details } = order
+  const {
+    status: _status,
+    paymentId: _paymentId,
+    approveBy: _approveBy,
+    orderNo: _orderNo,
+    kitchenAskedAt: _kitchenAskedAt,
+    kitchenSentAt: _kitchenSentAt,
+    ...details
+  } = order
   await sql`UPDATE bakery_cake_orders SET payload=${encode(details)},updated_at=now() WHERE id=${order.id}`
 }
 

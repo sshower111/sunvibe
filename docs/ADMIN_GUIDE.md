@@ -1,6 +1,18 @@
 # Admin guide
 
-Go to https://sunvillebakerylv.com/admin and sign in with the admin password. You stay signed in on that device for 12 hours. Works on phones.
+Go to https://sunvillebakerylv.com/admin and sign in with the admin password. In a browser you stay signed in for 12 hours.
+
+## iPhone app (Sunville Admin)
+
+The admin pages install as an app on the Home Screen:
+
+1. Open https://sunvillebakerylv.com/admin in **Safari** (not Chrome).
+2. Tap **Share** → **Add to Home Screen** → **Add**. The red **Sunville Admin** icon appears.
+3. Open it from the Home Screen and sign in once. The app keeps you signed in for 90 days, renewed every time you open it, so it won't ask again unless you sign out, don't open it for 90 days, or the admin password changes.
+
+The app has four tabs at the bottom: **Orders**, **Inquiries**, **Menu** and **More** (Gallery, Occasions, Pre-orders, Settings, View website, Sign out). Pull down at the top of any screen to refresh it. On a computer the same sections are in the left sidebar.
+
+Each section has its own address (`/admin/orders`, `/admin/inquiries`, `/admin/menu`, `/admin/more`, `/admin/gallery`, ...). Old links such as `/admin?tab=cake-orders` still open the right section.
 
 ## Menu
 
@@ -34,6 +46,14 @@ Online orders from `/order-cake` (paid by card through Square). Details and setu
 
 Orders show as a table (ordered, pickup, cake, customer, status, phone, email). The list starts on **All**; use the **Status** dropdown to filter, and click **Ordered** or **Pickup** to sort; click again to reverse. Cake writing and notes show under the cake when there are any.
 
+
+Three lists are pinned at the top of **Orders** when they have anything in them:
+
+- **Needs approval**: orders waiting for Approve & charge or Decline. **URGENT** marks a pickup today or tomorrow; those come first.
+- **Checking with kitchen**: orders you have asked the kitchen about (used from the next update).
+- **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
+
+The full list follows underneath:
 
 - **Needs approval**: same-day orders, and next-day orders for 6", 10", 12", 1/2 sheet and full sheet. The card is only held. Press **Approve & charge** or **Decline** before the time shown; otherwise the hold is released and the customer is told automatically.
 - **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { adminHome } from '@/lib/admin-nav'
 
 // Pages with forms, CAPTCHA or admin tools keep a strict per-request nonce policy (rendered on every request).
 // Read-only pages (home, menu, gallery, privacy) use a fixed policy so they can be cached and served
@@ -36,6 +37,9 @@ function policy(scriptSources: string, development: boolean) {
 export function middleware(request: NextRequest) {
   const development = process.env.NODE_ENV !== 'production'
   const { pathname } = request.nextUrl
+  // /admin opens Cake orders; old links (/admin?tab=cake-inquiries) open the matching section.
+  if (pathname === '/admin' || pathname === '/admin/')
+    return NextResponse.redirect(new URL(adminHome(request.nextUrl.searchParams.get('tab') ?? undefined), request.url))
   // Maintenance mode (Vercel env MAINTENANCE_MODE=true): every public page shows /maintenance; admin still works.
   if (process.env.MAINTENANCE_MODE === 'true' && !pathname.startsWith('/admin') && pathname !== '/maintenance') {
     const response = NextResponse.rewrite(new URL('/maintenance', request.url))

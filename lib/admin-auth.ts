@@ -8,6 +8,12 @@ import { cookies } from 'next/headers'
  */
 export const ADMIN_COOKIE = 'sunville_admin'
 const SESSION_SECONDS = 12 * 60 * 60
+/**
+ * Sign-ins from the Home Screen app last 90 days and are renewed whenever the app is opened, so tapping a
+ * notification never asks for the password. Browser sign-ins keep the 12-hour limit.
+ */
+const DEVICE_SESSION_SECONDS = 90 * 24 * 60 * 60
+const RENEW_AFTER_SECONDS = 24 * 60 * 60
 
 function same(a: string, b: string) {
   return timingSafeEqual(createHash('sha256').update(a).digest(), createHash('sha256').update(b).digest())
@@ -29,11 +35,22 @@ function sign(expires: number) {
   const key = signingKey()
   return key ? expires + '.' + createHmac('sha256', key).update(String(expires)).digest('base64url') : null
 }
-export function createAdminSessionToken() {
-  const expires = Math.floor(Date.now() / 1000) + SESSION_SECONDS
-  const token = sign(expires)
+export function createAdminSessionToken(device = false) {
+  const maxAge = device ? DEVICE_SESSION_SECONDS : SESSION_SECONDS
+  const token = sign(Math.floor(Date.now() / 1000) + maxAge)
   if (!token) throw new Error('Admin password not configured')
-  return { token, maxAge: SESSION_SECONDS }
+  return { token, maxAge }
+}
+/**
+ * A fresh 90-day token for a Home Screen app session that is more than a day old, or null when nothing needs
+ * renewing (browser sessions, which last 12 hours, are never extended).
+ */
+export function renewedAdminSession(token: string | undefined) {
+  if (!isValidAdminSession(token)) return null
+  const left = Number(token!.split('.')[0]) - Date.now() / 1000
+  return left > SESSION_SECONDS && left < DEVICE_SESSION_SECONDS - RENEW_AFTER_SECONDS
+    ? createAdminSessionToken(true)
+    : null
 }
 function isValidAdminSession(token: string | undefined) {
   if (!token) return false
