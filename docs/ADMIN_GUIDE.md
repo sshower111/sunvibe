@@ -99,7 +99,7 @@ Every online order is only **held** on the customer's card until you approve it.
 
 The buttons on the order's page:
 
-- **Approve & charge**: charges the card and emails the customer. Then **Send to kitchen** opens Messages to the kitchen with the Chinese order text (and marks it sent; **Mark sent** only marks it).
+- **Approve & charge**: charges the card and emails the customer. Then **Send to kitchen** opens Messages to the kitchen with the Chinese order text (and marks it sent). On a computer, where texts can't be sent, **Mark sent** only marks it.
 - **Ask kitchen**: opens Messages to the kitchen with the order and "請問呢個蛋糕做唔做到？". The order moves to **Checking with kitchen**; an urgent order gets one more hour to answer if the pickup time allows. When the kitchen replies, come back and **Approve & charge** or **Decline**.
 - **Decline**: asks to confirm, releases the card hold, and emails the customer unless you untick **Email … that we can't make it**.
 - **Card hold ended** (later orders only): **Approve & send pay link** emails the customer a link to pay online (`/pay/<id>`, valid 3 days or until pickup). **Decline** closes it.
@@ -116,7 +116,7 @@ Three lists are pinned at the top of **Orders** when they have anything in them:
 
 - **Needs approval**: orders waiting for your answer, including **Card hold ended**. **URGENT** marks a pickup today or tomorrow; those come first. **Review** opens the order's page.
 - **Checking with kitchen**: orders you have asked the kitchen about.
-- **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
+- **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; on a computer, **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
 
 The full list follows underneath. Tap an order's date to open its page. Each order shows its main button (**Review**, **Mark picked up**, or **Resend pay link**); everything else is in the **⋯** menu (top-right corner of the order on phones): Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
 

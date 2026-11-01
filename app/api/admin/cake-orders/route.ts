@@ -7,6 +7,7 @@ import {
   askKitchen,
   createTestOrder,
   declineOrder,
+  getCakeOrderSettled,
   listCakeOrdersSettled,
 } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
@@ -56,8 +57,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     const { action, id } = parsed.data
     if (action === 'get') {
-      // Settles it first if its answer time passed, like the list.
-      const order = (await listCakeOrdersSettled()).find(o => o.id === id) ?? (await getCakeOrder(id))
+      const order = await getCakeOrderSettled(id)
       if (!order) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
       return NextResponse.json({ order, events: await listOrderEvents(id), kitchenPhone: kitchenPhone() }, noStore)
     }

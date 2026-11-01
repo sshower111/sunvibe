@@ -388,6 +388,15 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   assert.equal(list.orders.find(o => o.id === late.requestId).status, 'expired')
   assert.equal(square.calls.at(-1)[0], 'cancel')
 
+  // Opening one order settles it too.
+  const lateOne = order({ size: '12-inch', pickupDate: addDays(today, 1) })
+  await post(route, lateOne)
+  await db.query("UPDATE bakery_cake_orders SET approve_by = now() - interval '1 minute' WHERE id = $1", [
+    lateOne.requestId,
+  ])
+  const one = await (await adminCall({ action: 'get', id: lateOne.requestId })).json()
+  assert.equal(one.order.status, 'expired')
+
   // A later order whose card hold ended waits as "Card hold ended"; approving emails a pay link (/pay/<id>).
   const longer = order({ size: '10-inch', pickupDate: addDays(today, 5) })
   await post(route, longer)

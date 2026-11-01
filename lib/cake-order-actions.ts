@@ -77,9 +77,8 @@ async function settle(order: StoredCakeOrder) {
   await holdEnded(order)
 }
 
-/** Lists orders, first settling any held order whose answer time has passed. */
-export async function listCakeOrdersSettled() {
-  const orders = await listCakeOrders()
+/** Settles the given orders in place: pay links past their date expire, held orders past their answer time end. */
+async function settleDue(orders: StoredCakeOrder[]) {
   await expirePayLinks(orders)
   const now = Date.now()
   for (const order of orders) {
@@ -91,6 +90,16 @@ export async function listCakeOrdersSettled() {
     }
   }
   return orders
+}
+
+/** Lists orders, first settling any held order whose answer time has passed. */
+export const listCakeOrdersSettled = async () => settleDue(await listCakeOrders())
+
+/** One order, settled first like the list. */
+export async function getCakeOrderSettled(id: string) {
+  const order = await getCakeOrder(id)
+  if (order) await settleDue([order])
+  return order
 }
 
 export type ApproveResult = { status: 'paid' } | { status: 'awaiting_payment'; emailed: boolean }

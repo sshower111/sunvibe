@@ -411,7 +411,13 @@ function PinnedOrders({
                           Send to kitchen
                         </a>
                       </Button>
-                      <Button size="sm" variant="outline" disabled={busy} onClick={() => act(o.id, 'kitchen_sent')}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="hidden sm:inline-flex"
+                        disabled={busy}
+                        onClick={() => act(o.id, 'kitchen_sent')}
+                      >
                         Mark sent
                       </Button>
                     </>

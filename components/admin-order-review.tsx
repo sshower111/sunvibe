@@ -316,7 +316,13 @@ export function AdminOrderReview({ id }: { id: string }) {
               </a>
             </Button>
             {!order.kitchenSentAt && (
-              <Button size="lg" variant="outline" disabled={busy} onClick={() => void act('kitchen_sent')}>
+              <Button
+                size="lg"
+                variant="outline"
+                className="hidden sm:inline-flex"
+                disabled={busy}
+                onClick={() => void act('kitchen_sent')}
+              >
                 Mark sent
               </Button>
             )}
