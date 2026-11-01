@@ -208,7 +208,7 @@ test('the Claude request: model, fallbacks, structured output, photos and no con
   assert.equal(result.output.headline, 'Unicorn birthday, 30 guests')
   assert.equal(result.inputTokens, 100)
   const [request] = requests
-  assert.equal(request.model, 'claude-opus-5-5')
+  assert.equal(request.model, server.ASSISTANT_MODEL)
   assert.equal(request.fallbacks, 'default')
   assert.deepEqual(request.betas, ['server-side-fallback-2026-07-01'])
   assert.equal(request.output_config.effort, 'medium')

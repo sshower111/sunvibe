@@ -12,6 +12,8 @@ import {
   decideOrder,
   formatPickupTime,
   formatVegasTime,
+  CONFIRM_BADGE,
+  INSTANT_NOTICE_HOURS,
   isInstantCake,
   ORDER_FILLINGS,
   ORDER_FLAVORS,
@@ -28,9 +30,8 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/select'
 import { FormAlert } from '@/components/ui/form-message'
 import { CakePreview } from '@/components/cake-preview'
-import { CakeLeadBadge } from '@/components/menu-cakes'
 
-// Checkout for the cakes on the menu (/order-cake?size=…). The 8" display cake is charged when ordered; every other
+// Checkout for menu cakes (/order-cake, from the menu's Cakes chip; ?size= preselects a size). The 8" display cake is charged when ordered; every other
 // size is held on the card until the kitchen confirms (lib/cake-order.ts). Custom designs go to /custom-cakes.
 
 const steps = ['Cake', 'Pickup', 'Pay'] as const
@@ -52,6 +53,21 @@ const empty = {
   phone: '',
 }
 type Data = typeof empty
+
+/** Lead time for the chosen size: ready in 4 hours (8"), or the kitchen confirms with 24 hours' notice. */
+function CakeLeadBadge({ size }: { size: string }) {
+  const instant = isInstantCake(size)
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit items-center rounded-md px-2.5 py-1.5 text-left text-xs font-medium',
+        instant ? 'bg-success-tint text-success' : 'bg-warning-tint text-warning',
+      )}
+    >
+      {instant ? `Ready in ${INSTANT_NOTICE_HOURS} hours` : CONFIRM_BADGE}
+    </span>
+  )
+}
 
 /** A large tap tile. */
 function Choice({

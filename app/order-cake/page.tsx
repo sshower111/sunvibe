@@ -9,7 +9,7 @@ import { CakeStructuredData } from '@/components/cake-structured-data'
 export const dynamic = 'force-dynamic'
 export const metadata = pageMetadata('/order-cake')
 
-// Checkout for the cakes on the menu (/menu → Cakes links here with ?size=). Custom cakes: /custom-cakes.
+// Checkout for menu cakes (the menu's Cakes chip links here; ?size= preselects a size). Custom cakes: /custom-cakes.
 export default async function OrderCakePage({ searchParams }: { searchParams: Promise<{ size?: string }> }) {
   const { size } = await searchParams
   return (

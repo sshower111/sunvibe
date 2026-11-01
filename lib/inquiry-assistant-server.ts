@@ -18,7 +18,7 @@ import {
 // Runs the inquiry assistant (lib/inquiry-assistant.ts) with Claude and stores the result. Off when
 // ANTHROPIC_API_KEY is not set. A failure is logged and never affects the inquiry itself.
 
-export const ASSISTANT_MODEL = 'claude-opus-5-5'
+export const ASSISTANT_MODEL = 'claude-sonnet-5-5'
 type Inquiry = Omit<StoredCakeInquiry, 'status' | 'staffNotes'>
 type Photo = { name: string; data: Buffer }
 

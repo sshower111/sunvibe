@@ -85,11 +85,11 @@ Changing the VAPID keys turns notifications off on every device; turn them on ag
 
 ## Cake orders
 
-Online orders from the menu's Cakes section (`/menu` → **Order** → `/order-cake`, paid by card through Square). Details and setup: `docs/CAKE-ORDERS.md`.
+Online orders from the menu's **Cakes** chip (`/menu` → `/order-cake`, paid by card through Square). Details and setup: `docs/CAKE-ORDERS.md`.
 
 ### Approving an order
 
-The **8" round** is a display cake: it is charged when ordered (4 hours' notice) and goes straight to **To make**, so just **Send to kitchen**. Every other size (6", 10", 12", sheets) shows "Requires Kitchen Confirmation (24h Lead Time)" on the menu, needs 24 hours' notice, and is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or the order in the list) to open it in the side panel. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
+The **8" round** is a display cake: it is charged when ordered (4 hours' notice) and goes straight to **To make**, so just **Send to kitchen**. Every other size (6", 10", 12", sheets) shows "Requires Kitchen Confirmation (24h Lead Time)" when chosen, needs 24 hours' notice, and is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or the order in the list) to open it in the side panel. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
 
 | Pickup | Answer by | If not answered |
 | --- | --- | --- |

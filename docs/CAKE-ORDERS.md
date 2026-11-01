@@ -1,18 +1,18 @@
 # Online cake orders (/order-cake)
 
-Customers pick a cake on the menu (`/menu` → Cakes → **Order**), choose flavor and filling, pay by card through Square, and pick it up at the bakery. Custom designs, tiers and delivery are quote requests on `/custom-cakes` (`docs/CUSTOM-CAKE-INQUIRIES.md`).
+Customers tap **Cakes** on the menu (`/menu`), which opens `/order-cake`, choose size, flavor and filling, pay by card through Square, and pick it up at the bakery. Custom designs, tiers and delivery are quote requests on `/custom-cakes` (`docs/CUSTOM-CAKE-INQUIRIES.md`).
 
 ## What customers can order
 
-- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet, listed on the menu (`components/menu-cakes.tsx`) with "from" prices. **Order** opens `/order-cake?size=…` (`components/cake-order-flow.tsx`): cake (size, flavor, filling, writing) → pickup → details & payment.
+- Sizes: 6", 8", 10", 12" round, 1/4 sheet, 1/2 sheet, full sheet, chosen on `/order-cake` (`components/cake-order-flow.tsx`): cake (size, flavor, filling, writing) → pickup → details & payment. `?size=8-inch` preselects a size.
 - Any listed flavor and filling. The price comes from the pricing sheet column for the filling (`lib/cake-catalog.ts`): Custard; Mixed Fruit / Strawberry / Banana; Mango / Taro; Coconut / Durian.
 - Classic look only (cream finish, piped border, optional writing up to 60 characters).
 - Pickup only. No tax is added.
 
 ## Display cakes and kitchen confirmation (Nov 1, 2026)
 
-- **8" round** (`INSTANT_SIZES` in `lib/cake-order.ts`): a display cake. Any listed flavor and filling, ready with **4 hours' notice**, charged when ordered (status Paid, no approval). The menu shows "Ready in 4 hours".
-- **Every other size**: shows "Requires Kitchen Confirmation (24h Lead Time)" on the menu and order page, needs **24 hours' notice**, and is held on the card until the bakery approves (below).
+- **8" round** (`INSTANT_SIZES` in `lib/cake-order.ts`): a display cake. Any listed flavor and filling, ready with **4 hours' notice**, charged when ordered (status Paid, no approval). The order page shows "Ready in 4 hours" once it is chosen.
+- **Every other size**: shows "Requires Kitchen Confirmation (24h Lead Time)" on the order page once chosen, needs **24 hours' notice**, and is held on the card until the bakery approves (below).
 - To change which sizes are display cakes or the notice, edit `INSTANT_SIZES`, `INSTANT_NOTICE_HOURS` and `CONFIRM_NOTICE_HOURS`. If a display cake can't be made, use **⋯ → Refund** on the order (below).
 
 ## Apple Pay and Google Pay
@@ -38,7 +38,7 @@ If nobody approves a same-day or next-day order in time, the hold is released, t
 
 ## Where customers find it
 
-- Menu page: the **Cakes** category (also at the top of All items when not searching), each size with **Order**.
+- Menu page: the **Cakes** chip (next to All items) opens `/order-cake`. The menu itself lists no cake sizes.
 - Custom cakes page: "Need a cake sooner? Order from the menu" under the form.
 - The top menu has no separate cake order link; **Custom cakes** there is the quote request.
 

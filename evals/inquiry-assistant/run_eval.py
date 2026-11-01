@@ -8,6 +8,7 @@ drafts must never contain (payment methods, frosting ingredients, dollar amounts
     node evals/inquiry-assistant/export_requests.cjs
     python evals/inquiry-assistant/run_eval.py                 # labelled cases, about $0.05 each
     python evals/inquiry-assistant/run_eval.py --real          # saved inquiries: only the universal checks
+    python evals/inquiry-assistant/run_eval.py --model claude-opus-5-5   # same cases on another model, to compare
     python evals/inquiry-assistant/run_eval.py --grade out/results-....jsonl   # regrade without calling the API
 
 Needs ANTHROPIC_API_KEY (read from .env.local when not set). Results go to evals/inquiry-assistant/out/ (git-ignored).
@@ -29,8 +30,8 @@ HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
 ROOT = HERE.parent.parent
 
-# Opus 5.5 list prices per million tokens, for the cost line in the report.
-INPUT_PRICE, OUTPUT_PRICE = 4.00, 20.00
+# List prices per million tokens (input, output), for the cost line in the report.
+PRICES = {"claude-opus-5-5": (4.00, 20.00), "claude-sonnet-5-5": (2.00, 10.00)}
 
 CJK = re.compile(r"[㐀-鿿]")
 # Never in a customer draft: payment methods, frosting ingredients, color difficulty, a written price.
@@ -142,7 +143,8 @@ def report(results: list[dict]) -> None:
     tokens_in = sum(r.get("input_tokens", 0) for r in results)
     tokens_out = sum(r.get("output_tokens", 0) for r in results)
     latencies = sorted(r.get("latency_s", 0) for r in results)
-    cost = tokens_in * INPUT_PRICE / 1e6 + tokens_out * OUTPUT_PRICE / 1e6
+    price_in, price_out = PRICES.get(results[0].get("model", ""), PRICES["claude-opus-5-5"]) if results else (0, 0)
+    cost = tokens_in * price_in / 1e6 + tokens_out * price_out / 1e6
     print(
         f"Cost ${cost:.2f} (${cost / max(len(results), 1):.3f} per inquiry), "
         f"median latency {latencies[len(latencies) // 2] if latencies else 0}s"
@@ -154,6 +156,7 @@ def main() -> int:
     parser.add_argument("--real", action="store_true", help="use out/real-requests.jsonl (saved inquiries)")
     parser.add_argument("--grade", type=Path, help="regrade a saved results file without calling the API")
     parser.add_argument("--limit", type=int, help="only the first N cases")
+    parser.add_argument("--model", help="try another model with the same prompts, e.g. claude-opus-5-5")
     args = parser.parse_args()
 
     if args.grade:
@@ -172,12 +175,20 @@ def main() -> int:
     client = anthropic.Anthropic(timeout=120, max_retries=2)
 
     def run(case: dict) -> dict:
+        if args.model:
+            case["request"]["model"] = args.model
         try:
             answer = call_claude(client, case["request"])
         except (anthropic.APIError, json.JSONDecodeError) as error:
             answer = {"stop_reason": "error", "output": None, "error": str(error)}
         print(f"  {case['id']}: {answer['stop_reason']}", flush=True)
-        return {"id": case["id"], "expect": case["expect"], "promptVersion": case["request"]["promptVersion"], **answer}
+        return {
+            "id": case["id"],
+            "expect": case["expect"],
+            "model": case["request"]["model"],
+            "promptVersion": case["request"]["promptVersion"],
+            **answer,
+        }
 
     print(f"Running {len(cases)} cases on {cases[0]['request']['model']}...")
     with ThreadPoolExecutor(max_workers=4) as pool:

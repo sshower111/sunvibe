@@ -9,7 +9,7 @@ import { Footer } from '@/components/footer'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MenuGridSkeleton } from '@/components/menu-grid-skeleton'
-import { MenuCakes } from '@/components/menu-cakes'
+import Link from 'next/link'
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Search, X, ChevronDown, Phone, MapPin } from 'lucide-react'
 import { canOptimizeGalleryImage } from '@/lib/gallery-images'
@@ -323,33 +323,41 @@ export default function MenuPage({
               </ul>
             </form>
             <div role="group" aria-label="Filter by category" className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap">
-              {categories.map(item => (
-                <button
-                  key={item}
-                  type="button"
-                  aria-pressed={category === item}
-                  onClick={() => {
-                    setCategory(item)
-                    if (item === 'Cakes') setQuery('')
-                    setSuggesting(false)
-                    setActiveSuggestion(-1)
-                  }}
-                  className={
-                    'action-button shrink-0 border ' +
-                    (category === item
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-card text-foreground hover:border-input hover:bg-secondary')
-                  }
-                >
-                  {item}
-                </button>
-              ))}
+              {categories.map(item =>
+                // Cakes are ordered online: the chip opens the cake order page.
+                item === 'Cakes' ? (
+                  <Link
+                    key={item}
+                    href="/order-cake"
+                    className="action-button shrink-0 border border-border bg-card text-foreground hover:border-input hover:bg-secondary"
+                  >
+                    {item}
+                  </Link>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    aria-pressed={category === item}
+                    onClick={() => {
+                      setCategory(item)
+                      setSuggesting(false)
+                      setActiveSuggestion(-1)
+                    }}
+                    className={
+                      'action-button shrink-0 border ' +
+                      (category === item
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-card text-foreground hover:border-input hover:bg-secondary')
+                    }
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
             </div>
           </section>
 
-          {/* Cakes to order online come first: in Cakes, and in All items when not searching. */}
-          {(category === 'Cakes' || (category === 'All items' && !query.trim())) && <MenuCakes />}
-          {category === 'Cakes' && !loading && !error && filtered.length === 0 ? null : loading ? (
+          {loading ? (
             <div role="status" aria-label="Loading menu">
               <p className="mb-4 text-sm text-muted-foreground">Loading menu…</p>
               <MenuGridSkeleton />
