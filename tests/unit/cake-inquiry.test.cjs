@@ -81,7 +81,7 @@ const valid = {
   fulfillment: 'Pickup',
   deliveryAddress: '',
   notes: '<img src=x> allergy request',
-  acknowledged: 'yes',
+  designStyle: 'Vintage Piping',
   requestId: '11111111-1111-4111-8111-111111111111',
   captchaToken: 'mock',
 }
@@ -109,6 +109,19 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal((await post({ size: 'tier-8-10-12-14' })).status, 400)
   assert.equal((await post({ size: 'tier-6-10-12-16-18' })).status, 400)
   assert.equal((await post({ acknowledged: '' })).status, 400)
+  assert.equal((await post({ acknowledged: 'yes' })).status, 200) // sent by the old cake planner
+  // At least one design reference: a style, a link or a photo.
+  assert.equal((await post({ designStyle: '' })).status, 400)
+  assert.equal((await post({ designStyle: 'Fondant tower' })).status, 400)
+  assert.equal((await post({ designStyle: '', referenceLink: 'not a link' })).status, 400)
+  assert.equal((await post({ designStyle: '', referenceLink: 'https://' + 'x'.repeat(500) })).status, 400)
+  assert.equal((await post({ designStyle: '', referenceLink: 'https://www.pinterest.com/pin/123/' })).status, 200)
+  assert.equal(
+    schema.cakeInquirySchema.parse({ ...valid, referenceLink: 'instagram.com/p/abc' }).referenceLink,
+    'https://instagram.com/p/abc',
+  )
+  assert.equal(schema.cakeInquirySchema.parse(valid).textOk, 'no')
+  assert.equal((await post({ textOk: 'maybe' })).status, 400)
   assert.equal((await post({ filling: 'Strawberry' })).status, 200)
   assert.equal((await post({ filling: 'Strawberry Banana' })).status, 400)
   // The customer's own tiers, with a different flavor in each tier (top first).
@@ -184,6 +197,11 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   // Writing on the cake: escaped in both languages, never translated.
   assert(row(mail[0].body.html, 'Writing on cake', 'Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
   assert(row(zh, '蛋糕上的字', 'Happy 30th, &lt;b&gt;Amy&lt;/b&gt;!'))
+  // Design reference and texting permission.
+  assert(row(mail[0].body.html, 'Design style', 'Vintage Piping'))
+  assert(row(zh, '設計風格', '復古唧花'))
+  assert(row(mail[0].body.html, 'OK to text', 'No'))
+  assert(row(zh, '可否短訊聯絡', '不可以'))
   // Delivered inquiries are saved to the tracker, without the acknowledgement checkbox.
   assert.equal(saved.length, 1)
   assert.equal(saved[0].id, valid.requestId)
@@ -191,6 +209,7 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.deepEqual(saved[0].photos, ['1.png'])
   assert.equal(saved[0].cakeMessage, 'Happy 30th, <b>Amy</b>!')
   assert(!('acknowledged' in saved[0]))
+  assert.equal(saved[0].designStyle, 'Vintage Piping')
   // A tracker outage does not fail an inquiry that was emailed.
   storeDown = true
   assert.equal((await post({ cakeMessage: '' })).status, 200)

@@ -217,6 +217,23 @@ export function AdminCakeInquiries() {
       ['Cake', `${i.servings} servings · ${cakeLabel(i.size)}`],
       ['Flavor', flavorText],
       ['Writing', i.cakeMessage || 'None'],
+      ...(i.designStyle ? ([['Style', i.designStyle]] as [string, string][]) : []),
+      ...(i.referenceLink
+        ? ([
+            [
+              'Link',
+              <a
+                key="link"
+                href={i.referenceLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-all text-primary underline"
+              >
+                {i.referenceLink}
+              </a>,
+            ],
+          ] as [string, React.ReactNode][])
+        : []),
       i.fulfillment === 'Pickup'
         ? ['Pickup', 'At the bakery']
         : ['Delivery', `${i.fulfillment} · ${i.deliveryAddress || 'Address TBC'}`],
@@ -228,9 +245,12 @@ export function AdminCakeInquiries() {
       ['Customer', i.name],
       [
         'Phone',
-        <a key="tel" href={'tel:' + i.phone.replace(/[^+0-9]/g, '')} className="text-primary underline">
-          {i.phone}
-        </a>,
+        <span key="tel">
+          <a href={'tel:' + i.phone.replace(/[^+0-9]/g, '')} className="text-primary underline">
+            {i.phone}
+          </a>
+          {i.textOk === 'yes' && ' · OK to text'}
+        </span>,
       ],
       [
         'Email',

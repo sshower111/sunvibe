@@ -18,8 +18,9 @@ const bodySchema = cakeOrderSchema.extend({
   captchaToken: z.string().min(1).max(2048),
 })
 
-// Online cake order: check the cake and pickup time, then hold the amount on the card until the bakery approves
-// (lib/cake-order.ts decideOrder has the answer deadlines). The order row is saved before the card is touched.
+// Online cake order: check the cake and pickup time, then charge the card (display cakes) or hold the amount until
+// the bakery approves (lib/cake-order.ts decideOrder has the answer deadlines). The order row is saved before the card
+// is touched.
 export async function POST(request: NextRequest) {
   if (!(await rateLimiter.check('cake-order:' + getClientIp(request), 8, 10 * 60 * 1000)))
     return fail(`Too many attempts. Please wait 10 minutes or call ${SITE.phone}.`, 429)
@@ -42,16 +43,19 @@ export async function POST(request: NextRequest) {
   if (!decision.ok) return fail(decision.error, 400)
   const price = cakePrice(input.size, input.filling)
   if (price === null) return fail('Choose a listed cake and filling.', 400)
+  const held = decision.needsApproval
   let order: StoredCakeOrder = {
     ...input,
     id: requestId,
     createdAt: now.toISOString(),
     price,
     status: 'processing',
-    approveBy: decision.approveBy.toISOString(),
-    approvalReason: decision.reason,
-    holdUntil: new Date(now.getTime() + decision.holdMinutes * 60_000).toISOString(),
-    shortHold: decision.shortHold,
+    ...(held && {
+      approveBy: decision.approveBy.toISOString(),
+      approvalReason: decision.reason,
+      holdUntil: new Date(now.getTime() + decision.holdMinutes * 60_000).toISOString(),
+      shortHold: decision.shortHold,
+    }),
   }
 
   try {
@@ -72,8 +76,8 @@ export async function POST(request: NextRequest) {
         .update(requestId + ':' + cardToken)
         .digest('base64url'),
       amountCents: Math.round(price * 100),
-      autocomplete: false,
-      holdMinutes: decision.holdMinutes,
+      autocomplete: !held,
+      holdMinutes: held ? decision.holdMinutes : undefined,
       referenceId: orderRef(order),
       note: `Cake ${orderRef(order)}: ${sizeLabel(input.size)} ${input.flavor}/${input.filling}, pickup ${input.pickupDate} ${input.pickupTime}`,
       email: input.email,
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const status = 'awaiting_approval'
+  const status = held ? 'awaiting_approval' : 'paid'
   const saved = { ...order, status, paymentId: payment.id } as const
   try {
     await finishCakeOrder(requestId, { status, paymentId: payment.id, approveBy: order.approveBy })
@@ -105,7 +109,7 @@ export async function POST(request: NextRequest) {
   await notifyAdmins(() => newOrderPush(saved))
   return NextResponse.json({
     success: true,
-    held: true,
+    held,
     ref: orderRef(order),
     approveBy: order.approveBy,
     receiptUrl: payment.receipt_url,

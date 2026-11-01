@@ -1,4 +1,4 @@
-import { budgets, eventTypes, fillings, flavors } from './cake-inquiry'
+import { budgets, designStyles, eventTypes, fillings, flavors } from './cake-inquiry'
 import { cakeCatalog, deliveryOptions } from './cake-catalog'
 import { emailDivider, emailHeading, emailNote, emailRows } from './email-layout'
 
@@ -19,6 +19,9 @@ export const ZH = {
   filling: '餡料偏好',
   customFilling: '客人指定餡料',
   cakeMessage: '蛋糕上的字',
+  designStyle: '設計風格',
+  referenceLink: '參考連結',
+  textOk: '可否短訊聯絡',
   budget: '預算',
   fulfillment: '自取／送貨要求',
   deliveryAddress: '送貨地址／酒店',
@@ -78,6 +81,13 @@ const options: Record<string, string> = {
   Banana: '香蕉',
   'Something else': '其他餡料',
   'Something else (e.g., passion fruit)': '其他餡料（詳見備註）',
+  // Design styles (Character / Theme is with the events)
+  'Vintage Piping': '復古唧花',
+  'Minimalist Floral': '簡約花卉',
+  'Abstract Buttercream': '抽象牛油忌廉',
+  // OK to text
+  Yes: '可以',
+  No: '不可以',
   // Pickup and delivery
   Pickup: '自取',
   'Local delivery (within 10 miles) — $30': '本地送貨（10 英里內）— $30',
@@ -97,6 +107,9 @@ export const translatableOptions = [
   ...budgets.filter(value => !/^\$\d+–\$\d+$/.test(value)),
   ...flavors,
   ...fillings,
+  ...designStyles,
+  'Yes',
+  'No',
   ...deliveryOptions,
   'Not sure',
   ...cakeCatalog.map(cake => cake.label),

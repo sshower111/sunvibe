@@ -25,15 +25,9 @@ export function getStoreStatus(now: Date) {
   return { open: false, text: 'Closed · Opens ' + (minutes < 480 ? 'today' : 'tomorrow') + ' at 8 AM' }
 }
 
-export const menuCategories = [
-  'All items',
-  'Savory buns',
-  'Sweet buns & rolls',
-  'Specialty items',
-  'Custom cakes',
-] as const
+export const menuCategories = ['All items', 'Cakes', 'Savory buns', 'Sweet buns & rolls', 'Specialty items'] as const
 export function menuGroup(product: MenuProduct): (typeof menuCategories)[number] {
-  if (/custom cakes?/i.test(product.category)) return 'Custom cakes'
+  if (/custom cakes?/i.test(product.category)) return 'Cakes'
   if (/^(buns|breads)$/i.test(product.category)) {
     return /ham|sausage|pork|hot dog|scallion|tuna|cheese/i.test(product.name) ? 'Savory buns' : 'Sweet buns & rolls'
   }
@@ -41,7 +35,7 @@ export function menuGroup(product: MenuProduct): (typeof menuCategories)[number]
   return 'Specialty items'
 }
 export function menuLeadTime(product: MenuProduct) {
-  if (menuGroup(product) === 'Custom cakes') return { text: '3–5 days’ notice', tone: 'notice' }
+  if (menuGroup(product) === 'Cakes') return { text: '3–5 days’ notice', tone: 'notice' }
   if (/^(buns|breads)$/i.test(product.category)) return { text: 'Fresh daily', tone: 'daily' }
   return { text: 'Call to confirm availability', tone: 'availability' }
 }

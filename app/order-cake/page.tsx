@@ -9,18 +9,17 @@ import { CakeStructuredData } from '@/components/cake-structured-data'
 export const dynamic = 'force-dynamic'
 export const metadata = pageMetadata('/order-cake')
 
-// Everyday and custom cakes are ordered here (/custom-cakes redirects to this page).
-export default function OrderCakePage() {
+// Checkout for the cakes on the menu (/menu → Cakes links here with ?size=). Custom cakes: /custom-cakes.
+export default async function OrderCakePage({ searchParams }: { searchParams: Promise<{ size?: string }> }) {
+  const { size } = await searchParams
   return (
     <div className="min-h-screen bg-background">
       <CakeStructuredData />
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        <PageBand id="order-heading" title="Plan your cake">
-          <p>Tell us about your party and we’ll suggest the right cake and price.</p>
-        </PageBand>
-        <section id="cake-inquiry" className="site-container section-space">
-          <CakeOrderFlow square={squareClientConfig()} />
+        <PageBand id="order-heading" title="Order a cake" />
+        <section className="site-container section-space">
+          <CakeOrderFlow square={squareClientConfig()} initialSize={typeof size === 'string' ? size : ''} />
         </section>
       </main>
       <Footer />

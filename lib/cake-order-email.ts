@@ -165,6 +165,20 @@ export const sendNotAcceptedEmail = (o: StoredCakeOrder) =>
     rows: cakeRows(o).filter(([label]) => label !== 'Total'),
   })
 
+/** Refund from admin: the online payment (the deposit for deposit orders) goes back to the card. */
+export const sendRefundedEmail = (o: StoredCakeOrder) =>
+  send(`cake-order-refunded-${o.id}`, {
+    to: customerEmail(o),
+    replyTo: bakeryInbox(),
+    subject: tag(o, `Your cake order ${orderRef(o)} has been refunded — Sunville Bakery`),
+    paragraphs: [
+      `Hi ${o.name}, we've refunded ${money(amountDueNow(o))} for your cake order ${orderRef(o)} to the card you paid with.`,
+      `Your bank may take 5–10 business days to show it on your statement.`,
+      `Questions? Reply to this email or call ${SITE.phone}.`,
+    ],
+    rows: cakeRows(o).filter(([label]) => label !== 'Total'),
+  })
+
 // Orders paid through a link: custom cakes (made in admin from an inquiry), and online orders approved after
 // their card hold ended.
 

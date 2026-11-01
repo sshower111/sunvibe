@@ -4,7 +4,7 @@
 ALTER TABLE bakery_cake_orders DROP CONSTRAINT IF EXISTS bakery_cake_orders_status_check;
 ALTER TABLE bakery_cake_orders ADD CONSTRAINT bakery_cake_orders_status_check
   CHECK (status IN ('processing','awaiting_approval','paid','picked_up','declined','expired','failed',
-                    'awaiting_payment','deposit_paid','checking_kitchen','hold_expired'));
+                    'awaiting_payment','deposit_paid','checking_kitchen','hold_expired','refunded'));
 
 -- When the kitchen was asked about the order, and when the final details were texted to the kitchen.
 ALTER TABLE bakery_cake_orders ADD COLUMN IF NOT EXISTS kitchen_asked_at timestamptz;

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import {
+  amountDueNow,
   askKitchenText,
   formatPickupDate,
   formatPickupTime,
@@ -45,6 +46,8 @@ const eventLabels: Record<string, string> = {
   picked_up: 'Picked up',
   not_picked_up: 'Undo picked up',
   paid_offline: 'Paid in store / by phone',
+  refunded: 'Refunded, customer emailed',
+  refunded_no_email: 'Refunded, no email',
   awaiting_payment: 'Pay link reopened',
   processing: 'Paying',
 }
@@ -76,6 +79,7 @@ export function AdminOrderPanel({
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [declining, setDeclining] = useState(false)
+  const [refunding, setRefunding] = useState(false)
   const [notify, setNotify] = useState(true)
   const [copied, setCopied] = useState('')
   const [now, setNow] = useState(() => Date.now())
@@ -232,6 +236,15 @@ export function AdminOrderPanel({
         return { label: 'Email customer', href: 'mailto:' + order.email }
       case 'not_picked_up':
         return { label: 'Undo picked up', onSelect: () => void act('not_picked_up') }
+      case 'refund':
+        return {
+          label: 'Refund',
+          danger: true,
+          onSelect: () => {
+            setNotify(true)
+            setRefunding(true)
+          },
+        }
       case 'delete':
         return {
           label: 'Delete test order',
@@ -388,7 +401,39 @@ export function AdminOrderPanel({
           </div>
         </div>
       )}
-      {paid && (
+      {refunding && (
+        <div className="space-y-3 rounded-lg border border-red-300 p-3">
+          <p className="font-semibold">
+            Refund {money(amountDueNow(order))} to {order.name}&apos;s card for order {orderRef(order)}?
+          </p>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="size-5 accent-primary"
+              checked={notify}
+              onChange={e => setNotify(e.target.checked)}
+            />
+            Email {order.name} about the refund
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="destructive"
+              disabled={busy}
+              onClick={() =>
+                void act('refund', { notify }, () =>
+                  notify ? 'Refunded. The customer has been emailed.' : 'Refunded.',
+                ).then(() => setRefunding(false))
+              }
+            >
+              Refund {money(amountDueNow(order))}
+            </Button>
+            <Button variant="outline" disabled={busy} onClick={() => setRefunding(false)}>
+              Keep it
+            </Button>
+          </div>
+        </div>
+      )}
+      {paid && !refunding && (
         <div className="grid gap-2 sm:flex sm:flex-wrap">
           <Button asChild variant={order.kitchenSentAt ? 'outline' : 'default'}>
             <a href={kitchenSms(phone, kitchenText(order))} onClick={() => void act('kitchen_sent')}>

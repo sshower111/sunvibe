@@ -107,6 +107,21 @@ export const completePayment = async (id: string) =>
   (await call<{ payment: SquarePayment }>('POST', `/v2/payments/${encodeURIComponent(id)}/complete`, {})).payment
 export const cancelPayment = async (id: string) =>
   (await call<{ payment: SquarePayment }>('POST', `/v2/payments/${encodeURIComponent(id)}/cancel`, {})).payment
+/** Refunds (part of) a completed payment. Repeating the same idempotency key returns the same refund. */
+export async function refundPayment(input: {
+  paymentId: string
+  amountCents: number
+  idempotencyKey: string
+  reason: string
+}) {
+  const { refund } = await call<{ refund: { id: string; status: string } }>('POST', '/v2/refunds', {
+    idempotency_key: input.idempotencyKey,
+    payment_id: input.paymentId,
+    amount_money: { amount: input.amountCents, currency: 'USD' },
+    reason: input.reason.slice(0, 192),
+  })
+  return refund
+}
 export const getPayment = async (id: string) =>
   (await call<{ payment: SquarePayment }>('GET', `/v2/payments/${encodeURIComponent(id)}`)).payment
 

@@ -34,6 +34,17 @@ export const isCustomFilling = (value: string) => value.startsWith('Something el
 export const fillingText = (filling: string, customFilling = '') =>
   isCustomFilling(filling) && customFilling ? customFilling : filling
 export const MAX_CAKE_MESSAGE = 60
+// /custom-cakes asks for at least one design reference: photos, a link, or one of these styles.
+export const designStyles = [
+  'Vintage Piping',
+  'Minimalist Floral',
+  'Character / Theme',
+  'Abstract Buttercream',
+] as const
+export const MAX_REFERENCE_LINK = 500
+/** True when the inquiry has a design reference besides photos (photos are checked by the API). */
+export const hasDesignReference = (v: { designStyle?: string; referenceLink?: string }) =>
+  !!(v.designStyle || v.referenceLink)
 // 10 × 400 KB keeps the whole upload under Vercel’s 4.5 MB request limit (photos are resized to 1400px in the browser).
 export const MAX_PHOTO_BYTES = 400 * 1024
 export const MAX_PHOTOS = 10
@@ -135,12 +146,26 @@ export const cakeInquirySchema = z
       .max(MAX_CUSTOM_FILLING, `Please keep the filling under ${MAX_CUSTOM_FILLING} characters.`)
       .default(''),
     budget: z.enum(budgets),
+    // Design reference from /custom-cakes (older inquiries have neither).
+    designStyle: z.enum(['', ...designStyles]).default(''),
+    referenceLink: z
+      .string()
+      .trim()
+      .max(MAX_REFERENCE_LINK, 'Please keep the link under 500 characters.')
+      // People often paste "instagram.com/p/…" without https://.
+      .transform(v => (v && !/^https?:\/\//i.test(v) ? 'https://' + v : v))
+      .refine(
+        v => !v || /^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(v),
+        'Paste a link to the design, for example from Instagram or Pinterest.',
+      )
+      .default(''),
+    // The customer ticked "OK to text updates regarding this quote".
+    textOk: z.enum(['yes', 'no']).default('no'),
     fulfillment: z.enum(deliveryOptions),
     deliveryAddress: z.string().trim().max(500, 'Please keep the delivery address under 500 characters.'),
     notes: z.string().trim().max(3000, 'Please keep notes under 3,000 characters.'),
-    acknowledged: z.literal('yes', {
-      errorMap: () => ({ message: 'Please acknowledge this is an inquiry, not a confirmed order.' }),
-    }),
+    // The old cake planner asked to confirm this is a quote request; /custom-cakes says so on the button instead.
+    acknowledged: z.literal('yes').optional(),
   })
   .refine(v => !v.eventTime || businessSlots(v.eventDate).includes(v.eventTime), {
     message: 'Choose a time during our opening hours.',
@@ -181,16 +206,17 @@ export const inquiryStatusLabels: Record<InquiryStatus, string> = {
 export const MAX_STAFF_NOTES = 3000
 /** Short code shown in email subjects and admin so each inquiry gets its own email thread. */
 export const inquiryRef = (id: string) => '#' + id.slice(0, 4).toUpperCase()
-export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged'> & {
-  id: string
-  createdAt: string
-  photoCount: number
-  /** Reference photos kept for admin preview, e.g. ["1.jpg", "2.png"]. Missing on inquiries from before photos were kept. */
-  photos?: string[]
-  status: InquiryStatus
-  staffNotes: string
-  /** Sample from admin "Send test inquiry"; can be deleted from admin. */
-  test?: boolean
-  /** Admin list only: the custom cake order made from this inquiry, if any. */
-  order?: { ref: string; status: string }
-}
+export type StoredCakeInquiry = Omit<CakeInquiry, 'acknowledged' | 'designStyle' | 'referenceLink' | 'textOk'> &
+  Partial<Pick<CakeInquiry, 'designStyle' | 'referenceLink' | 'textOk'>> & {
+    id: string
+    createdAt: string
+    photoCount: number
+    /** Reference photos kept for admin preview, e.g. ["1.jpg", "2.png"]. Missing on inquiries from before photos were kept. */
+    photos?: string[]
+    status: InquiryStatus
+    staffNotes: string
+    /** Sample from admin "Send test inquiry"; can be deleted from admin. */
+    test?: boolean
+    /** Admin list only: the custom cake order made from this inquiry, if any. */
+    order?: { ref: string; status: string }
+  }

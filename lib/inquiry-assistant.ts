@@ -85,6 +85,8 @@ export function inquiryForModel(i: Inquiry) {
     ...(i.customFilling ? { customFilling: i.customFilling } : {}),
     ...(i.tierFlavors ? { tierFlavors: i.tierFlavors } : {}),
     cakeMessage: i.cakeMessage,
+    ...(i.designStyle ? { designStyle: i.designStyle } : {}),
+    ...(i.referenceLink ? { referenceLink: i.referenceLink } : {}),
     budget: i.budget,
     fulfillment: i.fulfillment,
     notes: i.notes,

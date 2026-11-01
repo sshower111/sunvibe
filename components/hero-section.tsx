@@ -33,8 +33,8 @@ export function HeroSection() {
             Pineapple buns, BBQ pork buns, egg tarts and chiffon celebration cakes from Johnny and May’s kitchen.
           </p>
           <div className="mt-6 grid gap-3 min-[360px]:grid-cols-2 sm:mt-8 sm:flex sm:flex-wrap">
-            <Link href="/order-cake" className={cn(buttonVariants(), 'w-full px-3 sm:w-auto sm:px-5')}>
-              Plan your cake
+            <Link href="/custom-cakes" className={cn(buttonVariants(), 'w-full px-3 sm:w-auto sm:px-5')}>
+              Custom cakes
             </Link>
             <Link
               href="/menu"

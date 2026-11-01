@@ -27,7 +27,7 @@ const filters = {
   upcoming: { label: 'To make', statuses: ['paid', 'deposit_paid', 'processing'] },
   payment: { label: 'Awaiting payment', statuses: ['awaiting_payment'] },
   done: { label: 'Picked up', statuses: ['picked_up'] },
-  closed: { label: 'Declined / expired', statuses: ['declined', 'expired', 'failed'] },
+  closed: { label: 'Declined / refunded', statuses: ['declined', 'expired', 'failed', 'refunded'] },
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
 type Filter = keyof typeof filters
 const statusTone: Record<CakeOrderStatus, BadgeTone> = {
@@ -42,6 +42,7 @@ const statusTone: Record<CakeOrderStatus, BadgeTone> = {
   declined: 'red',
   expired: 'red',
   failed: 'red',
+  refunded: 'gray',
 }
 type SortKey = 'created' | 'pickup'
 const money = (n: number) => '$' + n.toFixed(2)

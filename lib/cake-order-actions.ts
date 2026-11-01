@@ -13,6 +13,7 @@ import {
   sendApprovedEmail,
   sendNewOrderEmails,
   sendNotAcceptedEmail,
+  sendRefundedEmail,
   sendPaymentRequestEmail,
 } from './cake-order-email'
 import {
@@ -20,13 +21,16 @@ import {
   completePayment,
   createPayment,
   getPayment,
+  refundPayment,
   squareClientConfig,
   squareEnvironment,
 } from './square'
 import {
+  amountDueNow,
   askKitchenDeadline,
   cakePrice,
   decideOrder,
+  pickupSlots,
   orderRef,
   PAY_LINK_DAYS,
   vegasInstant,
@@ -167,6 +171,38 @@ export async function declineOrder(id: string, notify = true) {
     if (notify) await sendNotAcceptedEmail(order)
 }
 
+/** Paid orders that can be refunded (picked-up ones too, e.g. a complaint). */
+export const REFUNDABLE: readonly CakeOrderStatus[] = ['paid', 'deposit_paid', 'picked_up']
+
+/**
+ * Refund: the online payment (the deposit for deposit orders) goes back to the card through Square. Safe to repeat:
+ * the refund's idempotency key is the order ID, so Square refunds once. Orders paid in store / by phone have no
+ * completed online payment and are refunded where they were paid.
+ */
+export async function refundOrder(id: string, notify = true) {
+  const order = await getCakeOrder(id)
+  if (!order) throw new Error('Order not found. Refresh the list.')
+  if (order.status === 'refunded') return // second tap
+  if (!REFUNDABLE.includes(order.status)) throw new Error('Only paid orders can be refunded. Refresh the list.')
+  if (viaSquare(order)) {
+    const payment = await getPayment(order.paymentId!).catch(() => null)
+    if (payment?.status !== 'COMPLETED')
+      throw new Error('This order was not paid online. Refund it where it was paid (Square terminal, cash).')
+    try {
+      await refundPayment({
+        paymentId: payment.id,
+        amountCents: Math.round(amountDueNow(order) * 100),
+        idempotencyKey: 'refund-' + order.id,
+        reason: `Cake order ${orderRef(order)}`,
+      })
+    } catch (error) {
+      throw new Error('Square could not refund this payment: ' + (error as Error).message)
+    }
+  } else if (!order.test) throw new Error('This order was not paid online. Refund it where it was paid.')
+  if (await moveCakeOrder(id, order.status, 'refunded', notify ? 'refunded' : 'refunded_no_email'))
+    if (notify) await sendRefundedEmail(order)
+}
+
 /** Ask Kitchen: the order waits as "Checking with kitchen"; same-day and next-day orders get an extra hour if pickup allows. */
 export async function askKitchen(id: string, now = new Date()) {
   const order = await getCakeOrder(id)
@@ -183,17 +219,20 @@ export async function askKitchen(id: string, now = new Date()) {
 
 /**
  * Admin "Test order": a sample order that goes through the same saving, emails, approval and Chinese kitchen text as a real one.
- * - urgent: 10" round tomorrow at noon (answer by 8 PM tonight, or within the hour).
- * - later: 8" round 3 days ahead (card held up to 7 days).
+ * - urgent: 10" round at the first pickup time with 24 hours' notice (usually tomorrow; answer by 8 PM tonight).
+ * - later: 6" round 3 days ahead at noon (card held up to 7 days).
  * In Square sandbox it uses Square's test card, so the payment shows in the sandbox dashboard. In production no card
  * is used at all (made-up payment ID), so nothing is ever charged. Emails go to the bakery inbox with [TEST] subjects.
  */
 export async function createTestOrder(scenario: 'urgent' | 'later', now = new Date()) {
   const today = storeDate(now)
-  const size = scenario === 'urgent' ? '10-inch' : '8-inch'
-  const pickupDate = addDays(today, scenario === 'urgent' ? 1 : 3)
-  const decision = decideOrder(size, pickupDate, '12:00', now)
+  const size = scenario === 'urgent' ? '10-inch' : '6-inch'
+  let pickupDate = addDays(today, scenario === 'urgent' ? 1 : 3)
+  if (scenario === 'urgent' && !pickupSlots(pickupDate, size, now).length) pickupDate = addDays(today, 2)
+  const pickupTime = scenario === 'urgent' ? pickupSlots(pickupDate, size, now)[0] : '12:00'
+  const decision = decideOrder(size, pickupDate, pickupTime, now)
   if (!decision.ok) throw new Error(decision.error)
+  if (!decision.needsApproval) throw new Error('Test orders use a size that needs approval.')
   const id = randomUUID()
   let order: StoredCakeOrder = {
     id,
@@ -206,7 +245,7 @@ export async function createTestOrder(scenario: 'urgent' | 'later', now = new Da
     filling: 'Strawberry',
     cakeMessage: 'Happy Birthday',
     pickupDate,
-    pickupTime: '12:00',
+    pickupTime,
     notes: 'Test order from admin.',
     price: cakePrice(size, 'Strawberry')!,
     status: 'processing',

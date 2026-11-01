@@ -1,7 +1,7 @@
 import { after, NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
 import { SITE } from '@/lib/site-info'
-import { cakeInquirySchema, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
+import { cakeInquirySchema, hasDesignReference, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
 import { saveCakeInquiry } from '@/lib/cake-inquiries-store'
 import { saveInquiryPhotos } from '@/lib/inquiry-photos'
 import { sendBakeryEmail, sendCustomerCopy } from '@/lib/cake-inquiry-email'
@@ -60,6 +60,14 @@ export async function POST(request: NextRequest) {
         return fail('Use JPG, PNG, or WebP photos. Other file types are not accepted.', 400)
       attachments.push({ filename: `cake-reference-${i + 1}.${ext}`, content: data })
     }
+    if (!attachments.length && !hasDesignReference(parsed.data))
+      return NextResponse.json(
+        {
+          error: 'Add a photo, a link or a style for the design.',
+          fields: { design: ['Add a photo, a link or a style for the design.'] },
+        },
+        { status: 400 },
+      )
     if (!process.env.TURNSTILE_SECRET_KEY || !process.env.TURNSTILE_ALLOWED_HOSTNAMES || !process.env.RESEND_API_KEY)
       return fail(`Online inquiries are temporarily unavailable. Please call ${SITE.phone}.`, 503)
     if (!(await verifyTurnstile(form.get('captchaToken'), 'custom_cake')))

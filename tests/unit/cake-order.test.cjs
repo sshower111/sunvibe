@@ -5,7 +5,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const { createHmac } = require('node:crypto')
-const { test, after } = require('node:test')
+const { test, after, mock } = require('node:test')
 const { PGlite } = require('@electric-sql/pglite')
 const { createLoader } = require('../helpers/load-ts.cjs')
 const { adminCookie } = require('../helpers/admin-session.cjs')
@@ -57,6 +57,10 @@ const fakeSquare = {
     return payment
   },
   getPayment: async id => square.payments.get(id),
+  async refundPayment(input) {
+    square.calls.push(['refund', input])
+    return { id: 'refund-' + input.paymentId, status: 'PENDING' }
+  },
 }
 const { load, root } = createLoader({
   mocks: {
@@ -85,56 +89,58 @@ const { storeDate, addDays } = load('lib/occasion-dates.ts')
 // Friday Oct 23 2026, 8:00 AM in Las Vegas (PDT).
 const now = new Date('2026-10-23T15:00:00Z')
 
-test('pickup times: same day from 10 AM with 3 hours notice, next day from 9:30 (12 PM if ordered after noon), Wednesday closes early', () => {
-  const sameDay = rules.pickupSlots('2026-10-23', now)
-  assert.equal(sameDay[0], '11:00')
+test('pickup times: 8" with 4 hours notice, other sizes 24 hours; next day from 9:30 (12 PM if ordered after noon), Wednesday closes early', () => {
+  const sameDay = rules.pickupSlots('2026-10-23', '8-inch', now)
+  assert.equal(sameDay[0], '12:00')
   assert.equal(sameDay.at(-1), '19:30')
-  assert.equal(rules.pickupSlots('2026-10-23', new Date('2026-10-23T13:00:00Z'))[0], '10:00')
-  assert.equal(rules.pickupSlots('2026-10-24', now)[0], '09:30')
-  assert.equal(rules.pickupSlots('2026-10-24', new Date('2026-10-23T18:59:00Z'))[0], '09:30') // 11:59 AM
-  assert.equal(rules.pickupSlots('2026-10-24', new Date('2026-10-23T19:00:00Z'))[0], '12:00') // noon
-  assert.equal(rules.pickupSlots('2026-10-25', new Date('2026-10-23T19:00:00Z'))[0], '09:30')
-  assert.equal(rules.pickupSlots('2026-10-28', now).at(-1), '14:30')
-  assert.deepEqual(rules.pickupSlots('2026-10-22', now), [])
-  assert.deepEqual(rules.pickupSlots('2026-10-23', new Date('2026-10-24T00:00:00Z')), [])
+  assert.equal(rules.pickupSlots('2026-10-23', '8-inch', new Date('2026-10-23T13:00:00Z'))[0], '10:00')
+  assert.deepEqual(rules.pickupSlots('2026-10-23', '10-inch', now), [])
+  assert.equal(rules.pickupSlots('2026-10-24', '10-inch', now)[0], '09:30')
+  assert.equal(rules.pickupSlots('2026-10-24', '10-inch', new Date('2026-10-23T19:31:00Z'))[0], '13:00') // 12:31 PM
+  assert.equal(rules.pickupSlots('2026-10-24', '8-inch', new Date('2026-10-23T18:59:00Z'))[0], '09:30') // 11:59 AM
+  assert.equal(rules.pickupSlots('2026-10-24', '8-inch', new Date('2026-10-23T19:00:00Z'))[0], '12:00') // noon
+  assert.equal(rules.pickupSlots('2026-10-25', '8-inch', new Date('2026-10-23T19:00:00Z'))[0], '09:30')
+  assert.equal(rules.pickupSlots('2026-10-28', '8-inch', now).at(-1), '14:30')
+  assert.deepEqual(rules.pickupSlots('2026-10-22', '8-inch', now), [])
+  assert.deepEqual(rules.pickupSlots('2026-10-23', '8-inch', new Date('2026-10-24T00:00:00Z')), [])
   assert.equal(rules.vegasInstant('2026-12-01', '09:30').toISOString(), '2026-12-01T17:30:00.000Z')
 })
 
-test('every order is held; answer deadlines: same day 1 hour, next day 8 PM, later while the 7-day hold lasts', () => {
-  // Same day: within the hour, and at least 2 hours before pickup. Square holds 90 minutes longer (Ask kitchen).
-  const same = rules.decideOrder('8-inch', '2026-10-23', '11:00', now)
-  assert.equal(same.needsApproval, true)
-  assert.equal(same.shortHold, true)
-  assert.equal(same.approveBy.toISOString(), '2026-10-23T16:00:00.000Z') // 9 AM
-  assert.equal(same.holdMinutes, 150)
-  assert.equal(rules.decideOrder('8-inch', '2026-10-23', '10:30', now).ok, false) // under 3 hours' notice
-  // Next day, any size: by 8 PM tonight.
-  for (const size of ['8-inch', '10-inch', 'quarter-sheet', 'full-sheet']) {
+test('8" is paid when ordered; other sizes are held: next day answered by 8 PM, later while the 7-day hold lasts', () => {
+  assert.deepEqual(rules.decideOrder('8-inch', '2026-10-23', '12:00', now), { ok: true, needsApproval: false })
+  assert.equal(rules.decideOrder('8-inch', '2026-10-23', '11:30', now).ok, false) // under 4 hours' notice
+  assert.equal(rules.decideOrder('10-inch', '2026-10-23', '19:30', now).ok, false) // under 24 hours' notice
+  // Next day, any other size: by 8 PM tonight. Square holds 90 minutes longer (Ask kitchen).
+  for (const size of ['6-inch', '10-inch', 'quarter-sheet', 'full-sheet']) {
     const next = rules.decideOrder(size, '2026-10-24', '12:00', now)
+    assert.equal(next.needsApproval, true, size)
     assert.equal(next.approveBy.toISOString(), '2026-10-24T03:00:00.000Z', size)
     assert.equal(next.shortHold, true)
   }
-  // Ordered at 8:30 PM: 9:30 AM is gone (after the noon cutoff); answer 3 hours before a 12 PM pickup.
-  const evening = new Date('2026-10-24T03:30:00Z')
-  assert.equal(rules.decideOrder('10-inch', '2026-10-24', '09:30', evening).ok, false)
-  assert.equal(
-    rules.decideOrder('10-inch', '2026-10-24', '12:00', evening).approveBy.toISOString(),
-    '2026-10-24T16:00:00.000Z',
-  )
+  // Ordered at 8:30 PM: nothing left tomorrow with 24 hours' notice.
+  assert.deepEqual(rules.pickupSlots('2026-10-24', '10-inch', new Date('2026-10-24T03:30:00Z')), [])
   // Later: card held until 3 hours before pickup, at most 7 days (Square's limit); not cancelled at the deadline.
-  const later = rules.decideOrder('8-inch', '2026-10-26', '12:00', now)
+  const later = rules.decideOrder('6-inch', '2026-10-26', '12:00', now)
   assert.equal(later.shortHold, false)
   assert.equal(later.approveBy.toISOString(), '2026-10-26T16:00:00.000Z')
   assert.equal(later.holdMinutes, 3 * 1440 + 60)
-  const farOff = rules.decideOrder('8-inch', '2026-11-02', '12:00', now)
+  const farOff = rules.decideOrder('6-inch', '2026-11-02', '12:00', now)
   assert.equal(farOff.approveBy.toISOString(), '2026-10-30T15:00:00.000Z')
   assert.equal(farOff.holdMinutes, rules.MAX_HOLD_MINUTES)
   assert.equal(rules.decideOrder('14-inch', '2026-10-30', '12:00', now).ok, false)
 })
 
 test('Ask kitchen: one more hour for urgent orders if pickup and the card hold allow', () => {
+  // Same-day held orders were placed before Nov 2026 (answer within the hour, Square holds 90 minutes longer).
+  const sameDay = time => ({
+    pickupDate: '2026-10-23',
+    pickupTime: time,
+    approveBy: '2026-10-23T16:00:00.000Z',
+    shortHold: true,
+    holdUntil: '2026-10-23T17:30:00.000Z',
+  })
   const held = (date, time) => {
-    const d = rules.decideOrder('8-inch', date, time, now)
+    const d = rules.decideOrder('10-inch', date, time, now)
     return {
       pickupDate: date,
       pickupTime: time,
@@ -143,11 +149,11 @@ test('Ask kitchen: one more hour for urgent orders if pickup and the card hold a
       holdUntil: new Date(now.getTime() + d.holdMinutes * 60_000).toISOString(),
     }
   }
-  assert.equal(rules.askKitchenDeadline(held('2026-10-23', '14:00'), now), '2026-10-23T17:00:00.000Z') // 9 → 10 AM
-  assert.equal(rules.askKitchenDeadline(held('2026-10-23', '11:00'), now), '2026-10-23T16:00:00.000Z') // pickup too soon
+  assert.equal(rules.askKitchenDeadline(sameDay('14:00'), now), '2026-10-23T17:00:00.000Z') // 9 → 10 AM
+  assert.equal(rules.askKitchenDeadline(sameDay('11:00'), now), '2026-10-23T16:00:00.000Z') // pickup too soon
   assert.equal(rules.askKitchenDeadline(held('2026-10-24', '12:00'), now), '2026-10-24T04:00:00.000Z') // 8 → 9 PM
   assert.equal(rules.askKitchenDeadline(held('2026-10-26', '12:00'), now), '2026-10-26T16:00:00.000Z') // later: same
-  const old = { ...held('2026-10-23', '14:00'), holdUntil: undefined } // placed before holds were longer
+  const old = { ...sameDay('14:00'), holdUntil: undefined } // placed before holds were longer
   assert.equal(rules.askKitchenDeadline(old, now), old.approveBy)
   assert.match(
     rules.askKitchenText({
@@ -201,6 +207,12 @@ test('kitchen text is Hong Kong Chinese in the agreed order', () => {
   assert.match(rules.zhPickup('2026-10-28', '09:30'), /^10月28日（星期三）上午9:30$/)
 })
 
+// From here on the clock is the next 8 AM in Las Vegas, so "tomorrow at noon" always has 24 hours' notice.
+const eight = rules.vegasInstant(storeDate(), '08:00').getTime()
+mock.timers.enable({
+  apis: ['Date'],
+  now: eight > Date.now() ? eight : rules.vegasInstant(addDays(storeDate(), 1), '08:00').getTime(),
+})
 const today = storeDate()
 const order = (fields = {}) => ({
   requestId: crypto.randomUUID(),
@@ -218,8 +230,9 @@ const order = (fields = {}) => ({
   captchaToken: 'ok',
   ...fields,
 })
-const post = (route, body, cookie) =>
-  route.POST(
+const post = (route, body, cookie) => {
+  mock.timers.tick(1000) // the clock is pinned; keep orders made one after another in order
+  return route.POST(
     new Request('http://test.invalid/api', {
       method: 'POST',
       headers: {
@@ -230,6 +243,7 @@ const post = (route, body, cookie) =>
       body: JSON.stringify(body),
     }),
   )
+}
 /** Same as post, signed in as admin (session cookie). */
 const adminPost = (route, body) => post(route, body, adminCookie(load))
 
@@ -243,6 +257,8 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   await db.exec(fs.readFileSync(path.join(root, 'db/007-kitchen-tracking.sql'), 'utf8')) // re-runnable
   await db.exec(fs.readFileSync(path.join(root, 'db/009-cake-order-events.sql'), 'utf8'))
   await db.exec(fs.readFileSync(path.join(root, 'db/009-cake-order-events.sql'), 'utf8')) // re-runnable
+  await db.exec(fs.readFileSync(path.join(root, 'db/011-refunds.sql'), 'utf8'))
+  await db.exec(fs.readFileSync(path.join(root, 'db/011-refunds.sql'), 'utf8')) // re-runnable
   await db.exec(
     "INSERT INTO bakery_migrations(scope,record_count) VALUES('menu',0),('content',0) ON CONFLICT DO NOTHING",
   )
@@ -252,36 +268,76 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   const store = load('lib/cake-orders-store.ts')
   const adminCall = body => adminPost(admin, body)
 
-  // 8" a week ahead: held (7 days at most), then approved and charged; a second tap does nothing more.
+  // 8" (display cake): charged right away, no approval.
   const paid = order()
   let r = await post(route, paid)
+  assert.equal(r.status, 200)
+  assert.equal((await r.json()).held, false)
+  assert.equal(square.calls.at(-1)[1].autocomplete, true)
+  assert.equal(square.calls.at(-1)[1].amountCents, 4200)
+  assert(square.calls.at(-1)[1].idempotencyKey.length <= 45) // Square's limit
+  const paidOrder = await store.getCakeOrder(paid.requestId)
+  assert.equal(paidOrder.status, 'paid')
+  assert.equal(paidOrder.approveBy, undefined)
+  // Order numbers are sequential from #1001 and used in Square and the emails.
+  assert.equal(paidOrder.orderNo, 1001)
+  assert.equal(square.calls.findLast(c => c[0] === 'create')[1].referenceId, '#1001')
+  assert.equal(emails.length, 2) // bakery, customer (confirmed)
+  assert(emails.some(e => e.subject.includes('#1001')))
+  assert(emails.some(e => e.subject.includes('is confirmed')))
+  assert(!emails.some(e => e.subject.includes('APPROVE BY')))
+  assert(!(await db.query('SELECT payload FROM bakery_cake_orders')).rows[0].payload.includes('Amy'))
+  assert(emails.some(e => e.text.includes('餡料：芒果')))
+
+  // 10" a week ahead: held (7 days at most), then approved and charged; a second tap does nothing more.
+  const week = order({ size: '10-inch' })
+  r = await post(route, week)
   assert.equal(r.status, 200)
   assert.equal((await r.json()).held, true)
   assert.equal(square.calls.at(-1)[1].autocomplete, false)
   assert(square.calls.at(-1)[1].holdMinutes <= 7 * 1440)
-  assert.equal(square.calls.at(-1)[1].amountCents, 4200)
-  assert(square.calls.at(-1)[1].idempotencyKey.length <= 45) // Square's limit
-  assert.equal((await store.getCakeOrder(paid.requestId)).status, 'awaiting_approval')
-  assert.equal((await store.getCakeOrder(paid.requestId)).shortHold, false)
-  assert.equal((await (await adminCall({ action: 'approve', id: paid.requestId })).json()).status, 'paid')
+  assert.equal((await store.getCakeOrder(week.requestId)).status, 'awaiting_approval')
+  assert.equal((await store.getCakeOrder(week.requestId)).shortHold, false)
+  assert.equal((await (await adminCall({ action: 'approve', id: week.requestId })).json()).status, 'paid')
   const approvedEmails = emails.length
-  assert.equal((await adminCall({ action: 'approve', id: paid.requestId })).status, 200)
+  assert.equal((await adminCall({ action: 'approve', id: week.requestId })).status, 200)
   assert.equal(emails.length, approvedEmails)
-  assert.equal((await store.getCakeOrder(paid.requestId)).status, 'paid')
+  assert.equal((await store.getCakeOrder(week.requestId)).status, 'paid')
   // Each step is in the order's history.
-  const got = await (await adminCall({ action: 'get', id: paid.requestId })).json()
+  const got = await (await adminCall({ action: 'get', id: week.requestId })).json()
   assert.deepEqual(
     got.events.map(e => e.action),
     ['placed', 'approved'],
   )
-  assert.equal(got.order.id, paid.requestId)
-  // Order numbers are sequential from #1001 and used in Square and the emails.
-  assert.equal((await store.getCakeOrder(paid.requestId)).orderNo, 1001)
-  assert.equal(square.calls.findLast(c => c[0] === 'create')[1].referenceId, '#1001')
-  assert(emails.some(e => e.subject.includes('#1001')))
-  assert(!(await db.query('SELECT payload FROM bakery_cake_orders')).rows[0].payload.includes('Amy'))
-  assert.equal(emails.length, 3) // bakery, customer (held), customer (confirmed)
-  assert(emails.some(e => e.text.includes('餡料：芒果')))
+  assert.equal(got.order.id, week.requestId)
+  assert.equal(emails.length, 5) // + bakery, customer (held), customer (confirmed)
+  // Refund from admin: the online payment goes back through Square once; a second tap does nothing more.
+  const refundable = order()
+  await post(route, refundable)
+  const beforeRefund = emails.length
+  r = await adminCall({ action: 'refund', id: refundable.requestId })
+  assert.equal(r.status, 200)
+  const refundCall = square.calls.at(-1)
+  assert.equal(refundCall[0], 'refund')
+  assert.equal(refundCall[1].amountCents, 4200)
+  assert.equal(refundCall[1].idempotencyKey, 'refund-' + refundable.requestId)
+  assert.equal((await store.getCakeOrder(refundable.requestId)).status, 'refunded')
+  assert.equal(emails.length, beforeRefund + 1)
+  assert(emails.at(-1).subject.includes('has been refunded'))
+  assert.equal((await adminCall({ action: 'refund', id: refundable.requestId })).status, 200)
+  assert.equal(square.calls.filter(c => c[0] === 'refund').length, 1)
+  assert.equal(emails.length, beforeRefund + 1)
+  // Only paid orders, and only ones paid online.
+  assert.equal((await adminCall({ action: 'refund', id: week.requestId, notify: false })).status, 200)
+  assert.equal((await store.getCakeOrder(week.requestId)).status, 'refunded')
+  assert.equal(emails.length, beforeRefund + 1)
+  const offline = order()
+  await post(route, offline)
+  square.payments.get((await store.getCakeOrder(offline.requestId)).paymentId).status = 'CANCELED'
+  r = await adminCall({ action: 'refund', id: offline.requestId })
+  assert.equal(r.status, 409)
+  assert.match((await r.json()).error, /not paid online/)
+
   // Same request again is not a second order.
   assert.equal((await post(route, paid)).status, 409)
 
@@ -299,7 +355,7 @@ test('ordering: paid now, held for approval, declined card, approve, decline and
   square.decline = false
   assert.equal((await post(route, { ...retry, cardToken: 'cnon:other' })).status, 200)
   // The retry keeps the failed attempt's number.
-  assert.equal((await store.getCakeOrder(retry.requestId)).orderNo, 1002)
+  assert.equal((await store.getCakeOrder(retry.requestId)).orderNo, 1005)
 
   // 10" tomorrow: card only held, bakery must approve.
   const held = order({ size: '10-inch', pickupDate: addDays(today, 1) })

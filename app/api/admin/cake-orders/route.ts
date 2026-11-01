@@ -9,6 +9,7 @@ import {
   declineOrder,
   getCakeOrderSettled,
   listCakeOrdersSettled,
+  refundOrder,
 } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
@@ -25,9 +26,10 @@ const actionSchema = z.object({
     'delete',
     'resend_link',
     'kitchen_sent',
+    'refund',
   ]),
   id: z.string().uuid(),
-  /** Decline: email the customer that we can't make it. */
+  /** Decline: email the customer that we can't make it. Refund: email the customer about the refund. */
   notify: z.boolean().optional(),
 })
 
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
     }
     if (action === 'approve') return NextResponse.json({ success: true, ...(await approveOrder(id)) })
     if (action === 'decline') await declineOrder(id, parsed.data.notify ?? true)
+    else if (action === 'refund') await refundOrder(id, parsed.data.notify ?? true)
     else if (action === 'ask_kitchen') await askKitchen(id)
     else if (action === 'delete') await deleteTestOrder(id)
     else if (action === 'kitchen_sent') {

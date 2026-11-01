@@ -9,6 +9,7 @@ import { Footer } from '@/components/footer'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { MenuGridSkeleton } from '@/components/menu-grid-skeleton'
+import { MenuCakes } from '@/components/menu-cakes'
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Search, X, ChevronDown, Phone, MapPin } from 'lucide-react'
 import { canOptimizeGalleryImage } from '@/lib/gallery-images'
@@ -329,7 +330,7 @@ export default function MenuPage({
                   aria-pressed={category === item}
                   onClick={() => {
                     setCategory(item)
-                    if (item === 'Custom cakes') setQuery('')
+                    if (item === 'Cakes') setQuery('')
                     setSuggesting(false)
                     setActiveSuggestion(-1)
                   }}
@@ -346,22 +347,9 @@ export default function MenuPage({
             </div>
           </section>
 
-          {category === 'Custom cakes' ? (
-            <section aria-labelledby="custom-menu-title" className="rounded-lg border bg-surface card-pad">
-              <span className="badge">3–5 days’ notice</span>
-              <h2 id="custom-menu-title" className="heading-2 mt-4">
-                A cake made for your celebration
-              </h2>
-              <p className="mt-3 max-w-2xl text-muted-foreground">
-                Tell us your party size and we’ll suggest the right cake.
-              </p>
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <Button asChild className="w-full sm:w-auto">
-                  <a href="/order-cake">Plan your cake</a>
-                </Button>
-              </div>
-            </section>
-          ) : loading ? (
+          {/* Cakes to order online come first: in Cakes, and in All items when not searching. */}
+          {(category === 'Cakes' || (category === 'All items' && !query.trim())) && <MenuCakes />}
+          {category === 'Cakes' && !loading && !error && filtered.length === 0 ? null : loading ? (
             <div role="status" aria-label="Loading menu">
               <p className="mb-4 text-sm text-muted-foreground">Loading menu…</p>
               <MenuGridSkeleton />

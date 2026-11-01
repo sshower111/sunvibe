@@ -14,6 +14,7 @@ export type OrderActionId =
   | 'call'
   | 'email'
   | 'not_picked_up'
+  | 'refund'
   | 'delete'
 
 /** Waiting on the bakery's answer: card held, or the hold ended before approval. */
@@ -30,6 +31,8 @@ export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
   if (o.status === 'expired' || o.status === 'declined' || o.status === 'hold_expired') ids.push('paid_offline')
   ids.push('text_kitchen', 'copy_kitchen', 'call', 'email')
   if (o.status === 'picked_up') ids.push('not_picked_up')
+  if ((o.status === 'paid' || o.status === 'deposit_paid' || o.status === 'picked_up') && o.paymentId)
+    ids.push('refund')
   if (o.test) ids.push('delete')
   return ids
 }

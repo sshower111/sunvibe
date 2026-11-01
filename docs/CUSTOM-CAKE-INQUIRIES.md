@@ -4,17 +4,23 @@ Local page: `/custom-cakes`. API: `POST /api/custom-cakes` (multipart/form-data)
 
 ## Customer experience
 
-- One page, `/order-cake`, runs the order (`/custom-cakes` redirects there) (`components/cake-order-flow.tsx`): party size (best-fit size suggested, `lib/cake-finder.ts`) → flavor and filling → classic look or custom cake → pickup or delivery and date → "Here's your cake" summary with an estimated price → contact (and card, when paying). Contact fields appear only after the customer presses "Order & pay" or "Request a quote" on the summary.
-- It ends as a paid online order (`docs/CAKE-ORDERS.md`) for an everyday size, listed flavor and filling, classic look and pickup at an offered time (this is the only way to get a cake the same day, and the design step says so). Everything else is sent here as an inquiry for a quote, with at least 3 days' notice.
-- In the flavor lists, "Not sure" is the last choice, after the real flavors and fillings.
-- Custom cake asks for inspiration photos first ("Have a picture? We'd love to see it"), then design/dietary notes; the summary shows how many photos were added, or "None yet, add one?". Delivery adds the address. Occasion is sent as "Other" and budget as "Not sure — please advise".
+Since Nov 1, 2026 `/custom-cakes` is its own page again (top menu **Custom cakes**, footer, home hero), only for custom, decorated and tiered cakes (`components/custom-cake-inquiry.tsx`). Cakes to buy now are on the menu (`docs/CAKE-ORDERS.md`). The old combined "Plan your cake" planner and the `/custom-cakes → /order-cake` redirect are gone. Three steps:
+
+1. **Event**: event date (at least 3 days ahead), occasion, guest count (tiles or typed), cake size ("Not sure, please suggest" or any listed round, sheet or tiered size), budget, pickup or delivery (delivery adds the address).
+2. **Design**: at least one of: up to 3 inspiration photos (JPEG/PNG/HEIC, converted to JPEG in the browser), an Instagram / Pinterest / web link (`referenceLink`; "https://" is added when missing), or a style (`designStyle`: Vintage Piping, Minimalist Floral, Character / Theme, Abstract Buttercream). The line "Adding a photo or link helps our decorators…" sits above them. Then optional flavor and filling ("Not sure yet" = Please recommend; an unlisted filling goes in the details), writing on the cake or plaque, and details (colors, theme, allergies).
+3. **Contact**: full name, email, mobile phone, and "OK to text updates regarding this quote" (`textOk`, unticked by default). Button: **Request a quote**. No acknowledgement checkbox any more (`acknowledged` is optional in the schema).
+
+After sending: "Inquiry received! Our kitchen team reviews custom requests daily and will send your official quote via email/text within 24–48 hours."
+
+The API rejects an inquiry with no photo, link or style (`hasDesignReference` in `lib/cake-inquiry.ts`, checked in `app/api/custom-cakes/route.ts`). The bakery email shows Design style, Reference link and OK to text (Chinese: 設計風格, 參考連結, 可否短訊聯絡); the admin panel shows the style, the link (opens in a new tab) and "OK to text" next to the phone; the AI notes get the style and link. These fields are stored in the encrypted inquiry payload, so no database change is needed.
+
 - The email to the bakery has a Traditional Chinese copy under the English (labels and options translated, customer text as written). Contact and pre-order emails do the same. To change a translation, edit `lib/email-zh.ts`.
-- Problems (missing or invalid fields, unticked acknowledgement, could not send) are listed in one box right above the Continue / Send button, and the fields with problems turn red, the same as the contact form. A photo that cannot be added shows its message under the photo picker.
-- Event date uses Las Vegas calendar time and requires at least three days' notice. The visible guidance requests 3–5 days and explains that availability must be confirmed.
-- Event time is optional (customers may not have decided). Blank is sent to the bakery as "Not decided yet" / 未定. It is picked from a list of 30-minute times within opening hours (9:30 AM to 7:30 PM; Wednesday to 2:30 PM), the same window as paid orders; the server rejects any other time (`businessSlots` in `lib/cake-inquiry.ts`).
-- Optional reference images: up to ten photos; any phone photo (including iPhone HEIC) is converted to JPEG, 1400px and at most 400 KB, in the browser before sending; preview and removal controls.
-- An explicit acknowledgement explains that inquiries do not confirm orders, pricing, or availability.
+- Problems (missing or invalid fields, no design reference, could not send) are shown in one box right above the Next / Request a quote button, and the field with the problem is focused and turns red. A photo that cannot be added shows its message there too.
+- Event date uses Las Vegas calendar time and requires at least three days' notice.
+- Event time is not asked on `/custom-cakes` (sent blank, shown to the bakery as "Not decided yet" / 未定). The API still accepts a 30-minute time within opening hours (`businessSlots` in `lib/cake-inquiry.ts`).
+- Reference photos: the page allows 3 (the API still accepts up to ten); any phone photo (including iPhone HEIC) is converted to JPEG, 1400px and at most 400 KB, in the browser before sending; preview and removal controls.
 - Navigation, mobile navigation, footer, sitemap, and page metadata include the new page.
+- The tier builder ("Your own tiers"), a flavor per tier and the typed "Something else" filling below belonged to the old planner and are no longer on the site; the API, emails, admin and AI notes still handle them, so older inquiries display as before.
 
 ## Owner-approved specification source
 

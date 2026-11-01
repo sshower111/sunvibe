@@ -35,6 +35,7 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     size: cakeLabel(data.size),
     eventTime: formatEventTime(data.eventTime) || 'Not decided yet',
     deliveryAddress: data.fulfillment === 'Pickup' ? 'Bakery pickup' : data.deliveryAddress,
+    textOk: data.textOk === 'yes' ? 'Yes' : 'No',
     // Different flavor per tier: one line per tier under Flavor.
     ...(tierFlavors && {
       flavor: tierFlavorLines(data.size, tierFlavors).join('\n'),
@@ -55,13 +56,25 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     // Only when the customer chose "Something else" and typed their filling.
     ...(usesCustomFilling(data) && { customFilling: 'Their filling' }),
     cakeMessage: 'Writing on cake',
+    designStyle: 'Design style',
+    referenceLink: 'Reference link',
     budget: 'Budget',
     fulfillment: 'Pickup / delivery request',
     deliveryAddress: 'Delivery address / hotel',
     notes: 'Notes / dietary requests',
+    textOk: 'OK to text',
   }
   // Chinese copy: option values are translated, typed values (name, notes, address…) stay as written.
-  const translated = new Set(['eventType', 'size', 'flavor', 'filling', 'budget', 'fulfillment'])
+  const translated = new Set([
+    'eventType',
+    'size',
+    'flavor',
+    'filling',
+    'designStyle',
+    'budget',
+    'fulfillment',
+    'textOk',
+  ])
   const zhRows = Object.keys(labels).map(key => {
     const value = values[key as keyof typeof values]
     const zh =
