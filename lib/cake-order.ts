@@ -4,12 +4,14 @@ import { businessSlots, flavors, fillings, MAX_CAKE_MESSAGE } from './cake-inqui
 import { addDays, storeDate } from './occasion-dates'
 import { zhOption } from './email-zh'
 
-// Menu cakes ordered online (/menu → Cakes, then /order-cake). Rules from the bakery (Nov 2026):
-// - Display cakes (INSTANT_SIZES, the 8" round): charged when ordered, any listed flavor and filling, 4 hours' notice.
-// - Every other size needs the kitchen's OK, with 24 hours' notice. The card is only held until the bakery approves
+// Menu cakes ordered online (/menu → Cakes, then /order-cake). Rules from the bakery (Nov 2026), 4 hours' notice for all:
+// - Display cakes (INSTANT_SIZES, the 8" round): charged when ordered, any listed flavor and filling.
+// - Every other size needs the kitchen's OK. The card is only held until the bakery approves
 //   (admin → the order → Approve & charge). The answer is due:
+//   - Same day (from 10 AM): within 1 hour, and at least 2 hours before pickup, so the kitchen gets 3+ hours.
 //   - Next day (from 9:30 AM if ordered before noon, otherwise from 12 PM): by 8 PM tonight, and at least
-//     3 hours before pickup. Cancelled (hold released, customer told) if not answered in time.
+//     3 hours before pickup. Same-day and next-day orders are cancelled (hold released, customer told) if not
+//     answered in time.
 //   - Later: while the card hold lasts (Square allows 7 days), and at least 3 hours before pickup. When the hold
 //     ends the order waits as "Card hold ended"; approving it then emails the customer a pay link.
 
@@ -28,9 +30,9 @@ export type OrderSize = (typeof ORDER_SIZES)[number]
 export const INSTANT_SIZES: readonly string[] = ['8-inch']
 export const isInstantCake = (size: string) => INSTANT_SIZES.includes(size)
 export const INSTANT_NOTICE_HOURS = 4
-export const CONFIRM_NOTICE_HOURS = 24
+export const CONFIRM_NOTICE_HOURS = 4
 /** Shown on menu cakes that need the kitchen's OK. */
-export const CONFIRM_BADGE = 'Requires Kitchen Confirmation (24h Lead Time)'
+export const CONFIRM_BADGE = `Requires Kitchen Confirmation (${CONFIRM_NOTICE_HOURS}h Lead Time)`
 export const noticeHours = (size: string) => (isInstantCake(size) ? INSTANT_NOTICE_HOURS : CONFIRM_NOTICE_HOURS)
 
 export const ORDER_FLAVORS = flavors.filter(f => f !== 'Please recommend')
@@ -124,7 +126,7 @@ export type OrderDecision =
       approveBy: Date
       /** How long Square holds the card. */
       holdMinutes: number
-      /** Next-day: cancelled if not answered in time (otherwise it waits as "Card hold ended"). */
+      /** Same-day or next-day: cancelled if not answered in time (otherwise it waits as "Card hold ended"). */
       shortHold: boolean
       reason: string
     }
@@ -147,6 +149,10 @@ export function decideOrder(size: string, date: string, time: string, now = new 
       shortHold,
       reason,
     }) as const
+  if (date === today) {
+    const approveBy = Math.min(t + HOUR, pickup - 2 * HOUR)
+    return held(approveBy, approveBy + SHORT_HOLD_EXTRA, true, 'Same-day order')
+  }
   if (date === addDays(today, 1)) {
     const tonight = vegasInstant(today, '20:00').getTime()
     // Ordered after about 7 PM: answer by 3 hours before pickup instead.

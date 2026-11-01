@@ -12,7 +12,7 @@ Customers tap **Cakes** on the menu (`/menu`), which opens `/order-cake`, choose
 ## Display cakes and kitchen confirmation (Nov 1, 2026)
 
 - **8" round** (`INSTANT_SIZES` in `lib/cake-order.ts`): a display cake. Any listed flavor and filling, ready with **4 hours' notice**, charged when ordered (status Paid, no approval). The order page shows "Ready in 4 hours" once it is chosen.
-- **Every other size**: shows "Requires Kitchen Confirmation (24h Lead Time)" on the order page once chosen, needs **24 hours' notice**, and is held on the card until the bakery approves (below).
+- **Every other size**: shows "Requires Kitchen Confirmation (4h Lead Time)" on the order page once chosen, needs **4 hours' notice** like the 8", and is held on the card until the bakery approves (below).
 - To change which sizes are display cakes or the notice, edit `INSTANT_SIZES`, `INSTANT_NOTICE_HOURS` and `CONFIRM_NOTICE_HOURS`. If a display cake can't be made, use **⋯ → Refund** on the order (below).
 
 ## Apple Pay and Google Pay
@@ -21,13 +21,14 @@ The payment step (and the custom cake pay link, `/pay/<id>`) shows **Apple Pay**
 
 ## Pickup times and approval (`lib/cake-order.ts`)
 
-Pickup slots are every 30 minutes until 30 minutes before closing (7:30 PM; Wednesday 2:30 PM), up to 60 days ahead, Las Vegas time, with 4 hours' notice (8") or 24 hours' notice (other sizes).
+Pickup slots are every 30 minutes until 30 minutes before closing (7:30 PM; Wednesday 2:30 PM), up to 60 days ahead, Las Vegas time, with 4 hours' notice for every size.
 
 Orders for any size but the 8" are only held on the card ("card held": Square authorizes the amount but doesn't charge it) until the bakery approves it on the order's admin page (`/admin/orders/<id>`, `components/admin-order-review.tsx`, `lib/cake-order-actions.ts`).
 
 | Pickup | Earliest time | Answer by | Square hold | If not answered |
 |---|---|---|---|---|
-| Next day | 9:30 AM if ordered before noon, else 12 PM (and 24 hours' notice) | 8 PM tonight, or 3 hours before pickup if sooner (at least 1 hour) | deadline + 90 min | Cancelled, customer emailed |
+| Same day | 10 AM, 4+ hours' notice | 1 hour after the order, and 2+ hours before pickup | deadline + 90 min | Cancelled, customer emailed ("Not approved in time") |
+| Next day | 9:30 AM if ordered before noon, else 12 PM | 8 PM tonight, or 3 hours before pickup if sooner (at least 1 hour) | deadline + 90 min | Cancelled, customer emailed |
 | 2+ days ahead | 9:30 AM | 3 hours before pickup, at most 7 days | until the deadline (Square's maximum is 7 days) | "Card hold ended"; approving emails a pay link (`/pay/<id>`) |
 
 The extra 90 minutes on short holds leave room for **Ask kitchen**, which moves a same-day or next-day deadline one hour later when the pickup time allows (still 2 or 3 hours before pickup). The site enforces the deadline itself (reminder job every 15 minutes, the Square webhook, and opening admin): it cancels the hold and tells the customer once. Orders placed before this change have no extra time and are never extended.

@@ -89,10 +89,11 @@ Online orders from the menu's **Cakes** chip (`/menu` → `/order-cake`, paid by
 
 ### Approving an order
 
-The **8" round** is a display cake: it is charged when ordered (4 hours' notice) and goes straight to **To make**, so just **Send to kitchen**. Every other size (6", 10", 12", sheets) shows "Requires Kitchen Confirmation (24h Lead Time)" when chosen, needs 24 hours' notice, and is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or the order in the list) to open it in the side panel. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
+The **8" round** is a display cake: it is charged when ordered (4 hours' notice) and goes straight to **To make**, so just **Send to kitchen**. Every other size (6", 10", 12", sheets) shows "Requires Kitchen Confirmation (4h Lead Time)" when chosen, also needs 4 hours' notice, and is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or the order in the list) to open it in the side panel. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
 
 | Pickup | Answer by | If not answered |
 | --- | --- | --- |
+| Today (URGENT) | 1 hour after ordering, and at least 2 hours before pickup | Cancelled, card released, customer emailed |
 | Tomorrow (URGENT) | 8 PM tonight (or 3 hours before pickup if sooner) | Cancelled, card released, customer emailed |
 | Later | When the card hold ends (up to 7 days) or 3 hours before pickup | Waits as **Card hold ended** |
 
@@ -103,7 +104,7 @@ The buttons in the order's panel:
 - **Decline**: asks to confirm, releases the card hold, and emails the customer unless you untick **Email … that we can't make it**.
 - **Card hold ended** (later orders only): **Approve & send pay link** emails the customer a link to pay online (`/pay/<id>`, valid 3 days or until pickup). **Decline** closes it.
 
-Tapping a button twice never charges or emails twice. Pickup times on `/order-cake`: 8" from 10 AM with 4 hours' notice; other sizes 24 hours ahead; tomorrow never before 9:30 AM, or 12 PM if ordered after noon. Orders placed before Nov 1, 2026 can still be same-day held orders (answer within the hour).
+Tapping a button twice never charges or emails twice. Pickup times on `/order-cake`: any size from 10 AM with 4 hours' notice; tomorrow never before 9:30 AM, or 12 PM if ordered after noon.
 
 The kitchen's number is the Vercel environment variable `KITCHEN_PHONE` (digits only, e.g. `7025550123`). Without it, Messages opens with no recipient.
 
@@ -117,7 +118,7 @@ Click (or tap) an order to open it in a panel on the right (full screen on a pho
 - **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.
 - **Declined / refunded**: declined, expired and refunded orders. If a declined or expired order's customer pays you another way afterwards (Square terminal, cash, by phone), press **Paid in store / by phone** to move the order back to To make. No email is sent, so let the customer know yourself.
 - **⋯ → Copy for kitchen** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text kitchen** opens Messages with it filled in.
-- **⋯ → Test order (urgent, tomorrow)** adds a sample 10" order at the first time with 24 hours' notice (usually tomorrow); **Test order (in 3 days)** adds a 6" order 3 days out. Both are held so Approve, Ask kitchen and Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
+- **⋯ → Test order (urgent, tomorrow)** adds a sample 10" order for tomorrow at its first pickup time; **Test order (in 3 days)** adds a 6" order 3 days out. Both are held so Approve, Ask kitchen and Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
 - **⋯ → Refund** (paid, deposit-paid or picked-up orders): asks to confirm, refunds what was paid online (the deposit for deposit orders) to the customer's card through Square, moves the order to **Declined / refunded** (status Refunded) and emails the customer unless you untick **Email … about the refund**. Tapping it twice refunds once. Orders marked **Paid in store / by phone** weren't paid online, so refund those where they were paid. Partial refunds and changes to paid orders: Square Dashboard → Transactions, search by the order number (e.g. `#1001`). Orders are numbered in sequence; a failed payment can leave a gap.
 
 ## Cake inquiries

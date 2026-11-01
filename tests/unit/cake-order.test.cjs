@@ -89,14 +89,13 @@ const { storeDate, addDays } = load('lib/occasion-dates.ts')
 // Friday Oct 23 2026, 8:00 AM in Las Vegas (PDT).
 const now = new Date('2026-10-23T15:00:00Z')
 
-test('pickup times: 8" with 4 hours notice, other sizes 24 hours; next day from 9:30 (12 PM if ordered after noon), Wednesday closes early', () => {
+test('pickup times: 4 hours notice for every size; next day from 9:30 (12 PM if ordered after noon), Wednesday closes early', () => {
   const sameDay = rules.pickupSlots('2026-10-23', '8-inch', now)
   assert.equal(sameDay[0], '12:00')
   assert.equal(sameDay.at(-1), '19:30')
   assert.equal(rules.pickupSlots('2026-10-23', '8-inch', new Date('2026-10-23T13:00:00Z'))[0], '10:00')
-  assert.deepEqual(rules.pickupSlots('2026-10-23', '10-inch', now), [])
+  assert.deepEqual(rules.pickupSlots('2026-10-23', 'full-sheet', now), sameDay)
   assert.equal(rules.pickupSlots('2026-10-24', '10-inch', now)[0], '09:30')
-  assert.equal(rules.pickupSlots('2026-10-24', '10-inch', new Date('2026-10-23T19:31:00Z'))[0], '13:00') // 12:31 PM
   assert.equal(rules.pickupSlots('2026-10-24', '8-inch', new Date('2026-10-23T18:59:00Z'))[0], '09:30') // 11:59 AM
   assert.equal(rules.pickupSlots('2026-10-24', '8-inch', new Date('2026-10-23T19:00:00Z'))[0], '12:00') // noon
   assert.equal(rules.pickupSlots('2026-10-25', '8-inch', new Date('2026-10-23T19:00:00Z'))[0], '09:30')
@@ -106,10 +105,16 @@ test('pickup times: 8" with 4 hours notice, other sizes 24 hours; next day from 
   assert.equal(rules.vegasInstant('2026-12-01', '09:30').toISOString(), '2026-12-01T17:30:00.000Z')
 })
 
-test('8" is paid when ordered; other sizes are held: next day answered by 8 PM, later while the 7-day hold lasts', () => {
+test('8" is paid when ordered; other sizes are held: same day 1 hour, next day 8 PM, later while the 7-day hold lasts', () => {
   assert.deepEqual(rules.decideOrder('8-inch', '2026-10-23', '12:00', now), { ok: true, needsApproval: false })
   assert.equal(rules.decideOrder('8-inch', '2026-10-23', '11:30', now).ok, false) // under 4 hours' notice
-  assert.equal(rules.decideOrder('10-inch', '2026-10-23', '19:30', now).ok, false) // under 24 hours' notice
+  // Same day: within the hour, and at least 2 hours before pickup. Square holds 90 minutes longer (Ask kitchen).
+  const same = rules.decideOrder('10-inch', '2026-10-23', '12:00', now)
+  assert.equal(same.needsApproval, true)
+  assert.equal(same.shortHold, true)
+  assert.equal(same.approveBy.toISOString(), '2026-10-23T16:00:00.000Z') // 9 AM
+  assert.equal(same.holdMinutes, 150)
+  assert.equal(rules.decideOrder('10-inch', '2026-10-23', '11:30', now).ok, false) // under 4 hours' notice
   // Next day, any other size: by 8 PM tonight. Square holds 90 minutes longer (Ask kitchen).
   for (const size of ['6-inch', '10-inch', 'quarter-sheet', 'full-sheet']) {
     const next = rules.decideOrder(size, '2026-10-24', '12:00', now)
@@ -117,8 +122,13 @@ test('8" is paid when ordered; other sizes are held: next day answered by 8 PM, 
     assert.equal(next.approveBy.toISOString(), '2026-10-24T03:00:00.000Z', size)
     assert.equal(next.shortHold, true)
   }
-  // Ordered at 8:30 PM: nothing left tomorrow with 24 hours' notice.
-  assert.deepEqual(rules.pickupSlots('2026-10-24', '10-inch', new Date('2026-10-24T03:30:00Z')), [])
+  // Ordered at 8:30 PM: 9:30 AM is gone (after the noon cutoff); answer 3 hours before a 12 PM pickup.
+  const evening = new Date('2026-10-24T03:30:00Z')
+  assert.equal(rules.decideOrder('10-inch', '2026-10-24', '09:30', evening).ok, false)
+  assert.equal(
+    rules.decideOrder('10-inch', '2026-10-24', '12:00', evening).approveBy.toISOString(),
+    '2026-10-24T16:00:00.000Z',
+  )
   // Later: card held until 3 hours before pickup, at most 7 days (Square's limit); not cancelled at the deadline.
   const later = rules.decideOrder('6-inch', '2026-10-26', '12:00', now)
   assert.equal(later.shortHold, false)
@@ -207,7 +217,7 @@ test('kitchen text is Hong Kong Chinese in the agreed order', () => {
   assert.match(rules.zhPickup('2026-10-28', '09:30'), /^10月28日（星期三）上午9:30$/)
 })
 
-// From here on the clock is the next 8 AM in Las Vegas, so "tomorrow at noon" always has 24 hours' notice.
+// From here on the clock is the next 8 AM in Las Vegas, so the tests don't depend on the time of day they run.
 const eight = rules.vegasInstant(storeDate(), '08:00').getTime()
 mock.timers.enable({
   apis: ['Date'],

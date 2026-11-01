@@ -54,7 +54,7 @@ const empty = {
 }
 type Data = typeof empty
 
-/** Lead time for the chosen size: ready in 4 hours (8"), or the kitchen confirms with 24 hours' notice. */
+/** Lead time for the chosen size: ready in 4 hours (8"), or the kitchen confirms first (also 4 hours' notice). */
 function CakeLeadBadge({ size }: { size: string }) {
   const instant = isInstantCake(size)
   return (
@@ -179,7 +179,7 @@ export function CakeOrderFlow({ square, initialSize = '' }: { square: SquareConf
   const cake = findCake(data.size)
   const instant = isInstantCake(data.size)
   const price = data.size && data.filling ? cakePrice(data.size, data.filling) : null
-  // The first day with a pickup time for this size (a 24-hour cake can't be picked up today).
+  // The first day with a pickup time for this size (none left today after the last slot).
   const minDate = useMemo(() => {
     const today = storeDate(now)
     const days = [0, 1, 2].map(n => addDays(today, n))

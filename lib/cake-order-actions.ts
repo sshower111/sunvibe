@@ -219,7 +219,7 @@ export async function askKitchen(id: string, now = new Date()) {
 
 /**
  * Admin "Test order": a sample order that goes through the same saving, emails, approval and Chinese kitchen text as a real one.
- * - urgent: 10" round at the first pickup time with 24 hours' notice (usually tomorrow; answer by 8 PM tonight).
+ * - urgent: 10" round tomorrow at its first pickup time (answer by 8 PM tonight; the day after when tomorrow has none).
  * - later: 6" round 3 days ahead at noon (card held up to 7 days).
  * In Square sandbox it uses Square's test card, so the payment shows in the sandbox dashboard. In production no card
  * is used at all (made-up payment ID), so nothing is ever charged. Emails go to the bakery inbox with [TEST] subjects.
