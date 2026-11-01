@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import {
+  fillingText,
   formatEventTime,
   inquiryRef,
   inquiryStatuses,
@@ -19,6 +20,8 @@ import { AdminSegmented } from './admin-segmented'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { AdminCustomOrderForm } from './admin-custom-order-form'
+import { AdminInquiryAssistant } from './admin-inquiry-assistant'
+import type { AssistantNote } from '@/lib/inquiry-assistant'
 import { cakeOrderStatusLabels, formatPickupDate, type CakeOrderStatus } from '@/lib/cake-order'
 
 const filters = {
@@ -47,6 +50,10 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [notice, setNotice] = useState('')
+  const [notes, setNotes] = useState<Record<string, AssistantNote>>({})
+  const [signer, setSigner] = useState('')
+  const [assistant, setAssistant] = useState(false)
+  const [writing, setWriting] = useState<string[]>([])
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-inquiries', body)
 
   async function run(task: () => Promise<void>) {
@@ -60,9 +67,20 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
       setBusy(false)
     }
   }
+  const showList = (list: {
+    inquiries: StoredCakeInquiry[]
+    notes: Record<string, AssistantNote>
+    signer: string
+    assistant: boolean
+  }) => {
+    setInquiries(list.inquiries)
+    setNotes(list.notes)
+    setSigner(list.signer)
+    setAssistant(list.assistant)
+  }
   const load = () =>
     run(async () => {
-      setInquiries((await request({ action: 'list' })).inquiries)
+      showList(await request({ action: 'list' }))
       setLoaded(true)
     })
   useEffect(() => {
@@ -95,6 +113,20 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
       setDrafts(({ [id]: _, ...rest }) => rest)
     })
 
+  // Takes 20–60 seconds; other actions stay usable meanwhile.
+  async function writeNotes(id: string) {
+    setWriting(w => [...w, id])
+    try {
+      const { note } = await request({ action: 'assistant', id })
+      setNotes(n => ({ ...n, [id]: note }))
+      setError('')
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setWriting(w => w.filter(x => x !== id))
+    }
+  }
+
   const removeTest = (id: string) =>
     run(async () => {
       await request({ action: 'delete', id })
@@ -104,7 +136,7 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
     run(async () => {
       setNotice('')
       const { sentTo } = await request({ action: 'test' })
-      setInquiries((await request({ action: 'list' })).inquiries)
+      showList(await request({ action: 'list' }))
       setFilter('open')
       setNotice(`Test inquiry sent to ${sentTo} (two emails starting with [TEST]) and added below.`)
     })
@@ -157,8 +189,8 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
           const editing = i.id in drafts
           const draft = drafts[i.id] ?? i.staffNotes
           const flavorText = i.tierFlavors
-            ? tierFlavorLines(i.size, i.tierFlavors).join('\n')
-            : `${i.flavor} / ${i.filling}`
+            ? tierFlavorLines(i.size, i.tierFlavors, v => fillingText(v, i.customFilling)).join('\n')
+            : `${i.flavor} / ${fillingText(i.filling, i.customFilling)}`
           const menu: MenuItem[] = [
             { label: 'Call ' + i.phone, href: 'tel:' + i.phone.replace(/[^+0-9]/g, '') },
             { label: 'Email ' + i.email, href: 'mailto:' + i.email },
@@ -166,6 +198,9 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
               label: i.staffNotes ? 'Edit private notes' : 'Add private notes',
               onSelect: () => setDrafts(d => ({ ...d, [i.id]: i.staffNotes })),
             },
+            ...(assistant && !writing.includes(i.id)
+              ? [{ label: notes[i.id] ? 'Redo AI notes' : 'Write AI notes', onSelect: () => void writeNotes(i.id) }]
+              : []),
             ...(i.test
               ? [
                   {
@@ -222,6 +257,13 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
                 {i.notes && <p className="whitespace-pre-wrap text-muted-foreground">Notes: {i.notes}</p>}
               </div>
               {i.photoCount > 0 && <InquiryPhotos inquiry={i} />}
+              {writing.includes(i.id) ? (
+                <p role="status" className="rounded-md border border-primary/30 bg-primary/5 p-2 text-muted-foreground">
+                  Writing AI notes…
+                </p>
+              ) : (
+                notes[i.id] && <AdminInquiryAssistant inquiry={i} note={notes[i.id]} signer={signer} />
+              )}
               {editing ? (
                 <div>
                   <label htmlFor={'inquiry-notes-' + i.id} className="mb-1 block font-semibold">

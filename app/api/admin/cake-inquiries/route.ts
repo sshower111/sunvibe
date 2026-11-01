@@ -1,7 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isAdminRequest } from '@/lib/admin-auth'
-import { deleteTestInquiry, listCakeInquiries, saveCakeInquiry, updateCakeInquiry } from '@/lib/cake-inquiries-store'
+import {
+  deleteTestInquiry,
+  getCakeInquiry,
+  listCakeInquiries,
+  saveCakeInquiry,
+  updateCakeInquiry,
+} from '@/lib/cake-inquiries-store'
 import {
   cakeInquirySchema,
   CUSTOM_FILLING,
@@ -17,11 +23,23 @@ import { newInquiryPush } from '@/lib/push-messages'
 import { customOrderSchema } from '@/lib/cake-order'
 import { createOrderFromInquiry } from '@/lib/custom-cake-orders'
 import { listCakeOrders } from '@/lib/cake-orders-store'
+import {
+  assistantEnabled,
+  getReplySigner,
+  listInquiryNotes,
+  runInquiryAssistant,
+  setReplySigner,
+} from '@/lib/inquiry-assistant-server'
+
+// "Regenerate" on an inquiry's AI notes waits for the answer.
+export const maxDuration = 120
 
 const updateSchema = z.union([
   z.object({ action: z.literal('status'), id: z.string().uuid(), status: z.enum(inquiryStatuses) }),
   z.object({ action: z.literal('notes'), id: z.string().uuid(), staffNotes: z.string().max(MAX_STAFF_NOTES) }),
   z.object({ action: z.literal('delete'), id: z.string().uuid() }),
+  z.object({ action: z.literal('assistant'), id: z.string().uuid() }),
+  z.object({ action: z.literal('signer'), name: z.string().trim().min(1).max(40) }),
 ])
 
 export async function POST(req: NextRequest) {
@@ -34,9 +52,15 @@ export async function POST(req: NextRequest) {
   if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     if (body.action === 'test') return sendTestInquiry()
+    if (body.action === 'get_signer') return NextResponse.json({ signer: await getReplySigner() })
     if (body.action === 'list') {
       // Each inquiry also gets the custom order made from it (number and status), if any.
-      const [inquiries, orders] = await Promise.all([listCakeInquiries(), listCakeOrders().catch(() => [])])
+      const [inquiries, orders, notes, signer] = await Promise.all([
+        listCakeInquiries(),
+        listCakeOrders().catch(() => []),
+        listInquiryNotes(),
+        getReplySigner(),
+      ])
       const orderFor = (id: string) => orders.find(o => o.inquiryId === id && o.status !== 'failed')
       return NextResponse.json(
         {
@@ -44,6 +68,9 @@ export async function POST(req: NextRequest) {
             const o = orderFor(i.id)
             return o ? { ...i, order: { ref: '#' + (o.orderNo ?? ''), status: o.status } } : i
           }),
+          notes,
+          signer,
+          assistant: assistantEnabled(),
         },
         { headers: { 'Cache-Control': 'no-store' } },
       )
@@ -58,6 +85,19 @@ export async function POST(req: NextRequest) {
     const parsed = updateSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid update' }, { status: 400 })
     const change = parsed.data
+    if (change.action === 'signer') {
+      await setReplySigner(change.name)
+      return NextResponse.json({ success: true })
+    }
+    if (change.action === 'assistant') {
+      if (!assistantEnabled())
+        return NextResponse.json({ error: 'AI notes are not set up (ANTHROPIC_API_KEY).' }, { status: 503 })
+      const inquiry = await getCakeInquiry(change.id)
+      if (!inquiry) return NextResponse.json({ error: 'Inquiry not found' }, { status: 404 })
+      const note = await runInquiryAssistant(inquiry)
+      if (!note) return NextResponse.json({ error: 'AI notes could not be made. Please retry.' }, { status: 502 })
+      return NextResponse.json({ note })
+    }
     if (change.action === 'delete') {
       await deleteTestInquiry(change.id)
       return NextResponse.json({ success: true })
@@ -98,7 +138,8 @@ async function sendTestInquiry() {
       size: '8-inch',
       flavor: 'Vanilla',
       filling: CUSTOM_FILLING,
-      notes: 'Passion fruit filling please',
+      customFilling: 'Passion fruit',
+      notes: 'Simple design, writing only.',
     },
   ]
   const sample = cakeInquirySchema.parse({
@@ -123,6 +164,9 @@ async function sendTestInquiry() {
   const { acknowledged: _, ...details } = sample
   const inquiry = { ...details, id: requestId, createdAt: new Date().toISOString(), photoCount: 0, test: true }
   await saveCakeInquiry(inquiry)
-  await notifyAdmins(() => newInquiryPush({ ...inquiry, status: 'new', staffNotes: '' }))
+  after(async () => {
+    const note = await runInquiryAssistant(inquiry, [])
+    await notifyAdmins(() => newInquiryPush({ ...inquiry, status: 'new', staffNotes: '' }, note?.output.headline))
+  })
   return NextResponse.json({ success: true, sentTo: bakeryInbox() })
 }

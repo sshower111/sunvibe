@@ -171,7 +171,7 @@ test('prices follow the pricing sheet column for the filling', () => {
   assert.equal(rules.cakePrice('half-sheet', 'Durian'), 158)
   assert.equal(rules.cakePrice('full-sheet', 'Custard'), 188)
   assert.equal(rules.cakePrice('14-inch', 'Mango'), null)
-  assert.equal(rules.cakePrice('8-inch', 'Something else (e.g., passion fruit)'), null)
+  assert.equal(rules.cakePrice('8-inch', 'Something else'), null)
   for (const filling of rules.ORDER_FILLINGS) assert.notEqual(rules.cakePrice('6-inch', filling), null)
 })
 

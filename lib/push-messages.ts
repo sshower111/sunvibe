@@ -53,11 +53,13 @@ export function newOrderPush(o: StoredCakeOrder, now = new Date()): PushText {
   }
 }
 
-export function newInquiryPush(i: StoredCakeInquiry): PushText {
+/** headline: the AI notes' one-line summary, added under the details when there is one. */
+export function newInquiryPush(i: StoredCakeInquiry, headline?: string): PushText {
   const when = i.eventDate ? formatPickupDate(i.eventDate) : 'date not set'
+  const details = `🎂 ${i.eventType} · ${when} · ${i.servings} servings · ${shortName(i.name)}`
   return {
     title: prefix(i.test, false) + 'Custom cake inquiry',
-    body: `🎂 ${i.eventType} · ${when} · ${i.servings} servings · ${shortName(i.name)}`,
+    body: headline ? `${details}\n${headline.slice(0, 120)}` : details,
     url: `/admin/inquiries/${i.id}`,
     tag: 'inquiry-' + i.id,
   }

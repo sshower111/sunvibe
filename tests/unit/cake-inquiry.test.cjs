@@ -21,8 +21,15 @@ const mail = []
 const saved = []
 let storeDown = false
 
+// after() only works inside a real request; here the work runs at once and is awaited by the test.
+const background = []
+const assistantRuns = []
 const { load } = createLoader({
   mocks: {
+    'next/server': { ...require('next/server'), after: task => void background.push(task()) },
+    '@/lib/inquiry-assistant-server': {
+      runInquiryAssistant: async (inquiry, photos) => (assistantRuns.push({ inquiry, photos }), null),
+    },
     '@/lib/turnstile': {
       verifyTurnstile: async (_token, action) => {
         assert.equal(action, 'custom_cake')
@@ -89,6 +96,13 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
   assert.equal((await post({ eventDate: '2026-02-30' })).status, 400)
   assert.equal((await post({ eventDate: '2000-01-01' })).status, 400)
   assert.equal((await post({ eventTime: '25:00' })).status, 400)
+  // Pickup or delivery only within opening hours: 9:30 AM to 7:30 PM, Wednesday to 2:30 PM, every 30 minutes.
+  assert.equal((await post({ eventTime: '21:00' })).status, 400)
+  assert.equal((await post({ eventTime: '07:00' })).status, 400)
+  assert.equal((await post({ eventTime: '14:15' })).status, 400)
+  assert.equal((await post({ eventDate: '2099-01-21', eventTime: '15:00' })).status, 400)
+  assert.equal(schema.businessSlots('2099-01-21').at(-1), '14:30')
+  assert.equal(schema.businessSlots('2099-01-20').at(-1), '19:30')
   assert.equal(schema.formatEventTime('14:30'), '2:30 PM')
   assert.equal(schema.formatEventTime('00:15'), '12:15 AM')
   assert.equal((await post({ email: 'invalid' })).status, 400)
@@ -195,4 +209,49 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
     body: new Uint8Array(schema.MAX_PHOTOS * schema.MAX_PHOTO_BYTES + 65537),
   })
   assert.equal((await route.POST(large)).status, 413)
+})
+
+test('new inquiries get AI notes after the response, with their photos', async () => {
+  assistantRuns.length = 0
+  verified = true
+  emailError = false
+  limited = false
+  storeDown = false
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+    'base64',
+  )
+  const response = await post({ requestId: '22222222-2222-4222-8222-222222222222' }, [
+    new File([png], 'cake.png', { type: 'image/png' }),
+  ])
+  assert.equal(response.status, 200)
+  await Promise.all(background)
+  assert.equal(assistantRuns.length, 1)
+  assert.equal(assistantRuns[0].inquiry.id, '22222222-2222-4222-8222-222222222222')
+  assert.deepEqual(
+    assistantRuns[0].photos.map(p => p.name),
+    ['1.png'],
+  )
+  assert(assistantRuns[0].photos[0].data.equals(png))
+})
+
+test('"Something else" needs the customer to type their filling, which the emails show', async () => {
+  verified = true
+  emailError = false
+  limited = false
+  storeDown = false
+  mail.length = 0
+  const custom = { filling: 'Something else', requestId: '33333333-3333-4333-8333-333333333333' }
+  assert.equal((await post(custom)).status, 400)
+  assert.equal(mail.length, 0)
+  assert.equal((await post({ ...custom, customFilling: 'x'.repeat(61) })).status, 400)
+  assert.equal((await post({ ...custom, customFilling: 'Passion fruit' })).status, 200)
+  assert(row(mail[0].body.html, 'Their filling', 'Passion fruit'))
+  assert(row(mail[0].body.html, '客人指定餡料', 'Passion fruit'))
+  assert(mail[1].body.text.includes('Please recommend / Passion fruit'))
+  assert.equal(saved.at(-1).customFilling, 'Passion fruit')
+  // Other fillings don't get the extra row.
+  mail.length = 0
+  assert.equal((await post({ filling: 'Mango', requestId: '44444444-4444-4444-8444-444444444444' })).status, 200)
+  assert(!mail[0].body.html.includes('Their filling'))
 })

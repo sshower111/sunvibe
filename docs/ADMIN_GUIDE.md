@@ -137,6 +137,7 @@ The full list follows underneath. Tap an order's date to open its page. Each ord
 - Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
 - A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
+- **AI notes** appear on each new inquiry within about half a minute (the notification arrives once they're ready): one line on what needs attention, an estimate with how it adds up, a different size when the chosen one doesn't fit, flavor ideas when the customer asked for a recommendation, yellow warnings and questions to ask the customer. The estimate is a suggestion; set the final price yourself. A filling the customer typed ("Something else") is priced like the filling group it is closest to in cost (passion fruit, for example, like durian/coconut) and marked for the owner to confirm. **Copy email** and **Copy text** copy a reply to paste into Gmail or a text message, signed with the name in Settings → Reply signature. **Ask owner** copies the Chinese summary, the owner's questions and the customer's notes to send to the owner. Nothing is sent by itself. **⋯ → Write AI notes** (or **Redo AI notes**) makes them again, for example for older inquiries.
 - **⋯ → Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use **⋯ → Delete test inquiry** to remove it.
 
 ## Bakery inbox (Gmail)
@@ -157,6 +158,7 @@ To give each kind its own label: in Gmail search, type `subject:[Order]`, open t
 ## Settings
 
 - Maintenance mode is set in Vercel (`MAINTENANCE_MODE=true`, then redeploy). Admin keeps working while it is on.
+- **Reply signature**: the name at the end of AI reply drafts on cake inquiries (default May).
 - **Encryption key**: customer details are encrypted with `CAMPAIGN_STORAGE_SECRET`. Records saved before 2026-10-29 may still use a key made from the admin password. **Check** shows how many; **Re-encrypt old records** moves them to `CAMPAIGN_STORAGE_SECRET`. Both are safe to press again. Do this before changing the password.
 
 ## Changing the password

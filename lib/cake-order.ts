@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { cakeCatalog, cakeLabel, deliveryOptions } from './cake-catalog'
-import { flavors, fillings, MAX_CAKE_MESSAGE } from './cake-inquiry'
+import { businessSlots, flavors, fillings, MAX_CAKE_MESSAGE } from './cake-inquiry'
 import { addDays, storeDate } from './occasion-dates'
 import { zhOption } from './email-zh'
 
@@ -47,8 +47,8 @@ const NEXT_DAY_FIRST = '09:30'
 /** Next-day orders placed from noon on are for 12 PM onwards. */
 const NEXT_DAY_AFTER_NOON = '12:00'
 const NEXT_DAY_CUTOFF_HOUR = 12
-/** Last pickup slot: 30 minutes before closing (8 PM, Wednesday 3 PM; lib/site-info.ts). */
-const lastSlot = (date: string) => (new Date(date + 'T12:00:00Z').getUTCDay() === 3 ? '14:30' : '19:30')
+/** Last pickup slot: 30 minutes before closing (8 PM, Wednesday 3 PM; businessSlots in lib/cake-inquiry.ts). */
+const lastSlot = (date: string) => businessSlots(date).at(-1)!
 
 export function cakePrice(size: string, filling: string) {
   const cake = cakeCatalog.find(c => c.value === size)

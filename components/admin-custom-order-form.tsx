@@ -2,7 +2,8 @@
 import { useId, useState } from 'react'
 import { cakeCatalog, deliveryOptions, findCake } from '@/lib/cake-catalog'
 import {
-  CUSTOM_FILLING,
+  fillingText,
+  isCustomFilling,
   flavors,
   fillings,
   MAX_CAKE_MESSAGE,
@@ -21,7 +22,7 @@ const pick = (value: string, skip: string[]) => (skip.includes(value) ? '' : val
 /** Different flavor per tier: 'Top: Vanilla · Bottom: Chocolate'. */
 const byTier = (inquiry: StoredCakeInquiry, key: 'flavor' | 'filling') =>
   inquiry.tierFlavors
-    ?.map((t, i) => `${tierNames(inquiry.tierFlavors!.length)[i]}: ${t[key]}`)
+    ?.map((t, i) => `${tierNames(inquiry.tierFlavors!.length)[i]}: ${fillingText(t[key], inquiry.customFilling)}`)
     .join(' · ')
     .slice(0, 100)
 
@@ -40,7 +41,9 @@ export function AdminCustomOrderForm({
   const [data, setData] = useState({
     size: pick(inquiry.size, ['Not sure']),
     flavor: byTier(inquiry, 'flavor') ?? pick(inquiry.flavor, ['Please recommend']),
-    filling: byTier(inquiry, 'filling') ?? pick(inquiry.filling, ['Please recommend', CUSTOM_FILLING]),
+    filling:
+      byTier(inquiry, 'filling') ??
+      (isCustomFilling(inquiry.filling) ? inquiry.customFilling || '' : pick(inquiry.filling, ['Please recommend'])),
     cakeMessage: inquiry.cakeMessage || '',
     pickupDate: inquiry.eventDate,
     pickupTime: inquiry.eventTime || '',

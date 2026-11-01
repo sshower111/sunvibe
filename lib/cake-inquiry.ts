@@ -23,10 +23,16 @@ export const fillings = [
   'Custard',
   'Coconut',
   'Durian',
-  'Something else (e.g., passion fruit)',
+  'Something else',
 ] as const
-// The bakery accommodates fillings it doesn't list; the customer describes them in the notes.
+// The bakery accommodates fillings it doesn't list; the customer types theirs (customFilling).
 export const CUSTOM_FILLING = fillings[fillings.length - 1]
+export const MAX_CUSTOM_FILLING = 60
+/** Inquiries before Nov 2026 stored this choice as "Something else (e.g., passion fruit)", described in the notes. */
+export const isCustomFilling = (value: string) => value.startsWith('Something else')
+/** The filling as people should read it: a typed filling replaces "Something else". */
+export const fillingText = (filling: string, customFilling = '') =>
+  isCustomFilling(filling) && customFilling ? customFilling : filling
 export const MAX_CAKE_MESSAGE = 60
 // 10 × 400 KB keeps the whole upload under Vercel’s 4.5 MB request limit (photos are resized to 1400px in the browser).
 export const MAX_PHOTO_BYTES = 400 * 1024
@@ -43,7 +49,18 @@ export function earliestCakeDate(now = new Date()) {
   date.setUTCDate(date.getUTCDate() + 3)
   return date.toISOString().slice(0, 10)
 }
-// Event time is optional ('' = not decided yet). Stored as 24-hour HH:MM from <input type="time">.
+/**
+ * Pickup or delivery times we offer on a date: every 30 minutes from 9:30 AM to 30 minutes before closing
+ * (8 PM; Wednesday 3 PM, lib/site-info.ts). Online orders use the same window (lib/cake-order.ts).
+ */
+export function businessSlots(date: string) {
+  const last = new Date(date + 'T12:00:00Z').getUTCDay() === 3 ? 14 * 60 + 30 : 19 * 60 + 30
+  const slots: string[] = []
+  for (let t = 9 * 60 + 30; t <= last; t += 30)
+    slots.push(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`)
+  return slots
+}
+// Event time is optional ('' = not decided yet). Stored as 24-hour HH:MM, one of businessSlots(eventDate).
 export function formatEventTime(value: string) {
   const match = /^(\d{2}):(\d{2})$/.exec(value)
   if (!match) return ''
@@ -112,6 +129,11 @@ export const cakeInquirySchema = z
       .trim()
       .max(MAX_CAKE_MESSAGE, `Please keep the cake message under ${MAX_CAKE_MESSAGE} characters.`)
       .default(''),
+    customFilling: z
+      .string()
+      .trim()
+      .max(MAX_CUSTOM_FILLING, `Please keep the filling under ${MAX_CUSTOM_FILLING} characters.`)
+      .default(''),
     budget: z.enum(budgets),
     fulfillment: z.enum(deliveryOptions),
     deliveryAddress: z.string().trim().max(500, 'Please keep the delivery address under 500 characters.'),
@@ -120,11 +142,23 @@ export const cakeInquirySchema = z
       errorMap: () => ({ message: 'Please acknowledge this is an inquiry, not a confirmed order.' }),
     }),
   })
+  .refine(v => !v.eventTime || businessSlots(v.eventDate).includes(v.eventTime), {
+    message: 'Choose a time during our opening hours.',
+    path: ['eventTime'],
+  })
   .refine(v => !v.tierFlavors || v.tierFlavors.length === tierSizes(v.size)?.length, {
     message: 'Choose a flavor and filling for each tier.',
     path: ['tierFlavors'],
   })
+  .refine(v => !usesCustomFilling(v) || v.customFilling, {
+    message: 'Tell us which filling you’d like.',
+    path: ['customFilling'],
+  })
 export type CakeInquiry = z.infer<typeof cakeInquirySchema>
+/** True when the cake, or any of its tiers, has a filling the customer typed. */
+export function usesCustomFilling(v: { filling: string; tierFlavors?: TierFlavor[] }) {
+  return isCustomFilling(v.filling) || !!v.tierFlavors?.some(t => isCustomFilling(t.filling))
+}
 
 // Tracking in admin. Each open status says whose turn it is.
 export const inquiryStatuses = [

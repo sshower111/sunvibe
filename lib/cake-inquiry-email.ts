@@ -1,7 +1,14 @@
 import 'server-only'
 import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
-import { type CakeInquiry, inquiryRef, formatEventTime, tierFlavorLines } from '@/lib/cake-inquiry'
+import {
+  type CakeInquiry,
+  fillingText,
+  inquiryRef,
+  formatEventTime,
+  tierFlavorLines,
+  usesCustomFilling,
+} from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { escapeHtml } from '@/lib/security'
@@ -45,6 +52,8 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     size: 'Cake size',
     flavor: 'Flavor preference',
     filling: 'Filling preference',
+    // Only when the customer chose "Something else" and typed their filling.
+    ...(usesCustomFilling(data) && { customFilling: 'Their filling' }),
     cakeMessage: 'Writing on cake',
     budget: 'Budget',
     fulfillment: 'Pickup / delivery request',
@@ -112,7 +121,9 @@ export async function sendCustomerCopy(data: CakeInquiry, { requestId, test }: O
     ...rest,
     size: cakeLabel(data.size),
     eventTime: formatEventTime(data.eventTime) || 'Not decided yet',
-    flavors: tierFlavors ? tierFlavorLines(data.size, tierFlavors).join('; ') : `${data.flavor} / ${data.filling}`,
+    flavors: tierFlavors
+      ? tierFlavorLines(data.size, tierFlavors, v => fillingText(v, data.customFilling)).join('; ')
+      : `${data.flavor} / ${fillingText(data.filling, data.customFilling)}`,
   }
   try {
     const copy = await mailer().emails.send(

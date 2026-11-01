@@ -16,8 +16,11 @@ import {
   type CakeSpec,
 } from '@/lib/cake-catalog'
 import {
+  businessSlots,
   earliestCakeDate,
   fillings,
+  isCustomFilling,
+  MAX_CUSTOM_FILLING,
   flavors,
   formatEventTime,
   MAX_CAKE_MESSAGE,
@@ -82,6 +85,8 @@ const empty = {
   size: '',
   flavor: '',
   filling: '',
+  // Typed by the customer when they choose "Something else".
+  customFilling: '',
   // Tiered cakes: the same flavor throughout, or one per tier (top first).
   sameTiers: true,
   tierFlavors: [] as TierFlavor[],
@@ -281,7 +286,10 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
       'tierFlavors',
       tierChoices.map((t, i) => (i === index ? { ...t, [key]: value } : t)),
     )
-  const flavorLines = perTier ? tierFlavorLines(size, tierChoices, showOption) : []
+  const customFilling = perTier ? tierChoices.some(t => isCustomFilling(t.filling)) : isCustomFilling(data.filling)
+  const showChoice = (value: string) =>
+    isCustomFilling(value) && data.customFilling.trim() ? data.customFilling.trim() : showOption(value)
+  const flavorLines = perTier ? tierFlavorLines(size, tierChoices, showChoice) : []
 
   // Pay now only for an everyday cake picked up at a time we offer; everything else is quoted.
   // A classic look on one of these can be ready the same day; the design step says so.
@@ -292,13 +300,17 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     ORDER_FILLINGS.includes(data.filling as never)
   const payNow = everyday && data.design === 'simple' && data.fulfillment === PICKUP
   const minDate = payNow ? storeDate(now) : earliestCakeDate(now)
-  const slots = useMemo(() => (payNow && data.date ? pickupSlots(data.date, now) : []), [payNow, data.date, now])
+  // Times within opening hours. Paid orders also need enough notice; a quote's time is optional.
+  const slots = useMemo(
+    () => (!data.date ? [] : payNow ? pickupSlots(data.date, now) : businessSlots(data.date)),
+    [payNow, data.date, now],
+  )
   const decision = payNow && data.date && data.time ? decideOrder(size, data.date, data.time, now) : null
   const held = !!(decision?.ok && decision.needsApproval)
   // Keep the date and time valid when the ending changes (a quote needs 3 days' notice).
   useEffect(() => {
     if (data.date && data.date < minDate) setData(d => ({ ...d, date: '', time: '' }))
-    else if (payNow && data.time && !slots.includes(data.time)) setData(d => ({ ...d, time: '' }))
+    else if (data.time && !slots.includes(data.time)) setData(d => ({ ...d, time: '' }))
   }, [minDate, payNow, slots]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const cakePrice = cake && data.filling ? startingPrice(cake, data.filling) : null
@@ -328,6 +340,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
         if (!data.flavor) return 'Choose a flavor.'
         if (!data.filling) return 'Choose a filling.'
       }
+      if (customFilling && !data.customFilling.trim()) return 'Tell us which filling you’d like.'
     }
     if (step === 2 && !data.design) return 'Choose a classic look or a custom cake.'
     if (step === 3) {
@@ -402,6 +415,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
           flavor: perTier ? tierChoices[0].flavor : data.flavor,
           filling: perTier ? tierChoices[0].filling : data.filling,
           tierFlavors: perTier ? JSON.stringify(tierChoices) : '',
+          customFilling: customFilling ? data.customFilling.trim() : '',
           cakeMessage: data.cakeMessage,
           budget: 'Not sure — please advise',
           fulfillment: data.fulfillment,
@@ -484,7 +498,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     ['Guests', data.guests || (cake ? 'Not sure yet' : ''), 0],
     ['Cake', cake?.label ?? (size === 'Not sure' ? 'We’ll suggest' : ''), 0],
     ['Flavor', perTier ? flavorLines.join('\n') : data.flavor && showOption(data.flavor), 1],
-    ['Filling', perTier ? '' : data.filling && showOption(data.filling), 1],
+    ['Filling', perTier ? '' : data.filling && showChoice(data.filling), 1],
     ['Design', data.design === 'custom' ? 'Custom cake' : data.design === 'simple' ? 'Classic look' : '', 2],
     ['Photos', data.design === 'custom' ? (photos.length ? `${photos.length} added` : 'None yet, add one?') : '', 2],
     [
@@ -514,7 +528,7 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
     cake?.label,
     perTier && 'A different flavor in each tier',
     !perTier && data.flavor && data.flavor !== 'Please recommend' && data.flavor,
-    !perTier && data.filling && showOption(data.filling) !== 'Not sure' && showOption(data.filling) + ' filling',
+    !perTier && data.filling && showOption(data.filling) !== 'Not sure' && showChoice(data.filling) + ' filling',
   ]
     .filter(Boolean)
     .join(' · ')
@@ -831,7 +845,8 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                       value={tier.filling}
                       onChange={value => {
                         setTier(index, 'filling', value)
-                        if (index < tierCount - 1) reveal(`flow-tier-flavors-${index + 1}`)
+                        if (isCustomFilling(value)) reveal('flow-custom-filling')
+                        else if (index < tierCount - 1) reveal(`flow-tier-flavors-${index + 1}`)
                       }}
                     />
                   </section>
@@ -853,9 +868,26 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                     legend="Filling"
                     options={notSureLast(fillings)}
                     value={data.filling}
-                    onChange={value => set('filling', value)}
+                    onChange={value => {
+                      set('filling', value)
+                      if (isCustomFilling(value)) reveal('flow-custom-filling')
+                    }}
                   />
                 </>
+              )}
+              {customFilling && (
+                <div>
+                  <label htmlFor="flow-custom-filling" className={label}>
+                    Which filling?
+                  </label>
+                  <Input
+                    id="flow-custom-filling"
+                    maxLength={MAX_CUSTOM_FILLING}
+                    autoComplete="off"
+                    value={data.customFilling}
+                    onChange={e => set('customFilling', e.target.value)}
+                  />
+                </div>
               )}
             </>
           )}
@@ -1048,13 +1080,19 @@ export function CakeOrderFlow({ square }: { square: SquareConfig | null }) {
                       ))}
                     </NativeSelect>
                   ) : (
-                    <Input
+                    <NativeSelect
                       id="flow-time"
-                      type="time"
-                      step={900}
                       value={data.time}
+                      disabled={!data.date}
                       onChange={e => set('time', e.target.value)}
-                    />
+                    >
+                      <option value="">Not decided yet</option>
+                      {slots.map(t => (
+                        <option key={t} value={t}>
+                          {formatPickupTime(t)}
+                        </option>
+                      ))}
+                    </NativeSelect>
                   )}
                 </div>
               </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AdminStorageKey } from '@/components/admin-storage-key'
 import { AdminNotifications } from '@/components/admin-notifications'
+import { AdminReplySigner } from '@/components/admin-reply-signer'
 
 export function AdminSettings() {
   const [maintenanceMode, setMaintenanceMode] = useState<boolean | null>(null)
@@ -38,6 +39,7 @@ export function AdminSettings() {
             redeploy.
           </p>
         </div>
+        <AdminReplySigner />
         <AdminStorageKey />
       </section>
     </div>

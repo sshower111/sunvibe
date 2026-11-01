@@ -5,6 +5,7 @@ let connection: Sql | undefined
 let guarded: Sql | undefined
 /** A query that hasn't answered in this time is treated as a dead connection. */
 const QUERY_TIMEOUT_MS = Number(process.env.DB_QUERY_TIMEOUT_MS) || 10_000
+const MAX_CONNECTIONS = 2
 
 export function database(): Sql {
   if (!process.env.DATABASE_URL) throw new Error('Database is not configured')
@@ -13,21 +14,38 @@ export function database(): Sql {
     // Serverless instances are frozen between requests, and the pooler can drop their idle sockets. postgres.js
     // then waits forever for an answer on a dead socket, which left admin pages loading with greyed-out buttons.
     // Every query now gets a time limit; on a timeout the pool is thrown away so the next request reconnects.
+    // Queries also wait here for a free connection: when more run at once than the pool has open connections,
+    // postgres.js sends the extra ones on a busy connection and the Supabase pooler never answers them.
+    const waiting: (() => void)[] = []
+    let running = 0
+    const release = () => {
+      const next = waiting.shift()
+      if (next) next()
+      else running--
+    }
     guarded = new Proxy(sql, {
       apply(target, thisArg, args) {
+        // Not sent yet: postgres.js runs a query when it is awaited.
         const query = Reflect.apply(target, thisArg, args) as Promise<unknown>
-        let timer: ReturnType<typeof setTimeout> | undefined
-        const timeout = new Promise<never>((_, reject) => {
-          timer = setTimeout(() => {
-            if (connection === sql) {
-              connection = guarded = undefined
-              verifiedScopes.clear()
-              void sql.end({ timeout: 0 }).catch(() => {})
-            }
-            reject(new Error('Database did not answer in time'))
-          }, QUERY_TIMEOUT_MS)
+        const turn =
+          running < MAX_CONNECTIONS ? (running++, Promise.resolve()) : new Promise<void>(go => waiting.push(go))
+        return turn.then(() => {
+          let timer: ReturnType<typeof setTimeout> | undefined
+          const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+              if (connection === sql) {
+                connection = guarded = undefined
+                verifiedScopes.clear()
+                void sql.end({ timeout: 0 }).catch(() => {})
+              }
+              reject(new Error('Database did not answer in time'))
+            }, QUERY_TIMEOUT_MS)
+          })
+          return Promise.race([query, timeout]).finally(() => {
+            clearTimeout(timer)
+            release()
+          })
         })
-        return Promise.race([query, timeout]).finally(() => clearTimeout(timer))
       },
     })
   }
@@ -39,7 +57,7 @@ function open(url: string) {
   // TLS certificates must be verified; never use rejectUnauthorized:false.
   return postgres(url, {
     prepare: false,
-    max: 2,
+    max: MAX_CONNECTIONS,
     // Short idle and lifetime limits so connections aren't kept across long freezes.
     idle_timeout: 5,
     max_lifetime: 60 * 5,

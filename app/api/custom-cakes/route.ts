@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { readBody, parseForm } from '@/lib/request-body'
 import { SITE } from '@/lib/site-info'
 import { cakeInquirySchema, MAX_PHOTOS, MAX_PHOTO_BYTES } from '@/lib/cake-inquiry'
@@ -9,8 +9,11 @@ import { verifyTurnstile } from '@/lib/turnstile'
 import { notifyAdmins } from '@/lib/push'
 import { newInquiryPush } from '@/lib/push-messages'
 import { getClientIp, rateLimiter } from '@/lib/security'
+import { runInquiryAssistant } from '@/lib/inquiry-assistant-server'
 
 export const runtime = 'nodejs'
+// Leaves time for the AI notes, which run after the response (see after() below).
+export const maxDuration = 120
 const fail = (error: string, status: number) => NextResponse.json({ error }, { status })
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +81,12 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('Cake inquiry emailed but not saved to the tracker', requestId, error)
     }
-    await notifyAdmins(() => newInquiryPush({ ...inquiry, status: 'new', staffNotes: '' }))
+    // After the customer has their answer: AI notes for admin (when set up), then the push with its one-line summary.
+    after(async () => {
+      const photos = attachments.map((a, i) => ({ name: `${i + 1}.${a.filename.split('.').pop()}`, data: a.content }))
+      const note = await runInquiryAssistant(inquiry, photos)
+      await notifyAdmins(() => newInquiryPush({ ...inquiry, status: 'new', staffNotes: '' }, note?.output.headline))
+    })
     // Copy for the customer. Replies go to the bakery, so changes arrive in one thread instead of a second form.
     await sendCustomerCopy(parsed.data, { requestId })
     return NextResponse.json({ success: true })
