@@ -77,8 +77,8 @@ Cards and popovers are white. Dark mode is not used.
 
 ## Header
 
-- `components/navigation.tsx`: white header, `shadow-pop` once the page has scrolled. Desktop: text links, current page red with a 3px underline; a red phone button on screens 1024px and wider.
-- Phone menu: full-width list below the header (56px rows in Playfair Display, chevrons, terracotta bar on the current page), then Call and Directions buttons and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening past 768px closes it.
+- `components/navigation.tsx`: cream header (`bg-base`) with a 1px sand rule, `shadow-pop` once the page has scrolled. Links: Home, Menu, Custom Cakes, Gallery, Contact (plus Pre-order during a festival campaign). Desktop: the current page (and its sub-pages) is terracotta with a small terracotta dot under it; other links turn terracotta on hover. A terracotta phone button (`rounded-lg`, white text, fades slightly on hover) on screens 1024px and wider.
+- Phone menu: full-width list below the header (56px rows in Playfair Display, chevrons, current page terracotta with the same dot), then Call and Directions buttons (`rounded-lg`) and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening to 1024px (where the desktop links appear) closes it.
 
 ## Rules
 

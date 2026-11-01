@@ -10,10 +10,14 @@ import { SITE } from '@/lib/site-info'
 const baseLinks = [
   { href: '/', label: 'Home' },
   { href: '/menu', label: 'Menu' },
-  { href: '/custom-cakes', label: 'Custom cakes' },
+  { href: '/custom-cakes', label: 'Custom Cakes' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/contact', label: 'Contact' },
 ]
+
+// Terracotta call button, shared by the desktop header and the phone menu.
+const callButton =
+  'inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-brand px-5 text-sm font-semibold text-white transition-opacity duration-150 hover:opacity-90 active:opacity-80'
 
 export function Navigation({ sticky = true }: { sticky?: boolean }) {
   const [open, setOpen] = useState(false)
@@ -24,6 +28,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
     ? [...baseLinks.slice(0, 4), { href: '/pre-order', label: 'Pre-order' }, ...baseLinks.slice(4)]
     : baseLinks
   const pathname = usePathname()
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
   const toggle = useRef<HTMLButtonElement>(null)
   const header = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -56,7 +61,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
         toggle.current?.focus()
       }
     }
-    const media = window.matchMedia('(min-width: 768px)')
+    const media = window.matchMedia('(min-width: 1024px)')
     const resize = () => {
       if (media.matches) setOpen(false)
     }
@@ -75,7 +80,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
         ref={header}
         className={
           (sticky ? 'sticky -mb-[var(--header-height)]' : 'fixed inset-x-0') +
-          ' top-0 z-50 border-b bg-card transition-shadow duration-200 ' +
+          ' top-0 z-50 border-b border-subtle bg-base transition-shadow duration-200 ' +
           (scrolled || open ? 'shadow-pop' : '')
         }
         onBlur={event => {
@@ -92,7 +97,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             >
               <img src="/logo-dark.png" width={509} height={123} alt="Sunville Bakery" className="h-9 w-auto md:h-11" />
             </Link>
-            <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 lg:flex lg:gap-2">
+            <nav aria-label="Main navigation" className="ml-auto hidden items-center gap-1 lg:flex xl:gap-2">
               {/* The logo already links home; drop "Home" on desktop when Pre-order needs the room. */}
               {links
                 .filter(link => !(preorderOpen && link.href === '/'))
@@ -100,21 +105,24 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    aria-current={pathname === link.href ? 'page' : undefined}
+                    aria-current={isActive(link.href) ? 'page' : undefined}
                     className={
-                      'inline-flex min-h-12 min-w-11 items-center justify-center whitespace-nowrap rounded-sm px-2 text-[0.9375rem] font-medium decoration-[3px] underline-offset-[10px] transition-colors hover:text-brand ' +
-                      (pathname === link.href ? 'text-primary underline' : 'text-foreground')
+                      'relative inline-flex min-h-12 min-w-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-[0.9375rem] font-medium transition-colors hover:text-brand ' +
+                      (isActive(link.href) ? 'text-primary' : 'text-foreground')
                     }
                   >
                     {link.label}
+                    {isActive(link.href) && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute bottom-1.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-primary"
+                      />
+                    )}
                   </Link>
                 ))}
             </nav>
             {/* Calling is how most orders start, so it stays in view on wide screens. */}
-            <a
-              href={SITE.phoneHref}
-              className="action-button hidden shrink-0 items-center gap-2 bg-brand text-white hover:bg-brand-deep active:bg-brand-deep xl:inline-flex"
-            >
+            <a href={SITE.phoneHref} className={callButton + ' max-lg:hidden'}>
               <Phone aria-hidden="true" className="size-4" />
               {SITE.phone}
             </a>
@@ -134,25 +142,23 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             id="mobile-navigation"
             aria-label="Mobile navigation"
             hidden={!open}
-            className="max-h-[calc(100dvh-var(--header-height))] overflow-y-auto border-t pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 animate-in fade-in slide-in-from-top-2 duration-200 lg:hidden"
+            className="max-h-[calc(100dvh-var(--header-height))] overflow-y-auto border-t border-subtle pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 animate-in fade-in slide-in-from-top-2 duration-200 lg:hidden"
           >
-            <ul className="divide-y">
+            <ul className="divide-y divide-subtle">
               {links.map(link => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    aria-current={pathname === link.href ? 'page' : undefined}
+                    aria-current={isActive(link.href) ? 'page' : undefined}
                     className={
-                      'flex min-h-14 items-center justify-between gap-3 rounded-sm px-1 font-serif text-xl transition-colors ' +
-                      (pathname === link.href ? 'text-primary' : 'text-foreground active:bg-secondary')
+                      'flex min-h-14 items-center justify-between gap-3 rounded-sm px-1 font-serif text-xl font-medium transition-colors ' +
+                      (isActive(link.href) ? 'text-primary' : 'text-foreground active:bg-secondary')
                     }
                   >
                     <span className="flex items-center gap-3">
-                      {pathname === link.href && (
-                        <span aria-hidden="true" className="h-5 w-1 rounded-full bg-primary" />
-                      )}
                       {link.label}
+                      {isActive(link.href) && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                     </span>
                     <ChevronRight aria-hidden="true" className="size-5 text-muted-foreground" />
                   </Link>
@@ -161,10 +167,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
             </ul>
             {/* Most phone visitors want to call or find the shop, so both are one tap away. */}
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <a
-                href={SITE.phoneHref}
-                className="action-button inline-flex items-center justify-center gap-2 bg-brand text-white hover:bg-brand-deep active:bg-brand-deep"
-              >
+              <a href={SITE.phoneHref} className={callButton}>
                 <Phone aria-hidden="true" className="size-4" />
                 Call
               </a>
@@ -172,7 +175,7 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                 href={SITE.directionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="action-button inline-flex items-center justify-center gap-2 border border-input bg-card text-foreground hover:bg-secondary active:bg-muted"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-input bg-card px-5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary active:bg-muted"
               >
                 <MapPin aria-hidden="true" className="size-4" />
                 Directions<span className="sr-only"> (opens a new tab)</span>
