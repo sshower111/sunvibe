@@ -1,8 +1,7 @@
 import type { StoredCakeOrder } from './cake-order'
 
-// What can be done with a cake order in the admin list, depending on its status. The main actions show as buttons
-// on the order; the rest are in its "⋯" menu, so each order takes little space on a phone. Approving, asking the
-// kitchen and declining happen on the order's own page (Review).
+// What can be done with a cake order in admin, depending on its status. In the order's side panel the main actions
+// show as buttons and the rest are in its "⋯" menu.
 
 export type OrderActionId =
   | 'review'
@@ -36,8 +35,7 @@ export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
 }
 
 /** True for the actions shown as buttons on the order itself; the others go in its "⋯" menu. */
-// At most two per order: the next step for its status. Kitchen texts are covered by the pinned
-// "Approved — not sent to kitchen" list, and rare or undoing actions stay in the menu.
+// At most two per order: the next step for its status. Rare or undoing actions stay in the menu.
 export function isPrimaryAction(o: StoredCakeOrder, id: OrderActionId): boolean {
   switch (id) {
     case 'review':

@@ -1,12 +1,12 @@
 'use strict'
-// Admin Home Screen app: section addresses, the pinned order lists and the long phone sign-in.
+// Admin Home Screen app: section addresses, urgent orders, order actions and the long phone sign-in.
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const { createLoader } = require('../helpers/load-ts.cjs')
 
 const { load, mocks } = createLoader()
 const nav = load('lib/admin-nav.ts')
-const { orderBoard, isUrgent } = load('lib/admin-order-board.ts')
+const { isUrgent } = load('lib/admin-order-board.ts')
 
 test('admin addresses map to sections and bottom tabs', () => {
   assert.equal(nav.sectionOf('/admin/orders'), 'orders')
@@ -46,38 +46,6 @@ test('same-day and next-day pickups are urgent', () => {
   assert.equal(isUrgent({ pickupDate: '2026-10-31' }, now), true)
   assert.equal(isUrgent({ pickupDate: '2026-11-01' }, now), true)
   assert.equal(isUrgent({ pickupDate: '2026-11-02' }, now), false)
-})
-
-test('pinned lists: urgent orders first, then by pickup', () => {
-  const later = order('awaiting_approval', '2026-11-05')
-  const soon = order('awaiting_approval', '2026-11-03')
-  const tomorrow = order('awaiting_approval', '2026-11-01')
-  const today = order('awaiting_approval', '2026-10-31')
-  const expired = order('hold_expired', '2026-11-04')
-  const board = orderBoard([later, soon, tomorrow, today, expired], now)
-  assert.deepEqual(
-    board.needsApproval.map(o => o.id),
-    [today.id, tomorrow.id, soon.id, expired.id, later.id],
-  )
-})
-
-test('pinned lists: checking with kitchen, and paid orders not yet sent to the kitchen', () => {
-  const checking = order('checking_kitchen', '2026-11-02', { kitchenAskedAt: now.toISOString() })
-  const paidNotSent = order('paid', '2026-11-03')
-  const depositNotSent = order('deposit_paid', '2026-11-02')
-  const paidSent = order('paid', '2026-11-03', { kitchenSentAt: now.toISOString() })
-  const pickedUp = order('picked_up', '2026-10-30')
-  const declined = order('declined', '2026-11-03')
-  const board = orderBoard([checking, paidNotSent, depositNotSent, paidSent, pickedUp, declined], now)
-  assert.deepEqual(board.needsApproval, [])
-  assert.deepEqual(
-    board.checkingKitchen.map(o => o.id),
-    [checking.id],
-  )
-  assert.deepEqual(
-    board.notSentToKitchen.map(o => o.id),
-    [depositNotSent.id, paidNotSent.id],
-  )
 })
 
 test('Home Screen app sign-in lasts 90 days and renews; browser sign-in stays 12 hours', t => {

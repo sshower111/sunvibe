@@ -22,7 +22,7 @@ iPhones only allow notifications for apps added to the Home Screen, so install t
 2. Tap **Turn on notifications**, then **Allow**.
 3. Tap **Send test notification**. It should arrive within a few seconds.
 
-What you get (tapping an order notification opens that order's page; an inquiry opens the inquiries list, scrolled to it and outlined):
+What you get (tapping a notification opens that order or inquiry in the side panel):
 
 - **New cake order**: "Needs approval", e.g. `🎂 8" vanilla/strawberry · Sat 2 PM · Jane D`. **URGENT** when pickup is today or tomorrow.
 - **New custom cake inquiry**: e.g. `🎂 Birthday · Sun, Nov 8 · 20 servings · Linda P`.
@@ -89,7 +89,7 @@ Online orders from `/order-cake` (paid by card through Square). Details and setu
 
 ### Approving an order
 
-Every online order is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or **Review** in the list) to open the order's page. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
+Every online order is only **held** on the customer's card until you approve it. A notification and an email arrive; tap it (or the order in the list) to open it in the side panel. It shows the answer deadline and time left, the cake, the customer (tap to call or email), the Chinese kitchen text and the order's history.
 
 | Pickup | Answer by | If not answered |
 | --- | --- | --- |
@@ -97,7 +97,7 @@ Every online order is only **held** on the customer's card until you approve it.
 | Tomorrow (URGENT) | 8 PM tonight (or 3 hours before pickup if sooner) | Cancelled, card released, customer emailed |
 | Later | When the card hold ends (up to 7 days) or 3 hours before pickup | Waits as **Card hold ended** |
 
-The buttons on the order's page:
+The buttons in the order's panel:
 
 - **Approve & charge**: charges the card and emails the customer. Then **Send to kitchen** opens Messages to the kitchen with the Chinese order text (and marks it sent). On a computer, where texts can't be sent, **Mark sent** only marks it.
 - **Ask kitchen**: opens Messages to the kitchen with the order and "請問呢個蛋糕做唔做到？". The order moves to **Checking with kitchen**; an urgent order gets one more hour to answer if the pickup time allows. When the kitchen replies, come back and **Approve & charge** or **Decline**.
@@ -110,32 +110,26 @@ The kitchen's number is the Vercel environment variable `KITCHEN_PHONE` (digits 
 
 ### The list
 
-Orders show as a table (ordered, pickup, cake, customer, status, phone, email). The list starts on **All**; use the **Status** dropdown to filter, and click **Ordered** or **Pickup** to sort; click again to reverse. Cake writing and notes show under the cake when there are any.
+Orders are a compact list: on a computer a table (pickup, customer and order number, cake, amount, status, ordered); on a phone two lines per order (name and amount, then pickup and status). The tabs at the top filter it (All, Needs approval, To make, Awaiting payment, Picked up, Declined / expired, each with a count); click **Pickup** or **Ordered** to sort, again to reverse. **URGENT** marks an order waiting for your answer with pickup today or tomorrow; TEST and CUSTOM orders are marked too. A paid order whose details haven't gone to the kitchen yet shows **Send to kitchen** as its status (orders paid before Oct 31, 2026 count as already sent).
 
-Three lists are pinned at the top of **Orders** when they have anything in them:
-
-- **Needs approval**: orders waiting for your answer, including **Card hold ended**. **URGENT** marks a pickup today or tomorrow; those come first. **Review** opens the order's page.
-- **Checking with kitchen**: orders you have asked the kitchen about.
-- **Approved — not sent to kitchen**: paid orders whose details haven't gone to the kitchen yet. On a phone, **Send to kitchen** opens Messages with the Chinese order text and marks it sent; on a computer, **Mark sent** just marks it (for example after **Copy for kitchen**). Orders paid before Oct 31, 2026 count as already sent.
-
-The full list follows underneath. Tap an order's date to open its page. Each order shows its main button (**Review**, **Mark picked up**, or **Resend pay link**); everything else is in the **⋯** menu (top-right corner of the order on phones): Text kitchen (phones), Copy for kitchen, Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
+Click (or tap) an order to open it in a panel on the right (full screen on a phone). Everything is done there: the next step as buttons (**Approve & charge** / **Ask kitchen** / **Decline**, **Send to kitchen** / **Mark sent** / **Mark picked up**, or **Resend pay link**), the details, the Chinese kitchen text and the history. The panel's **⋯** has the rest: Copy for kitchen, Text kitchen (phones), Call, Email, Copy pay link, Paid in store / by phone, Undo picked up and Delete test order. **×**, Escape or the phone's back gesture closes it; on a computer you can click another order in the list while it is open. The address shows the open order (`/admin/orders?open=<id>`), so a refresh keeps it open. The ↻ icon at the top refreshes the list, and the **⋯** next to it has the test orders.
 
 - **Needs approval**: every new online order (see Approving an order above).
 - **To make**: paid orders, soonest pickup first. **Mark picked up** when collected.
 - **Declined / expired**: if the customer pays you another way afterwards (Square terminal, cash, by phone), press **Paid in store / by phone** to move the order back to To make. No email is sent, so let the customer know yourself.
-- **Copy for kitchen** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text kitchen** opens Messages with it filled in.
+- **⋯ → Copy for kitchen** copies the order in Chinese (phone, size, flavor, filling, pickup time, pickup, writing). On a phone, **Text kitchen** opens Messages with it filled in.
 - **⋯ → Test order (urgent, tomorrow)** adds a sample 10" order for tomorrow at noon; **Test order (in 3 days)** adds an 8" order 3 days out. Both are held so Approve, Ask kitchen and Decline can be tried. Test orders have a TEST badge, send every email to the bakery inbox with `[TEST]` subjects, and can be deleted. In Square sandbox they use Square's test card (they show in the sandbox dashboard); in production no card is used, so nothing is charged.
 - Refunds and changes to paid orders: Square Dashboard → Transactions, search by the order number (e.g. `#1001`). Orders are numbered in sequence; a failed payment can leave a gap.
 
 ## Cake inquiries
 
-**Turning a confirmed inquiry into an order:** once the design and price are agreed with the customer (and the bakery), press **Approve & send pay link** on the inquiry. Check the details (size, flavor, filling, writing, pickup or delivery, date and time, design notes), enter the total price (including any delivery fee) and choose **Full amount** or **Deposit** (enter the deposit). The customer is emailed the details and a link to pay online, valid for 3 days. The order appears in **Cake orders** (marked CUSTOM, "Awaiting payment") and the inquiry changes to "Awaiting customer"; when they pay, the order becomes **Paid** or **Deposit paid** and the inquiry **Confirmed & paid** automatically. For deposits, Cake orders shows the balance to collect at pickup or delivery. If the link runs out, use **Resend link** in Cake orders (another 3 days); **Copy pay link** copies it for a text or your own email. Details: `docs/CAKE-ORDERS.md`.
+**Turning a confirmed inquiry into an order:** once the design and price are agreed with the customer (and the bakery), press **Approve & send pay link** in the inquiry's panel. Check the details (size, flavor, filling, writing, pickup or delivery, date and time, design notes), enter the total price (including any delivery fee) and choose **Full amount** or **Deposit** (enter the deposit). The customer is emailed the details and a link to pay online, valid for 3 days. The order appears in **Cake orders** (marked CUSTOM, "Awaiting payment") and the inquiry changes to "Awaiting customer"; when they pay, the order becomes **Paid** or **Deposit paid** and the inquiry **Confirmed & paid** automatically. For deposits, Cake orders shows the balance to collect at pickup or delivery. If the link runs out, open the order in Cake orders and use **Resend pay link** (another 3 days); **⋯ → Copy pay link** copies it for a text or your own email. Details: `docs/CAKE-ORDERS.md`.
 
 - Every custom cake inquiry from the order page (/order-cake, when it ends as a quote request) appears here (the inquiry email still arrives as before). Reference photos show as small thumbnails: hover one to see it full size, or tap it to open it in a new tab.
-- Each inquiry is a compact card: event, cake, flavors, writing, pickup or delivery, budget and the customer's notes. The **⋯** in its top-right corner has Call, Email, Add/Edit private notes and (for tests) Delete test inquiry. The status picker and **Approve & send pay link** are at the bottom.
+- Inquiries are a compact list (received, customer, event, cake, budget, status; two lines per inquiry on a phone). Click one to open it in the side panel: the status picker and **Approve & send pay link** at the top, then AI notes, private notes and the details (event, cake, flavors, writing, pickup or delivery, budget, notes, photos, customer). The panel's **⋯** has Call, Email, Add/Edit private notes, Write/Redo AI notes and (for tests) Delete test inquiry.
 - Set the status as it moves along: New → Awaiting customer / Under bakery review → Confirmed & paid → Completed, or Cancelled. "Open" shows everything still in progress.
 - Use the private notes for the agreed design, final price and how it was paid. Customers never see them.
-- A yellow note means the same email or phone sent another inquiry (usually a correction). Keep one and cancel the other.
+- A yellow note in the panel means the same email or phone sent another inquiry (usually a correction); click its date to open it. Keep one and cancel the other.
 - Customers get an email copy of their inquiry; their replies come to the bakery inbox.
 - **AI notes** appear on each new inquiry within about half a minute (the notification arrives once they're ready): one line on what needs attention, an estimate with how it adds up, a different size when the chosen one doesn't fit, flavor ideas when the customer asked for a recommendation, yellow warnings and questions to ask the customer. The estimate is a suggestion; set the final price yourself. A filling the customer typed ("Something else") is priced like the filling group it is closest to in cost (passion fruit, for example, like durian/coconut) and marked for the owner to confirm. **Copy email** and **Copy text** copy a reply to paste into Gmail or a text message, signed with the name in Settings → Reply signature. **Ask owner** copies the Chinese summary, the owner's questions and the customer's notes to send to the owner. Nothing is sent by itself. **⋯ → Write AI notes** (or **Redo AI notes**) makes them again, for example for older inquiries.
 - **⋯ → Send test inquiry** sends a sample inquiry through the real email setup, so you can check what arrives without filling in the form. Both emails (the bakery one and the customer copy) go to the bakery inbox with subjects starting `[TEST]`. The sample is also added to this list with a TEST badge so you can try statuses and notes on it; use **⋯ → Delete test inquiry** to remove it.

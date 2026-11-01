@@ -17,12 +17,17 @@ import { Button } from './ui/button'
 import { AdminPageHeader } from './admin-page-header'
 import { AdminActionMenu, type MenuItem } from './admin-action-menu'
 import { AdminSegmented } from './admin-segmented'
+import { AdminStatusBadge, type BadgeTone } from './admin-status-badge'
+import { AdminSidePanel, PanelDetails, headCell, listBox, rowClass, useOpenParam } from './admin-side-panel'
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { AdminCustomOrderForm } from './admin-custom-order-form'
 import { AdminInquiryAssistant } from './admin-inquiry-assistant'
 import type { AssistantNote } from '@/lib/inquiry-assistant'
 import { cakeOrderStatusLabels, formatPickupDate, type CakeOrderStatus } from '@/lib/cake-order'
+
+// Cake inquiries: a compact list; clicking one opens it in the side panel (details, photos, AI notes, private notes,
+// status and the custom order form).
 
 const filters = {
   open: { label: 'Open', statuses: ['new', 'waiting_customer', 'checking_owner'] },
@@ -31,6 +36,14 @@ const filters = {
   all: { label: 'All', statuses: inquiryStatuses },
 } satisfies Record<string, { label: string; statuses: readonly InquiryStatus[] }>
 type Filter = keyof typeof filters
+const statusTone: Record<InquiryStatus, BadgeTone> = {
+  new: 'blue',
+  waiting_customer: 'amber',
+  checking_owner: 'amber',
+  confirmed_paid: 'green',
+  completed: 'gray',
+  cancelled: 'red',
+}
 
 const customerKeys = (i: StoredCakeInquiry) => [i.email.toLowerCase(), i.phone.replace(/\D/g, '')]
 const received = (iso: string) =>
@@ -41,8 +54,11 @@ const received = (iso: string) =>
     hour: 'numeric',
     minute: '2-digit',
   })
+/** "Birthday · Sat, Nov 8 · 2:00 PM" */
+const eventText = (i: StoredCakeInquiry) =>
+  [i.eventType, i.eventDate && formatPickupDate(i.eventDate), formatEventTime(i.eventTime)].filter(Boolean).join(' · ')
 
-export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
+export function AdminCakeInquiries() {
   const [inquiries, setInquiries] = useState<StoredCakeInquiry[]>([])
   const [filter, setFilter] = useState<Filter>('open')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -54,6 +70,7 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
   const [signer, setSigner] = useState('')
   const [assistant, setAssistant] = useState(false)
   const [writing, setWriting] = useState<string[]>([])
+  const { openId, open, close } = useOpenParam()
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-inquiries', body)
 
   async function run(task: () => Promise<void>) {
@@ -87,17 +104,6 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
     void load()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Opened from a notification (/admin/inquirys/<id>): show it and scroll to it once the list has loaded.
-  useEffect(() => {
-    if (!loaded || !focusId) return
-    setFilter('all')
-    requestAnimationFrame(() =>
-      [...document.querySelectorAll<HTMLElement>('[data-inquiry-id="' + CSS.escape(focusId) + '"]')]
-        .find(el => el.offsetParent !== null)
-        ?.scrollIntoView({ block: 'center' }),
-    )
-  }, [loaded, focusId]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const patch = (id: string, change: Partial<StoredCakeInquiry>) =>
     setInquiries(current => current.map(i => (i.id === id ? { ...i, ...change } : i)))
   const setStatus = (id: string, status: InquiryStatus) =>
@@ -130,6 +136,7 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
   const removeTest = (id: string) =>
     run(async () => {
       await request({ action: 'delete', id })
+      close()
       setInquiries(current => current.filter(i => i.id !== id))
     })
   const sendTest = () =>
@@ -157,6 +164,192 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
     ]),
   )
   const shown = inquiries.filter(i => (filters[filter].statuses as readonly string[]).includes(i.status))
+  const selected = openId ? inquiries.find(i => i.id === openId) : undefined
+  const messages = (
+    <>
+      <p role="status" className="text-success empty:hidden">
+        {notice}
+      </p>
+      <p role="alert" className="text-danger empty:hidden">
+        {error}
+      </p>
+    </>
+  )
+
+  const panel = () => {
+    if (!openId) return null
+    if (!selected)
+      return (
+        <AdminSidePanel title="Inquiry" onClose={close}>
+          {messages}
+          <p className="text-muted-foreground">{loaded ? 'This inquiry was not found.' : 'Loading…'}</p>
+        </AdminSidePanel>
+      )
+    const i = selected
+    const related = others(i)
+    const editing = i.id in drafts
+    const draft = drafts[i.id] ?? i.staffNotes
+    const flavorText = i.tierFlavors
+      ? tierFlavorLines(i.size, i.tierFlavors, v => fillingText(v, i.customFilling)).join('\n')
+      : `${i.flavor} / ${fillingText(i.filling, i.customFilling)}`
+    const menu: MenuItem[] = [
+      { label: 'Call ' + i.phone, href: 'tel:' + i.phone.replace(/[^+0-9]/g, '') },
+      { label: 'Email ' + i.email, href: 'mailto:' + i.email },
+      {
+        label: i.staffNotes ? 'Edit private notes' : 'Add private notes',
+        onSelect: () => setDrafts(d => ({ ...d, [i.id]: i.staffNotes })),
+      },
+      ...(assistant && !writing.includes(i.id)
+        ? [{ label: notes[i.id] ? 'Redo AI notes' : 'Write AI notes', onSelect: () => void writeNotes(i.id) }]
+        : []),
+      ...(i.test
+        ? [
+            {
+              label: 'Delete test inquiry',
+              danger: true,
+              onSelect: () => window.confirm('Delete this test inquiry?') && void removeTest(i.id),
+            },
+          ]
+        : []),
+    ]
+    const rows: [string, React.ReactNode][] = [
+      ['Event', eventText(i)],
+      ['Cake', `${i.servings} servings · ${cakeLabel(i.size)}`],
+      ['Flavor', flavorText],
+      ['Writing', i.cakeMessage || 'None'],
+      i.fulfillment === 'Pickup'
+        ? ['Pickup', 'At the bakery']
+        : ['Delivery', `${i.fulfillment} · ${i.deliveryAddress || 'Address TBC'}`],
+      ['Budget', i.budget],
+      ...(i.notes ? ([['Notes', i.notes]] as [string, string][]) : []),
+      ...(i.photoCount > 0
+        ? ([['Photos', <InquiryPhotos key="photos" inquiry={i} />]] as [string, React.ReactNode][])
+        : []),
+      ['Customer', i.name],
+      [
+        'Phone',
+        <a key="tel" href={'tel:' + i.phone.replace(/[^+0-9]/g, '')} className="text-primary underline">
+          {i.phone}
+        </a>,
+      ],
+      [
+        'Email',
+        <a key="mail" href={'mailto:' + i.email} className="break-all text-primary underline">
+          {i.email}
+        </a>,
+      ],
+      ['Received', received(i.createdAt)],
+    ]
+    return (
+      <AdminSidePanel
+        key={i.id}
+        title={
+          <>
+            {i.name} <span className="font-normal text-muted-foreground">{inquiryRef(i.id)}</span>
+          </>
+        }
+        onClose={close}
+        actions={<AdminActionMenu label={`More actions for inquiry ${inquiryRef(i.id)}`} items={menu} />}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor={'inquiry-status-' + i.id} className="sr-only">
+            Status
+          </label>
+          <NativeSelect
+            id={'inquiry-status-' + i.id}
+            value={i.status}
+            disabled={busy}
+            className="!min-h-9 w-auto !py-1 text-sm"
+            onChange={e => setStatus(i.id, e.target.value as InquiryStatus)}
+          >
+            {inquiryStatuses.map(st => (
+              <option key={st} value={st}>
+                {inquiryStatusLabels[st]}
+              </option>
+            ))}
+          </NativeSelect>
+          {i.test && (
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">TEST</span>
+          )}
+        </div>
+        {messages}
+        {related.length > 0 && (
+          <p className="rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-amber-900">
+            Same customer also sent {related.length === 1 ? 'another inquiry' : `${related.length} other inquiries`}:{' '}
+            {related.map((o, n) => (
+              <span key={o.id}>
+                {n > 0 && '; '}
+                <button type="button" className="underline" onClick={() => open(o.id)}>
+                  {received(o.createdAt)}
+                </button>{' '}
+                ({inquiryStatusLabels[o.status]})
+              </span>
+            ))}
+          </p>
+        )}
+        {i.order && (
+          <p className="rounded-lg border bg-secondary p-2.5">
+            Order {i.order.ref}: {cakeOrderStatusLabels[i.order.status as CakeOrderStatus] ?? i.order.status}. Manage it
+            in Cake orders.
+          </p>
+        )}
+        {!i.order && !['completed', 'cancelled'].includes(i.status) && (
+          <AdminCustomOrderForm
+            inquiry={i}
+            onCreated={message => {
+              setNotice(message)
+              void load()
+            }}
+          />
+        )}
+
+        {writing.includes(i.id) ? (
+          <p role="status" className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 text-muted-foreground">
+            Writing AI notes…
+          </p>
+        ) : (
+          notes[i.id] && <AdminInquiryAssistant inquiry={i} note={notes[i.id]} signer={signer} />
+        )}
+
+        {editing ? (
+          <div>
+            <label htmlFor={'inquiry-notes-' + i.id} className="mb-1 block font-semibold">
+              Private notes
+            </label>
+            <Textarea
+              id={'inquiry-notes-' + i.id}
+              rows={3}
+              maxLength={MAX_STAFF_NOTES}
+              value={draft}
+              autoFocus
+              onChange={e => setDrafts(d => ({ ...d, [i.id]: e.target.value }))}
+            />
+            <div className="mt-2 flex gap-2">
+              <Button size="sm" onClick={() => saveNotes(i.id)} disabled={busy}>
+                Save notes
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDrafts(({ [i.id]: _, ...rest }) => rest)}
+                disabled={busy}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          i.staffNotes && (
+            <p className="whitespace-pre-wrap rounded-lg bg-secondary p-2.5">
+              <span className="font-semibold">Private notes:</span> {i.staffNotes}
+            </p>
+          )
+        )}
+
+        <PanelDetails rows={rows} />
+      </AdminSidePanel>
+    )
+  }
 
   return (
     <section className="space-y-4">
@@ -176,167 +369,102 @@ export function AdminCakeInquiries({ focusId }: { focusId?: string } = {}) {
           count: counts[key],
         }))}
       />
-      <p role="status" className="text-sm text-success empty:hidden">
-        {notice}
-      </p>
-      <p role="alert" className="text-sm text-danger empty:hidden">
-        {error}
-      </p>
-      {loaded && !shown.length && !error && <p>No inquiries here.</p>}
-      <div className="grid gap-2 md:grid-cols-2">
-        {shown.map(i => {
-          const related = others(i)
-          const editing = i.id in drafts
-          const draft = drafts[i.id] ?? i.staffNotes
-          const flavorText = i.tierFlavors
-            ? tierFlavorLines(i.size, i.tierFlavors, v => fillingText(v, i.customFilling)).join('\n')
-            : `${i.flavor} / ${fillingText(i.filling, i.customFilling)}`
-          const menu: MenuItem[] = [
-            { label: 'Call ' + i.phone, href: 'tel:' + i.phone.replace(/[^+0-9]/g, '') },
-            { label: 'Email ' + i.email, href: 'mailto:' + i.email },
-            {
-              label: i.staffNotes ? 'Edit private notes' : 'Add private notes',
-              onSelect: () => setDrafts(d => ({ ...d, [i.id]: i.staffNotes })),
-            },
-            ...(assistant && !writing.includes(i.id)
-              ? [{ label: notes[i.id] ? 'Redo AI notes' : 'Write AI notes', onSelect: () => void writeNotes(i.id) }]
-              : []),
-            ...(i.test
-              ? [
-                  {
-                    label: 'Delete test inquiry',
-                    danger: true,
-                    onSelect: () => window.confirm('Delete this test inquiry?') && void removeTest(i.id),
-                  },
-                ]
-              : []),
-          ]
-          return (
-            <article
-              key={i.id}
-              data-inquiry-id={i.id}
-              className={
-                'min-w-0 space-y-2 rounded-xl border bg-card p-3 text-sm ' +
-                (i.id === focusId ? 'ring-2 ring-primary' : '')
-              }
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="heading-3 min-w-0 flex-1 break-words">
-                  {i.name} <span className="text-sm font-normal text-muted-foreground">{inquiryRef(i.id)}</span>
-                  {i.test && (
-                    <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
-                      TEST
+      {/* While a panel is open its own copy of these messages is shown instead. */}
+      {!openId && <div className="text-sm empty:hidden">{messages}</div>}
+      {loaded && !shown.length && !error && <p className="text-sm text-muted-foreground">No inquiries here.</p>}
+      {shown.length > 0 && (
+        <>
+          {/* Phones and tablets: two lines per inquiry. */}
+          <ul className={listBox + ' lg:hidden'}>
+            {shown.map(i => (
+              <li key={i.id} className={rowClass(i.id === openId)}>
+                <button type="button" onClick={() => open(i.id)} className="block w-full px-3 py-2.5 text-left">
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate font-semibold">
+                      <TestTag i={i} />
+                      {i.name}
                     </span>
-                  )}
-                </h3>
-                <AdminActionMenu label={`More actions for inquiry ${inquiryRef(i.id)}`} items={menu} />
-              </div>
-              <p className="text-xs text-muted-foreground">Received {received(i.createdAt)}</p>
-              {related.length > 0 && (
-                <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-amber-900">
-                  Same customer also sent{' '}
-                  {related.length === 1 ? 'another inquiry' : `${related.length} other inquiries`}:{' '}
-                  {related.map(o => `${received(o.createdAt)} (${inquiryStatusLabels[o.status]})`).join('; ')}
-                </p>
-              )}
-              <div className="space-y-0.5 break-words">
-                <p className="font-semibold">
-                  {[i.eventType, i.eventDate && formatPickupDate(i.eventDate), formatEventTime(i.eventTime)]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-                <p>
-                  {i.servings} servings · {cakeLabel(i.size)}
-                </p>
-                <p className="whitespace-pre-wrap">{flavorText}</p>
-                {i.cakeMessage && <p className="text-muted-foreground">Writing: {i.cakeMessage}</p>}
-                <p className="text-muted-foreground">
-                  {i.fulfillment === 'Pickup' ? 'Pickup' : `${i.fulfillment} · ${i.deliveryAddress || 'Address TBC'}`} ·
-                  Budget {i.budget}
-                </p>
-                {i.notes && <p className="whitespace-pre-wrap text-muted-foreground">Notes: {i.notes}</p>}
-              </div>
-              {i.photoCount > 0 && <InquiryPhotos inquiry={i} />}
-              {writing.includes(i.id) ? (
-                <p role="status" className="rounded-md border border-primary/30 bg-primary/5 p-2 text-muted-foreground">
-                  Writing AI notes…
-                </p>
-              ) : (
-                notes[i.id] && <AdminInquiryAssistant inquiry={i} note={notes[i.id]} signer={signer} />
-              )}
-              {editing ? (
-                <div>
-                  <label htmlFor={'inquiry-notes-' + i.id} className="mb-1 block font-semibold">
-                    Private notes
-                  </label>
-                  <Textarea
-                    id={'inquiry-notes-' + i.id}
-                    rows={3}
-                    maxLength={MAX_STAFF_NOTES}
-                    value={draft}
-                    autoFocus
-                    onChange={e => setDrafts(d => ({ ...d, [i.id]: e.target.value }))}
-                  />
-                  <div className="mt-2 flex gap-2">
-                    <Button size="sm" onClick={() => saveNotes(i.id)} disabled={busy}>
-                      Save notes
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setDrafts(({ [i.id]: _, ...rest }) => rest)}
-                      disabled={busy}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                i.staffNotes && (
-                  <p className="whitespace-pre-wrap rounded-md bg-secondary p-2">
-                    <span className="font-semibold">Private notes:</span> {i.staffNotes}
-                  </p>
-                )
-              )}
-              {i.order && (
-                <p className="rounded-md border bg-secondary p-2">
-                  Order {i.order.ref}: {cakeOrderStatusLabels[i.order.status as CakeOrderStatus] ?? i.order.status}.
-                  Manage it in Cake orders.
-                </p>
-              )}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <label htmlFor={'inquiry-status-' + i.id} className="sr-only">
-                  Status
-                </label>
-                <NativeSelect
-                  id={'inquiry-status-' + i.id}
-                  value={i.status}
-                  disabled={busy}
-                  className="!min-h-9 w-auto !py-1 text-sm"
-                  onChange={e => setStatus(i.id, e.target.value as InquiryStatus)}
-                >
-                  {inquiryStatuses.map(st => (
-                    <option key={st} value={st}>
-                      {inquiryStatusLabels[st]}
-                    </option>
-                  ))}
-                </NativeSelect>
-                {!i.order && !['completed', 'cancelled'].includes(i.status) && (
-                  <AdminCustomOrderForm
-                    inquiry={i}
-                    onCreated={message => {
-                      setNotice(message)
-                      void load()
-                    }}
-                  />
-                )}
-              </div>
-            </article>
-          )
-        })}
-      </div>
+                    <span className="text-xs text-muted-foreground">{received(i.createdAt)}</span>
+                  </span>
+                  <span className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="min-w-0 flex-1 truncate">{eventText(i)}</span>
+                    <InquiryBadge i={i} />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {/* Wide screens: table. */}
+          <div className={listBox + ' hidden lg:block'}>
+            <table className="w-full table-fixed text-left text-sm">
+              <thead className="border-b bg-secondary">
+                <tr>
+                  <th scope="col" className={headCell + ' w-[9rem]'}>
+                    Received
+                  </th>
+                  <th scope="col" className={headCell}>
+                    Customer
+                  </th>
+                  <th scope="col" className={headCell}>
+                    Event
+                  </th>
+                  <th scope="col" className={headCell + ' hidden xl:table-cell'}>
+                    Cake
+                  </th>
+                  <th scope="col" className={headCell + ' hidden w-[8rem] xl:table-cell'}>
+                    Budget
+                  </th>
+                  <th scope="col" className={headCell + ' w-[11rem]'}>
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map(i => (
+                  <tr key={i.id} className={rowClass(i.id === openId)} onClick={() => open(i.id)}>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">{received(i.createdAt)}</td>
+                    <td className="truncate px-3 py-2.5">
+                      <TestTag i={i} />
+                      <button
+                        type="button"
+                        className="font-medium hover:underline"
+                        onClick={e => {
+                          e.stopPropagation()
+                          open(i.id)
+                        }}
+                      >
+                        {i.name}
+                      </button>{' '}
+                      <span className="text-muted-foreground">{inquiryRef(i.id)}</span>
+                    </td>
+                    <td className="truncate px-3 py-2.5">{eventText(i)}</td>
+                    <td className="hidden truncate px-3 py-2.5 text-muted-foreground xl:table-cell">
+                      {i.servings} servings · {cakeLabel(i.size)}
+                    </td>
+                    <td className="hidden truncate px-3 py-2.5 text-muted-foreground xl:table-cell">{i.budget}</td>
+                    <td className="px-3 py-2.5">
+                      <InquiryBadge i={i} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {panel()}
     </section>
   )
+}
+
+function InquiryBadge({ i }: { i: StoredCakeInquiry }) {
+  return <AdminStatusBadge tone={statusTone[i.status]}>{inquiryStatusLabels[i.status]}</AdminStatusBadge>
+}
+function TestTag({ i }: { i: StoredCakeInquiry }) {
+  return i.test ? (
+    <span className="mr-1.5 rounded bg-amber-100 px-1 py-px text-[0.65rem] font-semibold text-amber-900">TEST</span>
+  ) : null
 }
 
 const photoUrl = (id: string, file: string) =>

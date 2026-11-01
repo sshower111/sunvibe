@@ -1,32 +1,31 @@
 'use client'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import {
   cakeOrderStatusLabels,
   formatPickupDate,
   formatPickupTime,
   formatVegasTime,
-  isDelivery,
-  kitchenSms,
-  kitchenText,
   orderRef,
   sizeLabel,
   type CakeOrderStatus,
   type StoredCakeOrder,
 } from '@/lib/cake-order'
 import { adminPost } from '@/lib/admin-api'
-import { isUrgent, orderBoard } from '@/lib/admin-order-board'
-import { isPrimaryAction, orderActionIds, type OrderActionId } from '@/lib/admin-order-actions'
-import { AdminActionMenu, type MenuItem } from './admin-action-menu'
+import { isUrgent } from '@/lib/admin-order-board'
+import { needsAnswer } from '@/lib/admin-order-actions'
 import { AdminPageHeader } from './admin-page-header'
-import { Button } from './ui/button'
 import { AdminSegmented } from './admin-segmented'
 import { AdminStatusBadge, type BadgeTone } from './admin-status-badge'
+import { AdminOrderPanel } from './admin-order-review'
+import { headCell, listBox, rowClass, useOpenParam } from './admin-side-panel'
+
+// Cake orders: a compact list (table on wide screens, one line pair per order on phones). Clicking an order opens
+// it in the side panel, where everything is done.
 
 const filters = {
   approval: { label: 'Needs approval', statuses: ['awaiting_approval', 'checking_kitchen', 'hold_expired'] },
-  payment: { label: 'Awaiting payment (custom)', statuses: ['awaiting_payment'] },
   upcoming: { label: 'To make', statuses: ['paid', 'deposit_paid', 'processing'] },
+  payment: { label: 'Awaiting payment', statuses: ['awaiting_payment'] },
   done: { label: 'Picked up', statuses: ['picked_up'] },
   closed: { label: 'Declined / expired', statuses: ['declined', 'expired', 'failed'] },
 } satisfies Record<string, { label: string; statuses: readonly CakeOrderStatus[] }>
@@ -45,17 +44,20 @@ const statusTone: Record<CakeOrderStatus, BadgeTone> = {
   failed: 'red',
 }
 type SortKey = 'created' | 'pickup'
+const money = (n: number) => '$' + n.toFixed(2)
+/** Paid but the kitchen hasn't had the order text yet. */
+const notSentToKitchen = (o: StoredCakeOrder) =>
+  (o.status === 'paid' || o.status === 'deposit_paid') && !o.kitchenSentAt
 
 export function AdminCakeOrders() {
   const [orders, setOrders] = useState<StoredCakeOrder[]>([])
-  const [kitchenPhone, setKitchenPhone] = useState('')
   const [filter, setFilter] = useState<Filter | 'all'>('all')
   const [sort, setSort] = useState<{ by: SortKey; asc: boolean }>({ by: 'pickup', asc: true })
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState('')
-  const [copied, setCopied] = useState('')
   const [notice, setNotice] = useState('')
+  const { openId, open, close } = useOpenParam()
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-orders', body)
 
   async function run(task: () => Promise<void>) {
@@ -69,11 +71,10 @@ export function AdminCakeOrders() {
       setBusy(false)
     }
   }
+  const reload = async () => setOrders((await request({ action: 'list' })).orders)
   const load = () =>
     run(async () => {
-      const r = await request({ action: 'list' })
-      setOrders(r.orders)
-      setKitchenPhone(r.kitchenPhone ?? '')
+      await reload()
       setLoaded(true)
     })
   useEffect(() => {
@@ -84,45 +85,13 @@ export function AdminCakeOrders() {
     run(async () => {
       setNotice('')
       const r = await request({ action: 'test', scenario })
-      setOrders((await request({ action: 'list' })).orders)
+      await reload()
       setFilter('all')
       setNotice(
-        `Test order ${r.ref} added below. Emails went to ${r.sentTo} with [TEST] subjects. ` +
+        `Test order ${r.ref} added. Emails went to ${r.sentTo} with [TEST] subjects. ` +
           (r.viaSquare ? 'The payment is in the Square sandbox dashboard.' : 'No card was charged.'),
       )
     })
-  const act = (
-    id: string,
-    action: 'paid_offline' | 'picked_up' | 'not_picked_up' | 'delete' | 'resend_link' | 'kitchen_sent',
-    confirmText?: string,
-  ) => {
-    if (confirmText && !window.confirm(confirmText)) return
-    void run(async () => {
-      try {
-        await request({ action, id })
-      } finally {
-        setOrders((await request({ action: 'list' })).orders)
-      }
-    })
-  }
-  async function copyLink(order: StoredCakeOrder) {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/pay/${order.id}`)
-      setCopied('link-' + order.id)
-      setTimeout(() => setCopied(c => (c === 'link-' + order.id ? '' : c)), 2500)
-    } catch {
-      setError('Could not copy the link.')
-    }
-  }
-  async function copy(order: StoredCakeOrder) {
-    try {
-      await navigator.clipboard.writeText(kitchenText(order))
-      setCopied(order.id)
-      setTimeout(() => setCopied(c => (c === order.id ? '' : c)), 2500)
-    } catch {
-      setError('Could not copy. Select the text and copy it instead.')
-    }
-  }
 
   const counts = Object.fromEntries(
     Object.entries(filters).map(([key, f]) => [
@@ -138,91 +107,22 @@ export function AdminCakeOrders() {
         sort.by === 'pickup' ? pickupKey(a).localeCompare(pickupKey(b)) : a.createdAt.localeCompare(b.createdAt)
       return sort.asc ? diff : -diff
     })
-  const actionLabels: Record<OrderActionId, (o: StoredCakeOrder) => string> = {
-    review: o => (o.status === 'hold_expired' ? 'Review (hold ended)' : 'Review'),
-    picked_up: () => 'Mark picked up',
-    resend_link: () => 'Resend pay link',
-    copy_link: o => (copied === 'link-' + o.id ? 'Copied!' : 'Copy pay link'),
-    paid_offline: () => 'Paid in store / by phone',
-    text_kitchen: () => 'Text kitchen',
-    copy_kitchen: o => (copied === o.id ? 'Copied!' : 'Copy for kitchen'),
-    call: o => 'Call ' + o.phone,
-    email: () => 'Email customer',
-    not_picked_up: () => 'Undo picked up',
-    delete: () => 'Delete test order',
-  }
-  const menuItem = (o: StoredCakeOrder, id: OrderActionId): MenuItem => {
-    const label = actionLabels[id](o)
-    switch (id) {
-      case 'review':
-        return { label, href: '/admin/orders/' + o.id }
-      case 'picked_up':
-      case 'not_picked_up':
-      case 'delete':
-        return { label, danger: id === 'delete', onSelect: () => act(o.id, id) }
-      case 'resend_link':
-        return { label, onSelect: () => act(o.id, 'resend_link', `Email ${o.email} a new pay link (valid 3 days)?`) }
-      case 'copy_link':
-        return { label, onSelect: () => void copyLink(o) }
-      case 'paid_offline':
-        return {
-          label,
-          onSelect: () =>
-            act(
-              o.id,
-              'paid_offline',
-              `Did ${o.name} pay another way (phone or in store)? The order moves to To make. No email is sent.`,
-            ),
-        }
-      case 'text_kitchen':
-        return { label, phoneOnly: true, href: kitchenSms(kitchenPhone, kitchenText(o)) }
-      case 'copy_kitchen':
-        return { label, onSelect: () => void copy(o) }
-      case 'call':
-        return { label, href: 'tel:' + o.phone.replace(/[^+0-9]/g, '') }
-      case 'email':
-        return { label, href: 'mailto:' + o.email }
-    }
-  }
-  // Main actions as buttons; everything else in the order's "⋯" menu.
-  const orderButtons = (o: StoredCakeOrder) => {
-    const ids = orderActionIds(o).filter(id => isPrimaryAction(o, id))
-    if (!ids.length) return null
-    return (
-      <div className="flex flex-wrap items-center gap-2 pt-1 xl:flex-nowrap xl:pt-0">
-        {ids.map(id => {
-          const item = menuItem(o, id)
-          return id === 'review' ? (
-            <Button key={id} asChild size="sm">
-              <Link href={item.href!}>{item.label}</Link>
-            </Button>
-          ) : item.href ? (
-            <Button key={id} asChild size="sm" variant="outline" className={item.phoneOnly ? 'sm:hidden' : ''}>
-              <a href={item.href}>{item.label}</a>
-            </Button>
-          ) : (
-            <Button key={id} size="sm" variant="outline" disabled={busy} onClick={item.onSelect}>
-              {item.label}
-            </Button>
-          )
-        })}
-      </div>
-    )
-  }
-  const orderMenu = (o: StoredCakeOrder) => {
-    const rest = orderActionIds(o).filter(id => !isPrimaryAction(o, id))
-    return rest.length ? (
-      <AdminActionMenu label={`More actions for order ${orderRef(o)}`} items={rest.map(id => menuItem(o, id))} />
-    ) : null
-  }
   const sortBy = (by: SortKey) => setSort(s => (s.by === by ? { by, asc: !s.asc } : { by, asc: by === 'pickup' }))
-  const sortHeader = (by: SortKey, label: string) => (
-    <th scope="col" className="px-3 py-2" aria-sort={sort.by === by ? (sort.asc ? 'ascending' : 'descending') : 'none'}>
-      <button type="button" className="font-semibold underline-offset-2 hover:underline" onClick={() => sortBy(by)}>
-        {label} {sort.by === by ? (sort.asc ? '▲' : '▼') : ''}
+  const sortHeader = (by: SortKey, label: string, className = '') => (
+    <th
+      scope="col"
+      className={headCell + ' ' + className}
+      aria-sort={sort.by === by ? (sort.asc ? 'ascending' : 'descending') : 'none'}
+    >
+      <button type="button" className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => sortBy(by)}>
+        {label}
+        <span aria-hidden="true" className={sort.by === by ? 'text-foreground' : 'opacity-40'}>
+          {sort.by === by && !sort.asc ? '↓' : '↑'}
+        </span>
       </button>
     </th>
   )
+  const pickup = (o: StoredCakeOrder) => `${formatPickupDate(o.pickupDate)}, ${formatPickupTime(o.pickupTime)}`
 
   return (
     <section className="space-y-4">
@@ -235,7 +135,6 @@ export function AdminCakeOrders() {
           { label: 'Test order (in 3 days)', onSelect: () => void sendTest('later') },
         ]}
       />
-      <PinnedOrders orders={orders} busy={busy} act={act} kitchenPhone={kitchenPhone} />
       <AdminSegmented
         label="Show orders"
         value={filter}
@@ -255,79 +154,77 @@ export function AdminCakeOrders() {
       <p role="alert" className="text-sm text-danger empty:hidden">
         {error}
       </p>
-      {loaded && !shown.length && !error && <p>No orders here.</p>}
+      {loaded && !shown.length && !error && <p className="text-sm text-muted-foreground">No orders here.</p>}
       {shown.length > 0 && (
         <>
-          {/* Phones and tablets: one compact card per order. */}
-          <ul className="grid gap-2 md:grid-cols-2 xl:hidden">
+          {/* Phones and tablets: two lines per order. */}
+          <ul className={listBox + ' lg:hidden'}>
             {shown.map(o => (
-              <li key={o.id} className="space-y-1.5 rounded-xl border bg-card p-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Link href={'/admin/orders/' + o.id} className="flex-1 font-semibold hover:underline">
-                    {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
-                  </Link>
-                  <StatusBadge o={o} />
-                  {orderMenu(o)}
-                </div>
-                <CakeDetails o={o} />
-                <p className="text-muted-foreground">
-                  {o.name} · {orderRef(o)} · ${o.price.toFixed(2)}
-                  <OrderTags o={o} />
-                </p>
-                <StatusNote o={o} />
-                {orderButtons(o)}
+              <li key={o.id} className={rowClass(o.id === openId)}>
+                <button type="button" onClick={() => open(o.id)} className="block w-full px-3 py-2.5 text-left">
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate font-semibold">{o.name}</span>
+                    <span className="text-sm tabular-nums">{money(o.price)}</span>
+                  </span>
+                  <span className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="min-w-0 flex-1 truncate">
+                      <Flags o={o} />
+                      {pickup(o)}
+                    </span>
+                    <StatusBadge o={o} list />
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
 
           {/* Wide screens: table. */}
-          <div className="hidden overflow-x-auto rounded-xl border bg-card xl:block">
-            <table className="w-full text-left text-sm">
+          <div className={listBox + ' hidden lg:block'}>
+            <table className="w-full table-fixed text-left text-sm">
               <thead className="border-b bg-secondary">
-                <tr className="whitespace-nowrap">
-                  {sortHeader('created', 'Ordered')}
-                  {sortHeader('pickup', 'Pickup')}
-                  <th scope="col" className="px-3 py-2">
-                    Cake
-                  </th>
-                  <th scope="col" className="px-3 py-2">
+                <tr>
+                  {sortHeader('pickup', 'Pickup', 'w-[11rem]')}
+                  <th scope="col" className={headCell}>
                     Customer
                   </th>
-                  <th scope="col" className="px-3 py-2">
+                  <th scope="col" className={headCell + ' hidden xl:table-cell'}>
+                    Cake
+                  </th>
+                  <th scope="col" className={headCell + ' w-[6rem] text-right'}>
+                    Amount
+                  </th>
+                  <th scope="col" className={headCell + ' w-[11rem]'}>
                     Status
                   </th>
-                  <th scope="col" className="px-3 py-2">
-                    <span className="sr-only">Actions</span>
-                  </th>
+                  {sortHeader('created', 'Ordered', 'w-[10rem] hidden xl:table-cell')}
                 </tr>
               </thead>
               <tbody>
                 {shown.map(o => (
-                  <tr key={o.id} className="border-b align-top last:border-0">
-                    <td className="px-3 py-2">{formatVegasTime(o.createdAt)}</td>
-                    <td className="px-3 py-2">
-                      <Link href={'/admin/orders/' + o.id} className="hover:underline">
-                        {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
-                      </Link>
+                  <tr key={o.id} className={rowClass(o.id === openId)} onClick={() => open(o.id)}>
+                    <td className="px-3 py-2.5 whitespace-nowrap">{pickup(o)}</td>
+                    <td className="truncate px-3 py-2.5">
+                      <button
+                        type="button"
+                        className="font-medium hover:underline"
+                        onClick={e => {
+                          e.stopPropagation()
+                          open(o.id)
+                        }}
+                      >
+                        {o.name}
+                      </button>{' '}
+                      <span className="text-muted-foreground">{orderRef(o)}</span> <Flags o={o} />
                     </td>
-                    <td className="min-w-40 px-3 py-2">
-                      <CakeDetails o={o} />
-                      <div className="text-muted-foreground">${o.price.toFixed(2)}</div>
+                    <td className="hidden truncate px-3 py-2.5 text-muted-foreground xl:table-cell">
+                      {sizeLabel(o.size)} · {o.flavor}
                     </td>
-                    <td className="min-w-40 px-3 py-2">
-                      {o.name} <span className="whitespace-nowrap text-muted-foreground">{orderRef(o)}</span>
-                      <OrderTags o={o} />
-                      <div className="text-xs text-muted-foreground">{o.phone}</div>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{money(o.price)}</td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge o={o} list />
                     </td>
-                    <td className="px-3 py-2">
-                      <StatusBadge o={o} />
-                      <StatusNote o={o} />
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex w-max items-center gap-2">
-                        {orderButtons(o)}
-                        {orderMenu(o)}
-                      </div>
+                    <td className="hidden px-3 py-2.5 whitespace-nowrap text-muted-foreground xl:table-cell">
+                      {formatVegasTime(o.createdAt)}
                     </td>
                   </tr>
                 ))}
@@ -336,150 +233,60 @@ export function AdminCakeOrders() {
           </div>
         </>
       )}
-      <p className="text-sm text-muted-foreground">
-        Refunds and changes to paid orders are done in the Square Dashboard (Transactions), using the order code next to
-        the customer's name.
-      </p>
+      {openId && (
+        <AdminOrderPanel
+          key={openId}
+          id={openId}
+          onClose={close}
+          onChange={() => void reload().catch(() => {})}
+          onDeleted={() => {
+            close()
+            void reload().catch(() => {})
+          }}
+        />
+      )}
     </section>
   )
 }
 
-type Act = (id: string, action: 'kitchen_sent', confirmText?: string) => void
-
-// Pinned at the top: orders waiting on the bakery. Empty lists are not shown.
-function PinnedOrders({
-  orders,
-  busy,
-  act,
-  kitchenPhone,
-}: {
-  orders: StoredCakeOrder[]
-  busy: boolean
-  act: Act
-  kitchenPhone: string
-}) {
-  const board = orderBoard(orders)
-  const groups = [
-    { id: 'approve', title: 'Needs approval', list: board.needsApproval },
-    { id: 'kitchen', title: 'Checking with kitchen', list: board.checkingKitchen },
-    { id: 'send', title: 'Approved — not sent to kitchen', list: board.notSentToKitchen },
-  ].filter(g => g.list.length)
-  if (!groups.length) return null
+/** URGENT (answer today or tomorrow), TEST and CUSTOM markers. */
+function Flags({ o }: { o: StoredCakeOrder }) {
+  const urgent = needsAnswer(o) && isUrgent(o)
+  if (!urgent && !o.test && o.kind !== 'custom') return null
   return (
-    <div className="space-y-4">
-      {groups.map(group => (
-        <section key={group.id} aria-labelledby={'pinned-' + group.id} className="space-y-2">
-          <h3 id={'pinned-' + group.id} className="heading-3">
-            {group.title} <span className="font-normal text-muted-foreground">({group.list.length})</span>
-          </h3>
-          <ul className="grid gap-2 md:grid-cols-2">
-            {group.list.map(o => (
-              <li key={o.id} className="space-y-2 rounded-xl border bg-card p-3">
-                <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                  {group.id !== 'send' && isUrgent(o) && (
-                    <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">URGENT</span>
-                  )}
-                  {o.test && (
-                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">
-                      TEST
-                    </span>
-                  )}
-                  <span>
-                    {formatPickupDate(o.pickupDate)}, {formatPickupTime(o.pickupTime)}
-                  </span>
-                </div>
-                <p className="text-sm">
-                  {sizeLabel(o.size)} · {o.flavor} · {o.filling}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {o.name} · {orderRef(o)} · ${o.price.toFixed(2)}
-                  {(o.status === 'awaiting_approval' || o.status === 'checking_kitchen') && o.approveBy && (
-                    <> · answer by {formatVegasTime(o.approveBy)}</>
-                  )}
-                  {o.status === 'hold_expired' && <> · card hold ended</>}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {group.id !== 'send' && (
-                    <Button asChild size="sm">
-                      <Link href={'/admin/orders/' + o.id}>Review</Link>
-                    </Button>
-                  )}
-                  {group.id === 'send' && (
-                    <>
-                      <Button asChild size="sm" className="sm:hidden">
-                        <a href={kitchenSms(kitchenPhone, kitchenText(o))} onClick={() => act(o.id, 'kitchen_sent')}>
-                          Send to kitchen
-                        </a>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="hidden sm:inline-flex"
-                        disabled={busy}
-                        onClick={() => act(o.id, 'kitchen_sent')}
-                      >
-                        Mark sent
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </div>
+    <>
+      {urgent && (
+        <span className="mr-1.5 rounded bg-red-600 px-1 py-px text-[0.65rem] font-bold text-white">URGENT</span>
+      )}
+      {o.test && (
+        <span className="mr-1.5 rounded bg-amber-100 px-1 py-px text-[0.65rem] font-semibold text-amber-900">TEST</span>
+      )}
+      {o.kind === 'custom' && (
+        <span className="mr-1.5 rounded bg-secondary px-1 py-px text-[0.65rem] font-semibold text-foreground ring-1 ring-border">
+          CUSTOM
+        </span>
+      )}
+    </>
   )
 }
 
-// Small display pieces shared by the order cards and the table.
-export function StatusBadge({ o }: { o: StoredCakeOrder }) {
+// Small display pieces shared by the list and the order panel.
+/** In the list (`list`), a paid order the kitchen hasn't had yet shows "Send to kitchen" instead of "Paid". */
+export function StatusBadge({ o, list }: { o: StoredCakeOrder; list?: boolean }) {
+  if (list && notSentToKitchen(o)) return <AdminStatusBadge tone="amber">Send to kitchen</AdminStatusBadge>
   return (
     <AdminStatusBadge tone={statusTone[o.status]}>
       {o.kind === 'custom' && o.status === 'expired' ? 'Pay link expired' : cakeOrderStatusLabels[o.status]}
     </AdminStatusBadge>
   )
 }
-function CakeDetails({ o }: { o: StoredCakeOrder }) {
-  return (
-    <>
-      <p>
-        {sizeLabel(o.size)} · {o.flavor} · {o.filling}
-      </p>
-      {o.cakeMessage && <p className="text-muted-foreground">Writing: {o.cakeMessage}</p>}
-      {isDelivery(o) && (
-        <p className="text-muted-foreground">
-          Delivery: {o.deliveryAddress} ({o.fulfillment})
-        </p>
-      )}
-      {o.notes && <p className="whitespace-pre-wrap text-muted-foreground">Notes: {o.notes}</p>}
-    </>
-  )
-}
 export function OrderTags({ o }: { o: StoredCakeOrder }) {
   return (
     <>
-      {o.test && (
-        <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">TEST</span>
-      )}
+      {o.test && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">TEST</span>}
       {o.kind === 'custom' && (
-        <span className="ml-1.5 rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold text-foreground">CUSTOM</span>
+        <span className="rounded bg-secondary px-1.5 py-0.5 text-xs font-semibold text-foreground">CUSTOM</span>
       )}
     </>
   )
-}
-function StatusNote({ o }: { o: StoredCakeOrder }) {
-  const note =
-    (o.status === 'awaiting_approval' || o.status === 'checking_kitchen') && o.approveBy
-      ? `Answer by ${formatVegasTime(o.approveBy)}`
-      : o.status === 'awaiting_payment' && o.payBy
-        ? `Link valid until ${formatVegasTime(o.payBy)}`
-        : o.status === 'deposit_paid' && o.deposit
-          ? `Collect $${(o.price - o.deposit).toFixed(2)} at ${isDelivery(o) ? 'delivery' : 'pickup'}`
-          : ''
-  return note ? (
-    <p className={'text-xs ' + (o.approveBy && o.status !== 'paid' ? 'text-amber-900' : 'text-muted-foreground')}>
-      {note}
-    </p>
-  ) : null
 }

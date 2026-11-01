@@ -1,6 +1,6 @@
-import { AdminCakeInquiries } from '@/components/admin-cake-inquiries'
+import { redirect } from 'next/navigation'
 
-// Opened from a notification: the inquiries list, scrolled to this inquiry and highlighted.
+// Opened from a notification: the inquiries list with this inquiry open in the side panel.
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  return <AdminCakeInquiries focusId={(await params).id} />
+  redirect('/admin/inquiries?open=' + encodeURIComponent((await params).id))
 }

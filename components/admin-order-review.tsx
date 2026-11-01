@@ -1,8 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import {
   askKitchenText,
   formatPickupDate,
@@ -17,13 +16,16 @@ import {
 } from '@/lib/cake-order'
 import { adminPost, SignedOutError } from '@/lib/admin-api'
 import { isUrgent } from '@/lib/admin-order-board'
+import { isPrimaryAction, orderActionIds, type OrderActionId } from '@/lib/admin-order-actions'
 import { useAdmin } from '@/components/admin-shell'
-import { AdminPageHeader } from './admin-page-header'
+import { AdminActionMenu, type MenuItem } from './admin-action-menu'
+import { AdminSidePanel, PanelDetails } from './admin-side-panel'
 import { OrderTags, StatusBadge } from './admin-cake-orders'
 import { Button } from './ui/button'
 
-// One cake order (opened from a notification or the list): its details, the answer deadline and the next step:
+// One cake order in the side panel: its details, the answer deadline and the next step:
 // Approve & charge / Ask kitchen / Decline while the card is held, then Send to kitchen once paid.
+// Less-used actions (copy, call, email, paid in store, undo, delete test) are in the "⋯" menu.
 
 type OrderEvent = { at: string; action: string; from?: string; to?: string; detail: string }
 type Loaded = { order: StoredCakeOrder; events: OrderEvent[]; kitchenPhone: string }
@@ -56,7 +58,18 @@ function timeLeft(ms: number) {
   return `${Math.round(min / 1440)} days`
 }
 
-export function AdminOrderReview({ id }: { id: string }) {
+export function AdminOrderPanel({
+  id,
+  onClose,
+  onChange,
+  onDeleted,
+}: {
+  id: string
+  onClose: () => void
+  /** Something changed: the list reloads. */
+  onChange: () => void
+  onDeleted: () => void
+}) {
   const { signedOut } = useAdmin()
   const [data, setData] = useState<Loaded | null>(null)
   const [busy, setBusy] = useState(false)
@@ -64,7 +77,7 @@ export function AdminOrderReview({ id }: { id: string }) {
   const [notice, setNotice] = useState('')
   const [declining, setDeclining] = useState(false)
   const [notify, setNotify] = useState(true)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState('')
   const [now, setNow] = useState(() => Date.now())
 
   const request = useCallback(
@@ -114,38 +127,47 @@ export function AdminOrderReview({ id }: { id: string }) {
         if (done) setNotice(done(r))
       } finally {
         setData(await request({ action: 'get' }).catch(() => data))
+        onChange()
       }
     })
+  async function copy(key: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      setTimeout(() => setCopied(c => (c === key ? '' : c)), 2500)
+    } catch {
+      setError('Could not copy.')
+    }
+  }
 
   const order = data?.order
-  const header = (
-    <>
-      <Link
-        href="/admin/orders"
-        className="-ml-1 inline-flex items-center gap-0.5 text-sm font-medium text-primary hover:underline"
-      >
-        <ChevronLeft aria-hidden="true" className="size-4" />
-        Orders
-      </Link>
-      <AdminPageHeader title={order ? `Order ${orderRef(order)}` : 'Order'} onRefresh={load} busy={busy} />
-    </>
+  const refresh = (
+    <button
+      type="button"
+      aria-label="Refresh order"
+      onClick={() => void load()}
+      disabled={busy}
+      className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-secondary active:bg-muted disabled:opacity-60"
+    >
+      <RefreshCw aria-hidden="true" className={'size-4 ' + (busy ? 'animate-spin' : '')} />
+    </button>
   )
   const messages = (
     <>
-      <p role="status" className="text-sm text-success empty:hidden">
+      <p role="status" className="text-success empty:hidden">
         {notice}
       </p>
-      <p role="alert" className="text-sm text-danger empty:hidden">
+      <p role="alert" className="text-danger empty:hidden">
         {error}
       </p>
     </>
   )
   if (!order)
     return (
-      <section className="space-y-4">
-        {header}
+      <AdminSidePanel title="Order" actions={refresh} onClose={onClose}>
         {messages}
-      </section>
+        {!error && <p className="text-muted-foreground">Loading…</p>}
+      </AdminSidePanel>
     )
 
   const phone = data.kitchenPhone
@@ -163,19 +185,70 @@ export function AdminOrderReview({ id }: { id: string }) {
       r.status === 'awaiting_payment'
         ? r.emailed
           ? `Pay link emailed to ${order.test ? 'the bakery inbox (test)' : order.email}.`
-          : 'The pay link email could not be sent. Use Resend pay link in the list.'
+          : 'The pay link email could not be sent. Use Resend pay link.'
         : 'Approved and charged. The customer has been emailed.',
     )
   }
-  async function copyKitchen() {
-    try {
-      await navigator.clipboard.writeText(kitchenText(order!))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      setError('Could not copy. Select the text and copy it instead.')
+  const resendLink = () => {
+    if (window.confirm(`Email ${order.email} a new pay link (valid 3 days)?`))
+      void act('resend_link', {}, () => 'Pay link sent again.')
+  }
+
+  // The "⋯" menu: every action for this status that isn't already a button below.
+  const menuItem = (actionId: OrderActionId): MenuItem | null => {
+    switch (actionId) {
+      case 'review':
+      case 'picked_up':
+        return null
+      case 'resend_link':
+        return isPrimaryAction(order, actionId) ? null : { label: 'Resend pay link', onSelect: resendLink }
+      case 'copy_link':
+        return {
+          label: copied === 'link' ? 'Copied!' : 'Copy pay link',
+          onSelect: () => void copy('link', `${window.location.origin}/pay/${order.id}`),
+        }
+      case 'paid_offline':
+        return {
+          label: 'Paid in store / by phone',
+          onSelect: () => {
+            if (
+              window.confirm(
+                `Did ${order.name} pay another way (phone or in store)? The order moves to To make. No email is sent.`,
+              )
+            )
+              void act('paid_offline')
+          },
+        }
+      case 'text_kitchen':
+        return paid ? null : { label: 'Text kitchen', phoneOnly: true, href: kitchenSms(phone, kitchenText(order)) }
+      case 'copy_kitchen':
+        return {
+          label: copied === 'kitchen' ? 'Copied!' : 'Copy for kitchen',
+          onSelect: () => void copy('kitchen', kitchenText(order)),
+        }
+      case 'call':
+        return { label: 'Call ' + order.phone, href: 'tel:' + order.phone.replace(/[^+0-9]/g, '') }
+      case 'email':
+        return { label: 'Email customer', href: 'mailto:' + order.email }
+      case 'not_picked_up':
+        return { label: 'Undo picked up', onSelect: () => void act('not_picked_up') }
+      case 'delete':
+        return {
+          label: 'Delete test order',
+          danger: true,
+          onSelect: () => {
+            if (!window.confirm('Delete this test order?')) return
+            void run(async () => {
+              await request({ action: 'delete' })
+              onDeleted()
+            })
+          },
+        }
     }
   }
+  const menu = orderActionIds(order)
+    .map(menuItem)
+    .filter((item): item is MenuItem => item !== null)
 
   const rows: [string, React.ReactNode][] = [
     [
@@ -208,8 +281,16 @@ export function AdminOrderReview({ id }: { id: string }) {
   ]
 
   return (
-    <section className="space-y-4">
-      {header}
+    <AdminSidePanel
+      title={`Order ${orderRef(order)}`}
+      onClose={onClose}
+      actions={
+        <>
+          {refresh}
+          {menu.length > 0 && <AdminActionMenu label={`More actions for order ${orderRef(order)}`} items={menu} />}
+        </>
+      }
+    >
       <div className="flex flex-wrap items-center gap-2">
         {urgent && <span className="rounded bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">URGENT</span>}
         <StatusBadge o={order} />
@@ -219,7 +300,7 @@ export function AdminOrderReview({ id }: { id: string }) {
       {deadline !== null && (
         <div
           className={
-            'rounded-xl border p-3 text-sm ' +
+            'rounded-lg border p-3 ' +
             (deadline - now < 30 * 60_000
               ? 'border-red-300 bg-red-50 text-red-900'
               : 'border-amber-300 bg-amber-50 text-amber-900')
@@ -240,12 +321,15 @@ export function AdminOrderReview({ id }: { id: string }) {
         </div>
       )}
       {order.status === 'hold_expired' && (
-        <p className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+        <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-red-900">
           The card hold ended before the order was approved. Approving emails {order.name} a pay link.
         </p>
       )}
       {order.status === 'awaiting_payment' && order.payBy && (
-        <p className="rounded-xl border bg-card p-3 text-sm">Pay link valid until {formatVegasTime(order.payBy)}.</p>
+        <p className="text-muted-foreground">Pay link valid until {formatVegasTime(order.payBy)}.</p>
+      )}
+      {order.kitchenSentAt && paid && (
+        <p className="text-muted-foreground">Sent to kitchen {formatVegasTime(order.kitchenSentAt)}.</p>
       )}
 
       {messages}
@@ -253,11 +337,11 @@ export function AdminOrderReview({ id }: { id: string }) {
       {/* Next step */}
       {(waiting || order.status === 'hold_expired') && !declining && (
         <div className="grid gap-2 sm:flex sm:flex-wrap">
-          <Button size="lg" disabled={busy} onClick={approve}>
+          <Button disabled={busy} onClick={approve}>
             {order.status === 'hold_expired' ? 'Approve & send pay link' : `Approve & charge ${money(order.price)}`}
           </Button>
           {order.status === 'awaiting_approval' && (
-            <Button asChild size="lg" variant="outline">
+            <Button asChild variant="outline">
               <a
                 href={kitchenSms(phone, askKitchenText(order))}
                 aria-disabled={busy}
@@ -267,17 +351,17 @@ export function AdminOrderReview({ id }: { id: string }) {
               </a>
             </Button>
           )}
-          <Button size="lg" variant="outline" disabled={busy} onClick={() => setDeclining(true)}>
+          <Button variant="outline" disabled={busy} onClick={() => setDeclining(true)}>
             Decline
           </Button>
         </div>
       )}
       {declining && (
-        <div className="space-y-3 rounded-xl border border-red-300 bg-card p-3">
+        <div className="space-y-3 rounded-lg border border-red-300 p-3">
           <p className="font-semibold">
             Decline order {orderRef(order)}?{order.status !== 'hold_expired' && ' The card hold is released.'}
           </p>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2">
             <input
               type="checkbox"
               className="size-5 accent-primary"
@@ -305,62 +389,44 @@ export function AdminOrderReview({ id }: { id: string }) {
         </div>
       )}
       {paid && (
-        <div className="space-y-2">
-          {order.kitchenSentAt && (
-            <p className="text-sm text-muted-foreground">Sent to kitchen {formatVegasTime(order.kitchenSentAt)}.</p>
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
+          <Button asChild variant={order.kitchenSentAt ? 'outline' : 'default'}>
+            <a href={kitchenSms(phone, kitchenText(order))} onClick={() => void act('kitchen_sent')}>
+              {order.kitchenSentAt ? 'Send to kitchen again' : 'Send to kitchen'}
+            </a>
+          </Button>
+          {!order.kitchenSentAt && (
+            <Button
+              variant="outline"
+              className="hidden sm:inline-flex"
+              disabled={busy}
+              onClick={() => void act('kitchen_sent')}
+            >
+              Mark sent
+            </Button>
           )}
-          <div className="grid gap-2 sm:flex sm:flex-wrap">
-            <Button asChild size="lg" variant={order.kitchenSentAt ? 'outline' : 'default'}>
-              <a href={kitchenSms(phone, kitchenText(order))} onClick={() => void act('kitchen_sent')}>
-                {order.kitchenSentAt ? 'Send to kitchen again' : 'Send to kitchen'}
-              </a>
-            </Button>
-            {!order.kitchenSentAt && (
-              <Button
-                size="lg"
-                variant="outline"
-                className="hidden sm:inline-flex"
-                disabled={busy}
-                onClick={() => void act('kitchen_sent')}
-              >
-                Mark sent
-              </Button>
-            )}
-            <Button size="lg" variant="outline" disabled={busy} onClick={() => void act('picked_up')}>
-              Mark picked up
-            </Button>
-          </div>
+          <Button variant="outline" disabled={busy} onClick={() => void act('picked_up')}>
+            Mark picked up
+          </Button>
         </div>
       )}
-      {order.status === 'awaiting_payment' && (
-        <Button
-          variant="outline"
-          disabled={busy}
-          onClick={() => {
-            if (window.confirm(`Email ${order.email} a new pay link (valid 3 days)?`))
-              void act('resend_link', {}, () => 'Pay link sent again.')
-          }}
-        >
-          Resend pay link
-        </Button>
+      {isPrimaryAction(order, 'resend_link') && (
+        <div>
+          <Button variant="outline" disabled={busy} onClick={resendLink}>
+            Resend pay link
+          </Button>
+        </div>
       )}
 
-      <dl className="divide-y rounded-xl border bg-card px-3 text-sm">
-        {rows.map(([label, value]) => (
-          <div key={label} className="grid grid-cols-[6rem_1fr] items-baseline gap-2 py-2">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="whitespace-pre-wrap">{value}</dd>
-          </div>
-        ))}
-      </dl>
+      <PanelDetails rows={rows} />
 
-      <details className="rounded-xl border bg-card p-3 text-sm">
+      <details className="rounded-lg border p-3">
         <summary className="cursor-pointer font-semibold">Kitchen text (Chinese)</summary>
         <pre lang="zh-Hant" className="mt-2 whitespace-pre-wrap font-sans">
           {kitchenText(order)}
         </pre>
-        <Button size="sm" variant="outline" className="mt-2" onClick={() => void copyKitchen()}>
-          {copied ? 'Copied!' : 'Copy'}
+        <Button size="sm" variant="outline" className="mt-2" onClick={() => void copy('kitchen', kitchenText(order))}>
+          {copied === 'kitchen' ? 'Copied!' : 'Copy'}
         </Button>
       </details>
 
@@ -369,7 +435,7 @@ export function AdminOrderReview({ id }: { id: string }) {
           <h3 id="order-history" className="heading-3">
             History
           </h3>
-          <ol className="space-y-1 text-sm">
+          <ol className="space-y-1">
             {data.events.map((e, i) => (
               <li key={i} className="flex gap-3">
                 <span className="w-32 shrink-0 text-muted-foreground">{formatVegasTime(e.at)}</span>
@@ -379,6 +445,11 @@ export function AdminOrderReview({ id }: { id: string }) {
           </ol>
         </section>
       )}
-    </section>
+      {paid && (
+        <p className="text-muted-foreground">
+          Refunds and changes: Square Dashboard → Transactions, order code {orderRef(order)}.
+        </p>
+      )}
+    </AdminSidePanel>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Ellipsis } from 'lucide-react'
 
 export type MenuItem = {
@@ -18,7 +19,8 @@ const MENU_WIDTH = 224
 /**
  * "⋯" button that opens a short list of less-used actions. Keyboard and VoiceOver friendly: arrow keys move
  * between items, Escape or Tab closes it and focus returns to the button. The list is positioned on screen
- * (fixed), so a scrolling table can't clip it, and opens upwards when there is no room below.
+ * (fixed, in a portal), so a scrolling table or the sliding side panel can't clip or shift it, and opens upwards
+ * when there is no room below.
  */
 export function AdminActionMenu({ label, items }: { label: string; items: MenuItem[] }) {
   const [open, setOpen] = useState(false)
@@ -99,49 +101,52 @@ export function AdminActionMenu({ label, items }: { label: string; items: MenuIt
       >
         <Ellipsis aria-hidden="true" className="size-5" />
       </button>
-      {open && position && (
-        <div
-          ref={menu}
-          id={id}
-          role="menu"
-          aria-label={label}
-          onKeyDown={onKeyDown}
-          style={{ ...position, width: MENU_WIDTH }}
-          className="fixed z-50 overflow-hidden rounded-lg border bg-white py-1 shadow-lg"
-        >
-          {items.map(item =>
-            item.href ? (
-              <a
-                key={item.label}
-                role="menuitem"
-                tabIndex={-1}
-                href={item.href}
-                className={itemClass(item)}
-                onClick={() => {
-                  item.onSelect?.()
-                  close(false)
-                }}
-              >
-                {item.label}
-              </a>
-            ) : (
-              <button
-                key={item.label}
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                className={itemClass(item)}
-                onClick={() => {
-                  close()
-                  item.onSelect?.()
-                }}
-              >
-                {item.label}
-              </button>
-            ),
-          )}
-        </div>
-      )}
+      {open &&
+        position &&
+        createPortal(
+          <div
+            ref={menu}
+            id={id}
+            role="menu"
+            aria-label={label}
+            onKeyDown={onKeyDown}
+            style={{ ...position, width: MENU_WIDTH }}
+            className="fixed z-[60] overflow-hidden rounded-lg border bg-white py-1 shadow-lg"
+          >
+            {items.map(item =>
+              item.href ? (
+                <a
+                  key={item.label}
+                  role="menuitem"
+                  tabIndex={-1}
+                  href={item.href}
+                  className={itemClass(item)}
+                  onClick={() => {
+                    item.onSelect?.()
+                    close(false)
+                  }}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <button
+                  key={item.label}
+                  type="button"
+                  role="menuitem"
+                  tabIndex={-1}
+                  className={itemClass(item)}
+                  onClick={() => {
+                    close()
+                    item.onSelect?.()
+                  }}
+                >
+                  {item.label}
+                </button>
+              ),
+            )}
+          </div>,
+          document.body,
+        )}
     </>
   )
 }

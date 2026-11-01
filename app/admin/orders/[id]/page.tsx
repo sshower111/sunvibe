@@ -1,6 +1,6 @@
-import { AdminOrderReview } from '@/components/admin-order-review'
+import { redirect } from 'next/navigation'
 
-// One order: opened from a notification or from the orders list.
+// Links in notifications and emails: the orders list with this order open in the side panel.
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  return <AdminOrderReview id={(await params).id} />
+  redirect('/admin/orders?open=' + encodeURIComponent((await params).id))
 }
