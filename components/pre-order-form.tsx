@@ -80,10 +80,7 @@ export function PreOrderForm({
           Admin preview — reservations cannot be submitted.
         </p>
       )}
-      <section
-        aria-labelledby="preorder-title"
-        className="signboard relative isolate overflow-hidden border-b-[6px] border-gold"
-      >
+      <section aria-labelledby="preorder-title" className="signboard relative isolate overflow-hidden">
         {campaign.page.heroImage && (
           <>
             <img
@@ -93,8 +90,8 @@ export function PreOrderForm({
               height={900}
               className="absolute inset-0 -z-20 h-full w-full object-cover"
             />
-            {/* Flat red shade so the white words stay readable over any photo. */}
-            <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand/85" />
+            {/* Cream wash so the dark words stay readable over any photo. */}
+            <div aria-hidden="true" className="absolute inset-0 -z-10 bg-surface/90" />
           </>
         )}
         <div className="site-container section-space py-14 sm:py-20">
@@ -104,12 +101,7 @@ export function PreOrderForm({
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed sm:text-lg">{campaign.page.intro}</p>
           {available && (
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-7 w-full sm:w-auto"
-              onClick={() => scrollToSection('festival-items')}
-            >
+            <Button type="button" className="mt-7 w-full sm:w-auto" onClick={() => scrollToSection('festival-items')}>
               Choose your favorites
             </Button>
           )}

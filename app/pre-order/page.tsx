@@ -38,7 +38,7 @@ export default async function PreOrderPage({ searchParams }: { searchParams: Pro
           <PageBand id="preorder-title" title="Festival pre-orders">
             <p>
               {storageUnavailable ? 'Online reservations are paused for now. ' : 'No festival pre-orders right now. '}
-              <a href={SITE.phoneHref} className="font-semibold text-white underline underline-offset-4">
+              <a href={SITE.phoneHref} className="font-semibold text-primary underline underline-offset-4">
                 Call {SITE.phone}
               </a>
               {storageUnavailable ? ' for availability and reservations' : ' for today’s fresh bakes'}

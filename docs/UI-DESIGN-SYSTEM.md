@@ -2,7 +2,7 @@
 
 All tokens live in `app/globals.css` (Tailwind 4, CSS-first). Change a token there and every page follows. Use the tokens and utilities below instead of raw colors, radii or font sizes.
 
-Look (2026-10-18 redesign): **Hong Kong bakery counter**. Pastry-box red, egg-wash gold (pineapple-bun crust), pink box paper, char-siu brown ink. One standout element: Chinese item names set large in red, like a shelf label. Everything else stays plain.
+Look (2026-11-01 redesign): **warm artisanal bakery**. Soft cream page, deep espresso ink, rich terracotta accent, warm sand lines, white cards with soft shadows. One standout element: Chinese item names set large in terracotta, like a shelf label. Everything else stays plain.
 
 The refactor is done in steps, each reviewed before the next:
 
@@ -15,23 +15,26 @@ The refactor is done in steps, each reviewed before the next:
 
 | Token                                      | Hex       | Use                                                                 |
 | ------------------------------------------ | --------- | ------------------------------------------------------------------- |
-| `brand` (`primary`)                        | `#a3201c` | Pastry-box red: buttons, headings, links, focus ring, page bands    |
-| `brand-deep`                               | `#7a1612` | Hover/pressed red                                                   |
-| `gold` (`accent-warm`)                     | `#e9a93b` | Egg-wash gold: ribbon edge under red bands and footer, footer CTA. Fills only, never text on white |
-| `surface`                                  | `#fbede8` | Pink box paper: soft sections (`bg-surface`, `bg-muted`)            |
-| `surface-soft` (`secondary`)               | `#fdf6f3` | Lightest tint: hovers, placeholders                                 |
-| `ink`                                      | `#2b1a14` | Char-siu brown: body text, footer background                        |
-| `ink-muted`                                | `#6b5650` | Secondary text                                                      |
-| `paper`                                    | `#ffffff` | Page background                                                     |
-| `line` / `input-line`                      |           | Borders / form field borders                                        |
+| `brand` (`primary`)                        | `#9e2a2b` | Rich terracotta: buttons, headings, links, focus ring (`bg-primary`, `text-primary`) |
+| `brand-deep`                               | `#7f2122` | Hover/pressed terracotta                                            |
+| `gold` (`accent-warm`)                     | `#e9a93b` | Egg-wash gold: footer edge and footer CTA. Fills only, never text on white |
+| `base` (`background`)                      | `#faf7f2` | Soft warm cream: page background (`bg-base`, `bg-background`)       |
+| `surface`                                  | `#f3ede4` | Deeper cream: page bands and soft sections (`bg-surface`, `bg-muted`) |
+| `surface-soft` (`secondary`)               | `#f7f3ed` | Lightest tint: hovers, placeholders                                 |
+| `ink` (`foreground`)                       | `#2b211e` | Deep espresso: body text, footer background                         |
+| `ink-muted`                                | `#675a54` | Secondary text                                                      |
+| `paper` (`card`)                           | `#ffffff` | Cards, containers, popovers                                         |
+| `line` (`border`, `subtle`)                | `#e6dfd5` | Soft warm sand: borders and dividers (`border-subtle`)              |
+| `input-line` (`input`)                     | `#d3c8ba` | Form field borders                                                  |
 | `success`, `warning`, `danger` (+ `-tint`), `success-on-dark` |           | Status messages and errors                                          |
 
 Cards and popovers are white. Dark mode is not used.
 
 ## Shape, depth, motion
 
-- Radius: `rounded-sm` 6px, `rounded-md` 8px (buttons and fields, `--control-radius`), `rounded-lg` 12px (cards, images). `rounded-xl` is the same as `rounded-lg`.
-- Shadow: flat by default; `shadow-pop` only for menus, popovers and hovered cards.
+- Radius: `rounded-sm` 6px, `rounded-md` 8px (buttons and fields, `--control-radius`), `rounded-lg` 12px (images, small panels), `rounded-xl` 14px (cards).
+- Cards: `card-surface` (white, `rounded-xl`, 1px sand border, `shadow-card` = `0 4px 20px rgba(43,33,30,0.04)`). `<Card>` and `menu-card` use it.
+- Shadow: `shadow-card` on cards; `shadow-pop` only for menus, popovers and hovered cards.
 - Motion: `--duration-fast` 150ms, `--duration-base` 200ms, `ease-standard`. Reduced-motion users get no animation.
 
 ## Layout and type
@@ -39,19 +42,19 @@ Cards and popovers are white. Dark mode is not used.
 - `site-container`: 80rem max width, fluid gutter `--gutter` (16–32px).
 - `section-space`: fluid 48–96px vertical padding. `page-space`: clears the fixed header (`--header-height`, 64px / 96px on desktop).
 - Touch targets: `--tap` 44px minimum on phones and tablets.
-- Type: Young Serif headings (one weight, 400; never bold), Figtree body at 16px/1.6, Noto Serif HK Black for Chinese (`han`, `han-label`).
+- Type: Playfair Display headings (500; `heading-3` 600), Plus Jakarta Sans body at 16px/1.6, Noto Serif HK Black for Chinese (`han`, `han-label`).
   - `text-display` 40–72px (hero), `heading-1` 34–52px, `heading-2` 26–36px, `heading-3` 20px. Headings balance their line breaks.
   - `eyebrow`: small muted sentence-case label (no capitals or letter spacing). `text-pretty-body`: muted paragraph, 65 characters wide, no orphans.
   - `heading-label`: compact sans-serif label for footer and contact subsections. `heading-on-dark` for headings over photos.
-- `<ShelfLabel>` (`components/item-name.tsx`): stands in for a missing photo on menu and festival cards. The Chinese name large in red on `surface` pink (or the English name in Young Serif if there is none). No icons or "coming soon" text.
+- `<ShelfLabel>` (`components/item-name.tsx`): stands in for a missing photo on menu and festival cards. The Chinese name large in red on `surface` pink (or the English name in Playfair Display if there is none). No icons or "coming soon" text.
 - `han-label`: red Chinese item name. Use `<ItemName name="Pineapple Bun 菠蘿包" />` (`components/item-name.tsx`), which splits the English and Chinese with `splitName` (`lib/bilingual.ts`).
-- `signboard`: red background, white text and headings. `<PageBand>` (`components/page-band.tsx`) is the red band with the gold edge at the top of menu, custom cakes, gallery and contact. It pads itself under the fixed header.
+- `signboard`: deeper cream band with a thin sand rule, terracotta heading and espresso text. `<PageBand>` (`components/page-band.tsx`) is that band at the top of menu, custom cakes, gallery, contact, pre-order and pay. It pads itself under the fixed header.
 - `<StoreStatus>` (`components/store-status.tsx`): live open/closed line in Las Vegas time; `onLight` for white backgrounds.
 - Other utilities: `surface`, `badge`, `price` (tabular numbers), `action-button`, `form-control`, `menu-card`.
 
 ## Interactive states
 
-- **Focus**: one 2px brown ring, 2px away from the edge, shown only for keyboard users (`:focus-visible` in `app/globals.css`). Components should not add their own focus rings. A menu card outlines as a whole when its hidden button is focused.
+- **Focus**: one 2px terracotta ring, 2px away from the edge, shown only for keyboard users (`:focus-visible` in `app/globals.css`). Form fields instead turn their border terracotta with a soft 3px halo (no second outline). Components should not add their own focus rings. A menu card outlines as a whole when its hidden button is focused.
 - **Hover / pressed**: buttons darken on hover and darken more and shrink slightly (98%) when pressed. Outline buttons also get a darker border. Menu cards lift 2px with `shadow-pop` and their photo zooms to 104% (`menu-card-photo`), only on devices with a mouse. Form fields get a darker border on hover. Gallery photos zoom to 104% on hover (mouse only) with a zoom-in cursor; no badges on the photos.
 - **Disabled**: 50% opacity, no clicks (buttons); fields get a soft background and a not-allowed cursor. Links styled as buttons use `aria-disabled`.
 - **Loading**: `<Button loading>` shows a spinner, disables the button and sets `aria-busy` (used on contact, cake inquiry, admin sign-in, add photo link). `<Skeleton>` (`components/ui/skeleton.tsx`, `skeleton` utility) is a pulsing placeholder; always pair it with a screen-reader "Loading…" status. Menu pages use `MenuGridSkeleton` (`components/menu-grid-skeleton.tsx`), which has the same shape as a menu card; the admin menu and photo lists use `Skeleton` directly.
@@ -75,7 +78,7 @@ Cards and popovers are white. Dark mode is not used.
 ## Header
 
 - `components/navigation.tsx`: white header, `shadow-pop` once the page has scrolled. Desktop: text links, current page red with a 3px underline; a red phone button on screens 1024px and wider.
-- Phone menu: full-width list below the header (56px rows in Young Serif, chevrons, red bar on the current page), then Call and Directions buttons and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening past 768px closes it.
+- Phone menu: full-width list below the header (56px rows in Playfair Display, chevrons, terracotta bar on the current page), then Call and Directions buttons and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening past 768px closes it.
 
 ## Rules
 

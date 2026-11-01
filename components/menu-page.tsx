@@ -181,8 +181,8 @@ export default function MenuPage({
     <div className="min-h-screen bg-background">
       <Navigation />
       <main id="main-content" tabIndex={-1}>
-        {/* Red band with only the live open/closed status; the page title stays for screen readers. */}
-        <section aria-labelledby="menu-heading" className="signboard border-b-[6px] border-gold">
+        {/* Cream band with only the live open/closed status; the page title stays for screen readers. */}
+        <section aria-labelledby="menu-heading" className="signboard">
           <div className="site-container pb-4 pt-[calc(var(--header-height)+1rem)]">
             <h1 id="menu-heading" className="sr-only">
               Fresh buns & pastries in Las Vegas
@@ -192,15 +192,15 @@ export default function MenuPage({
               aria-expanded={hoursOpen}
               aria-controls="menu-hours"
               onClick={() => setHoursOpen(!hoursOpen)}
-              className="flex min-h-12 items-center gap-2 rounded-sm text-base font-medium text-white"
+              className="flex min-h-12 items-center gap-2 rounded-sm text-base font-medium text-ink"
             >
               <span
                 aria-hidden="true"
-                className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-success-on-dark' : 'bg-white/50')}
+                className={'size-2.5 shrink-0 rounded-full ' + (status?.open ? 'bg-success' : 'bg-ink-muted')}
               />
               <span className="text-left">
                 {status?.text || 'View store hours'}{' '}
-                <span className="whitespace-nowrap text-white/75">(Las Vegas)</span>
+                <span className="whitespace-nowrap text-ink-muted">(Las Vegas)</span>
               </span>
               <ChevronDown
                 aria-hidden="true"
@@ -210,7 +210,7 @@ export default function MenuPage({
             <div
               id="menu-hours"
               hidden={!hoursOpen}
-              className="mt-1 max-w-sm rounded-lg bg-card p-4 text-sm leading-7 text-ink"
+              className="card-surface mt-1 max-w-sm p-4 text-sm leading-7 text-ink"
             >
               <p>
                 {SITE.hours.dailyDays}: {SITE.hours.daily}

@@ -79,8 +79,7 @@ function Tile({ selected, onClick, children }: { selected: boolean; onClick: () 
       onClick={onClick}
       className={cn(
         'flex min-h-14 w-full cursor-pointer items-center justify-center rounded-lg border bg-card px-3 py-3 text-center font-semibold transition-colors hover:border-foreground/40 hover:bg-secondary',
-        selected &&
-          'border-primary bg-primary text-primary-foreground ring-1 ring-primary hover:border-primary hover:bg-primary',
+        selected && 'border-primary bg-primary text-primary-foreground hover:border-primary hover:bg-primary',
       )}
     >
       {children}

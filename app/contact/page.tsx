@@ -173,7 +173,7 @@ export default function ContactPage() {
               </a>
             </aside>
             <div className="min-w-0">
-              <Card className="gap-0 border-0 bg-transparent py-0 shadow-none sm:rounded-xl sm:border sm:border-border sm:bg-card sm:py-6">
+              <Card className="gap-0 border-0 bg-transparent py-0 shadow-none sm:rounded-xl sm:border sm:border-border sm:bg-card sm:py-6 sm:shadow-card">
                 <CardContent className="p-0 sm:p-6">
                   <h2 className="heading-2 mb-6">Send us a message</h2>
 

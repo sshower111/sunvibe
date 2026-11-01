@@ -5,22 +5,21 @@ import { SITE_URL, pageMetadata, bakerySchema } from '@/lib/seo'
 import { StructuredData } from '@/components/structured-data'
 import type React from 'react'
 import type { Metadata } from 'next'
-import { Figtree, Noto_Serif_HK, Young_Serif } from 'next/font/google'
+import { Noto_Serif_HK, Playfair_Display, Plus_Jakarta_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { SiteProvider } from '@/components/site-context'
 import './globals.css'
 
-const body = Figtree({
+const body = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'swap',
 })
 
-const display = Young_Serif({
+const display = Playfair_Display({
   subsets: ['latin'],
-  weight: '400',
   variable: '--font-display',
   display: 'swap',
 })
@@ -59,7 +58,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/logo-mark.png" />
-        <meta name="theme-color" content="#a3201c" />
+        <meta name="theme-color" content="#faf7f2" />
         <StructuredData data={bakerySchema} />
       </head>
       <body className={`${body.variable} ${display.variable} ${han.variable} font-sans`}>

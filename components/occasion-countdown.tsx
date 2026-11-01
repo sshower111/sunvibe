@@ -39,7 +39,7 @@ export function OccasionCountdown({ date }: { date: string }) {
     return () => clearInterval(timer)
   }, [date])
   return (
-    <span className="inline-flex min-h-11 items-center rounded-full border border-primary-foreground/40 bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+    <span className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
       {minutes === null
         ? 'Order by ' + date
         : minutes === 0

@@ -228,11 +228,7 @@ export function GalleryView({ galleryImages }: { galleryImages: string[] }) {
           id="gallery-heading"
           title="Our Las Vegas bakery gallery"
           aside={
-            <Button
-              asChild
-              variant="outline"
-              className="min-h-12 w-full border-white/70 bg-transparent text-white hover:border-white hover:bg-white/10 sm:w-auto"
-            >
+            <Button asChild variant="outline" className="min-h-12 w-full sm:w-auto">
               <a href="/menu">Explore the menu</a>
             </Button>
           }

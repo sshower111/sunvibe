@@ -6,20 +6,21 @@
 
 /*
  * Design tokens — Sunville Bakery.
- * Hong Kong bakery counter: pastry-box red, egg-wash gold, pink box paper, char-siu brown ink.
+ * Warm artisanal bakery: soft cream page, espresso ink, terracotta accent, warm sand lines, white cards.
  * Change a value here and it updates everywhere. See docs/UI-DESIGN-SYSTEM.md.
  */
 :root {
   /* Raw palette */
-  --ink: #2b1a14; /* char-siu brown: body text, footer */
-  --ink-muted: #6b5650;
-  --paper: #ffffff;
-  --surface: #fbede8; /* pink box paper: soft sections */
-  --surface-soft: #fdf6f3;
-  --line: #f0dcd5;
-  --input-line: #9c8a84;
-  --brand: #a3201c; /* pastry-box red */
-  --brand-deep: #7a1612;
+  --ink: #2b211e; /* deep espresso: body text, footer */
+  --ink-muted: #675a54;
+  --base: #faf7f2; /* soft warm cream: page background */
+  --paper: #ffffff; /* cards and containers */
+  --surface: #f3ede4; /* deeper cream: soft sections and page bands */
+  --surface-soft: #f7f3ed;
+  --line: #e6dfd5; /* soft warm sand: borders and dividers */
+  --input-line: #d3c8ba;
+  --brand: #9e2a2b; /* rich terracotta */
+  --brand-deep: #7f2122;
   --gold: #e9a93b; /* egg-wash gold (pineapple bun crust); fills only, never text on white */
   --accent-warm: var(--gold);
   --accent-ink: #4a2f06;
@@ -33,11 +34,11 @@
   --danger-tint: #fdeceb;
 
   /* Roles used by the shadcn components */
-  --background: var(--paper);
+  --background: var(--base);
   --foreground: var(--ink);
-  --card: #ffffff;
+  --card: var(--paper);
   --card-foreground: var(--ink);
-  --popover: #ffffff;
+  --popover: var(--paper);
   --popover-foreground: var(--ink);
   --primary: var(--brand);
   --primary-foreground: #ffffff;
@@ -103,6 +104,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ink: var(--ink);
+  --color-base: var(--base);
+  --color-subtle: var(--line);
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-gold: var(--gold);
@@ -120,13 +123,14 @@
   --color-danger-tint: var(--danger-tint);
 }
 
-/* Shape scale: rounded-sm / rounded-md / rounded-lg, shadow-pop, ease-standard. */
+/* Shape scale: rounded-sm / rounded-md / rounded-lg / rounded-xl, shadow-card, shadow-pop, ease-standard. */
 @theme static {
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --radius-xl: 12px;
-  --shadow-pop: 0 10px 28px rgb(122 22 18 / 0.1), 0 1px 2px rgb(43 26 20 / 0.06);
+  --radius-xl: 14px;
+  --shadow-card: 0 4px 20px rgb(43 33 30 / 0.04);
+  --shadow-pop: 0 10px 28px rgb(43 33 30 / 0.09), 0 1px 2px rgb(43 33 30 / 0.05);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -153,7 +157,7 @@
   h5,
   h6 {
     letter-spacing: var(--tracking-heading);
-    font-weight: 400;
+    font-weight: 500;
   }
   /* Even line breaks: headings balance, paragraphs avoid a lonely last word. */
   h4,
@@ -267,7 +271,7 @@ html {
   color: var(--heading-color, var(--primary));
   font-family: var(--font-display), Georgia, serif;
   font-size: var(--heading-1);
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.15;
   letter-spacing: var(--tracking-heading);
   text-wrap: balance;
@@ -276,7 +280,7 @@ html {
   color: var(--heading-color, var(--primary));
   font-family: var(--font-display), Georgia, serif;
   font-size: var(--heading-2);
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: var(--tracking-heading);
   text-wrap: balance;
@@ -285,7 +289,7 @@ html {
   color: var(--heading-color, var(--primary));
   font-family: var(--font-display), Georgia, serif;
   font-size: var(--heading-3);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.35;
   letter-spacing: var(--tracking-heading);
 }
@@ -340,16 +344,17 @@ html {
   &:hover:not(:disabled):not(:focus) {
     border-color: var(--ink-muted);
   }
+  /* One soft halo on focus, not a second outline around the border. */
   &:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
+    outline: none;
     border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
   }
   &[aria-invalid='true'] {
     border-color: var(--destructive);
   }
   &[aria-invalid='true']:focus-visible {
-    outline-color: var(--destructive);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 22%, transparent);
   }
   &:disabled {
     cursor: not-allowed;
@@ -363,8 +368,9 @@ html {
   gap: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--card);
+  box-shadow: var(--shadow-card);
   padding: 0.75rem;
   text-align: left;
   transition:
@@ -447,7 +453,7 @@ input[type='search']::-webkit-search-cancel-button {
   color: var(--heading-color, var(--primary));
   font-family: var(--font-display), Georgia, serif;
   font-size: var(--text-display);
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.05;
   letter-spacing: var(--tracking-display);
   text-wrap: balance;
@@ -522,12 +528,18 @@ input[type='search']::-webkit-search-cancel-button {
   letter-spacing: 0.06em;
   line-height: 1.25;
 }
-/* Red signboard used by the home hero and page headers. White text, gold rule. */
+/* Page header band: deeper cream with a sand rule, terracotta heading, espresso text. */
 @utility signboard {
-  --heading-color: #ffffff;
-  --ring: #ffffff;
-  background: var(--brand);
-  color: #ffffff;
+  background: var(--surface);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+/* White card or container: soft corners, sand border, soft organic shadow. */
+@utility card-surface {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
 }
 
 /* Home page photo strip (components/bakery-marquee.tsx). */
