@@ -4,12 +4,12 @@ import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 // Edge-to-edge bakery photo. The shade sits behind the words only (bottom on phones, left on wider
-// screens) so the baked goods stay bright. The gold band along the bottom is the ribbon on a pastry box.
+// screens) so the baked goods stay bright.
 export function HeroSection() {
   return (
     <section
       aria-labelledby="home-heading"
-      className="relative isolate flex min-h-[clamp(34rem,88svh,48rem)] items-end overflow-hidden border-b-[6px] border-gold bg-ink [--heading-color:#fff] [--ring:#fff] md:items-center"
+      className="relative isolate flex min-h-[clamp(34rem,88svh,48rem)] items-end overflow-hidden bg-ink [--heading-color:#fff] [--ring:#fff] md:items-center"
     >
       <Image
         src="/hero-bakery.jpg"
@@ -33,14 +33,21 @@ export function HeroSection() {
             Pineapple buns, BBQ pork buns, egg tarts and chiffon celebration cakes from Johnny and May’s kitchen.
           </p>
           <div className="mt-6 grid gap-3 min-[360px]:grid-cols-2 sm:mt-8 sm:flex sm:flex-wrap">
-            <Link href="/custom-cakes" className={cn(buttonVariants(), 'w-full px-3 sm:w-auto sm:px-5')}>
+            <Link
+              href="/custom-cakes"
+              className={cn(
+                buttonVariants(),
+                'w-full rounded-lg bg-brand px-3 text-white transition-opacity hover:bg-brand hover:opacity-90 active:bg-brand active:opacity-80 sm:w-auto sm:px-5',
+              )}
+            >
               Custom cakes
             </Link>
             <Link
               href="/menu"
               className={cn(
                 buttonVariants({ variant: 'outline' }),
-                'w-full border-white/70 bg-white/10 px-3 text-white backdrop-blur-sm hover:border-white hover:bg-white/20 active:bg-white/25 sm:w-auto sm:px-5',
+                // Cream fill so the terracotta words stay readable over the photo.
+                'w-full rounded-lg border-subtle bg-base px-3 text-primary hover:border-subtle hover:bg-surface active:bg-surface sm:w-auto sm:px-5',
               )}
             >
               See the menu

@@ -107,17 +107,11 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                     href={link.href}
                     aria-current={isActive(link.href) ? 'page' : undefined}
                     className={
-                      'relative inline-flex min-h-12 min-w-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-[0.9375rem] font-medium transition-colors hover:text-brand ' +
-                      (isActive(link.href) ? 'text-primary' : 'text-foreground')
+                      'inline-flex min-h-12 min-w-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-[0.9375rem] font-medium decoration-[3px] underline-offset-[10px] transition-colors hover:text-brand ' +
+                      (isActive(link.href) ? 'text-primary underline' : 'text-foreground')
                     }
                   >
                     {link.label}
-                    {isActive(link.href) && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute bottom-1.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-primary"
-                      />
-                    )}
                   </Link>
                 ))}
             </nav>
@@ -157,8 +151,8 @@ export function Navigation({ sticky = true }: { sticky?: boolean }) {
                     }
                   >
                     <span className="flex items-center gap-3">
+                      {isActive(link.href) && <span aria-hidden="true" className="h-5 w-1 rounded-full bg-primary" />}
                       {link.label}
-                      {isActive(link.href) && <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />}
                     </span>
                     <ChevronRight aria-hidden="true" className="size-5 text-muted-foreground" />
                   </Link>

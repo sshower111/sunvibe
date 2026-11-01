@@ -34,7 +34,7 @@ Cards and popovers are white. Dark mode is not used.
 
 - Radius: `rounded-sm` 6px, `rounded-md` 8px (buttons and fields, `--control-radius`), `rounded-lg` 12px (images, small panels), `rounded-xl` 14px (cards).
 - Cards: `card-surface` (white, `rounded-xl`, 1px sand border, `shadow-card` = `0 4px 20px rgba(43,33,30,0.04)`). `<Card>` and `menu-card` use it.
-- Shadow: `shadow-card` on cards; `shadow-pop` only for menus, popovers and hovered cards.
+- Shadow: `shadow-card` on cards; `shadow-photo` (`0 4px 16px rgba(43,33,30,0.06)`) on the home photo strip; `shadow-pop` only for menus, popovers and hovered cards.
 - Motion: `--duration-fast` 150ms, `--duration-base` 200ms, `ease-standard`. Reduced-motion users get no animation.
 
 ## Layout and type
@@ -69,16 +69,17 @@ Cards and popovers are white. Dark mode is not used.
 - Fixed bottom bars add `env(safe-area-inset-bottom)` padding.
 - On dark backgrounds set `[--ring:#fff]` so the focus ring stays visible.
 - Check new pages at 320, 390 and 768px: no sideways scrolling.
-- Home hero: full-bleed bakery photo with a dark shade behind the words (left on 768px+, bottom on phones) and the gold ribbon edge.
-- Home photo strip (`components/bakery-marquee.tsx`): every gallery photo, square with a thin gold frame, moving about 35px a second. Stops on hover and keyboard focus; reduced-motion visitors get a still, swipeable strip. Photos come from the same gallery data as `/gallery`.
+- Home hero: full-bleed bakery photo with a dark shade behind the words (left on 768px+, bottom on phones). Buttons: Custom cakes is solid terracotta (`rounded-lg`, white text, fades slightly on hover); See the menu is cream with a sand border and terracotta text, so it stays readable over the photo.
+- Home photo strip (`components/bakery-marquee.tsx`): every gallery photo, square with `rounded-xl` corners and `shadow-photo` on the cream background, moving about 35px a second. Stops on hover and keyboard focus; reduced-motion visitors get a still, swipeable strip. Photos come from the same gallery data as `/gallery`.
+- How we bake (`components/about-section.tsx`): three `card-surface` cards, each with a small terracotta icon in a soft round tint (wheat, leaf, flame).
 - Contact: the form comes first on phones; visit details move beside it from 1024px.
 - Cake planner (`components/cake-order-flow.tsx`): no card frame on phones, and the Next button sticks to the bottom of the screen. `<CakePreview>` (`components/cake-preview.tsx`) draws the cake from the answers; it is the page’s one rich element, so its food colors (sponge, fillings, roses) live in that file, not in the tokens. Beside the steps from 1024px. Below that, a small strip pinned under the header from step 2 (so it doesn’t push the size suggestions down), and a large drawing on the summary instead of the strip. After each answer, `reveal()` scrolls the next question up under the header and strip. Below 1024px each step scrolls so the progress bar sits right under the header (the page title stays above, out of the way), and picking or typing a guest count scrolls the size suggestions into view. Scroll offsets come from `scroll-padding-top` on `html` only; don't add `scroll-mt` on top of it.
 - Gallery photo viewer (`components/gallery-view.tsx`): with a mouse, arrows on the photo's edges and arrow keys. On touch screens no arrows on the photo; pinch or double-tap to zoom, drag to look around, swipe (only when not zoomed) or the small buttons under the photo for the next one. No how-to hint text: customers know these gestures.
 
 ## Header
 
-- `components/navigation.tsx`: cream header (`bg-base`) with a 1px sand rule, `shadow-pop` once the page has scrolled. Links: Home, Menu, Custom Cakes, Gallery, Contact (plus Pre-order during a festival campaign). Desktop: the current page (and its sub-pages) is terracotta with a small terracotta dot under it; other links turn terracotta on hover. A terracotta phone button (`rounded-lg`, white text, fades slightly on hover) on screens 1024px and wider.
-- Phone menu: full-width list below the header (56px rows in Playfair Display, chevrons, current page terracotta with the same dot), then Call and Directions buttons (`rounded-lg`) and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening to 1024px (where the desktop links appear) closes it.
+- `components/navigation.tsx`: cream header (`bg-base`) with a 1px sand rule, `shadow-pop` once the page has scrolled. Links: Home, Menu, Custom Cakes, Gallery, Contact (plus Pre-order during a festival campaign). Desktop: the current page (and its sub-pages) is terracotta with a 3px terracotta underline; other links turn terracotta on hover. A terracotta phone button (`rounded-lg`, white text, fades slightly on hover) on screens 1024px and wider.
+- Phone menu: full-width list below the header (56px rows in Playfair Display, chevrons, current page terracotta with a short terracotta bar before it), then Call and Directions buttons (`rounded-lg`) and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening to 1024px (where the desktop links appear) closes it.
 
 ## Rules
 

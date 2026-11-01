@@ -1,16 +1,20 @@
+import { Flame, Leaf, Wheat } from 'lucide-react'
 import { BakeryMarquee } from '@/components/bakery-marquee'
 
 // What makes Sunville's baking different, in the owners' words.
 const craft = [
   {
+    icon: Wheat,
     title: 'Made here, every day',
     text: 'Soft baked buns, steamed buns, egg tarts and cakes: everything on our shelves comes out of our own kitchen.',
   },
   {
+    icon: Leaf,
     title: 'Less sugar',
     text: 'Our recipes go easy on the sugar, so you taste the bun and the filling, not just the sweetness.',
   },
   {
+    icon: Flame,
     title: 'Our own char siu',
     text: 'The BBQ pork in our char siu buns is made in house.',
   },
@@ -19,7 +23,10 @@ const craft = [
 // The moving strip of gallery photos (components/bakery-marquee.tsx), then the story and how we bake.
 export function AboutSection({ images }: { images: string[] }) {
   return (
-    <section aria-labelledby="about-heading" className="bg-background section-space">
+    <section
+      aria-labelledby="about-heading"
+      className="bg-base pt-[clamp(1.75rem,1rem+3vw,3.5rem)] pb-[var(--section-space)]"
+    >
       <BakeryMarquee images={images} />
       <div
         id="about"
@@ -41,10 +48,16 @@ export function AboutSection({ images }: { images: string[] }) {
 
         <div className="mt-[clamp(3rem,7vw,5.5rem)]">
           <h3 className="heading-2">How we bake</h3>
-          <ul className="mt-6 grid gap-x-10 gap-y-8 md:grid-cols-3">
+          <ul className="mt-6 grid gap-4 md:grid-cols-3 md:gap-6">
             {craft.map(item => (
-              <li key={item.title} className="border-t-2 border-brand pt-5">
-                <span className="heading-3 block text-[1.5rem]">{item.title}</span>
+              <li key={item.title} className="card-surface card-pad">
+                <span
+                  aria-hidden="true"
+                  className="flex size-11 items-center justify-center rounded-full bg-primary/[0.08] text-primary"
+                >
+                  <item.icon className="size-5" strokeWidth={1.75} />
+                </span>
+                <span className="heading-3 mt-4 block text-[1.375rem]">{item.title}</span>
                 <p className="mt-2 leading-relaxed text-ink-muted">{item.text}</p>
               </li>
             ))}

@@ -18,7 +18,7 @@ function MarqueePhoto({ src, copy }: { src: string; copy: boolean }) {
         href={'/gallery?photo=' + encodeURIComponent(src)}
         tabIndex={copy ? -1 : undefined}
         aria-label={copy ? undefined : 'Open in the gallery: ' + galleryAlt(src)}
-        className="group relative block aspect-square overflow-hidden rounded-xl border bg-surface"
+        className="group relative block aspect-square overflow-hidden rounded-xl bg-surface shadow-photo"
       >
         <Image
           src={src}
@@ -50,8 +50,9 @@ export function BakeryMarquee({ images }: { images: string[] }) {
       className="bakery-marquee overflow-hidden motion-reduce:overflow-x-auto"
       style={{ '--marquee-duration': `${duration}s` } as React.CSSProperties}
     >
-      {/* Spacing sits inside each photo (right padding) so half the strip is exactly one set: a seamless loop. */}
-      <ul ref={trackRef} className="bakery-marquee-track flex w-max pb-2 pl-[var(--gutter)] motion-safe:pl-0">
+      {/* Spacing sits inside each photo (right padding) so half the strip is exactly one set: a seamless loop.
+          The vertical padding leaves room for the photos' soft shadow inside the clipped strip. */}
+      <ul ref={trackRef} className="bakery-marquee-track flex w-max py-5 pl-[var(--gutter)] motion-safe:pl-0">
         {images.map(src => (
           <MarqueePhoto key={src} src={src} copy={false} />
         ))}
