@@ -8,6 +8,7 @@ import {
   formatEventTime,
   tierFlavorLines,
   usesCustomFilling,
+  STYLE_SEPARATOR,
 } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
@@ -57,7 +58,7 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     ...(usesCustomFilling(data) && { customFilling: 'Their filling' }),
     cakeMessage: 'Writing on cake',
     designStyle: 'Design style',
-    referenceLink: 'Reference link',
+    referenceLink: 'Reference links',
     budget: 'Budget',
     fulfillment: 'Pickup / delivery request',
     deliveryAddress: 'Delivery address / hotel',
@@ -65,16 +66,7 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     textOk: 'OK to text',
   }
   // Chinese copy: option values are translated, typed values (name, notes, address…) stay as written.
-  const translated = new Set([
-    'eventType',
-    'size',
-    'flavor',
-    'filling',
-    'designStyle',
-    'budget',
-    'fulfillment',
-    'textOk',
-  ])
+  const translated = new Set(['eventType', 'size', 'flavor', 'filling', 'budget', 'fulfillment', 'textOk'])
   const zhRows = Object.keys(labels).map(key => {
     const value = values[key as keyof typeof values]
     const zh =
@@ -90,9 +82,11 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
               ? ZH.notDecided
               : !value
                 ? ZH.none
-                : translated.has(key)
-                  ? zhOption(value)
-                  : value
+                : key === 'designStyle'
+                  ? value.split(STYLE_SEPARATOR).map(zhOption).join('、')
+                  : translated.has(key)
+                    ? zhOption(value)
+                    : value
     return [ZH[key as keyof typeof ZH], zh] as [string, string]
   })
   const text = Object.entries(labels)

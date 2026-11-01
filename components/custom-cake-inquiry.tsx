@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { ImagePlus } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ImagePlus, Plus } from 'lucide-react'
 import { SITE } from '@/lib/site-info'
 import { cn } from '@/lib/utils'
-import { cakeCatalog, deliveryOptions } from '@/lib/cake-catalog'
+import { cakeCatalog, deliveryOptions, findCake, type CakeSpec } from '@/lib/cake-catalog'
+import { deliveryFee, priceRange, recommend, startingPrice } from '@/lib/cake-finder'
 import {
   budgets,
   designStyles,
@@ -15,6 +16,8 @@ import {
   MAX_CAKE_MESSAGE,
   MAX_PHOTO_BYTES,
   MAX_REFERENCE_LINK,
+  MAX_REFERENCE_LINKS,
+  STYLE_SEPARATOR,
 } from '@/lib/cake-inquiry'
 import { formatPhone } from '@/lib/form-helpers'
 import { prepareGalleryPhoto } from '@/lib/prepare-gallery-photo'
@@ -28,10 +31,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { FormAlert } from '@/components/ui/form-message'
 
 // Custom cake quote request on /custom-cakes (POST /api/custom-cakes): event → design → contact.
-// The design step needs at least one reference: photos, a link, or a style.
+// Beside it on wide screens (inline on phones): a size guide to pick the size from, and a starting price.
 
 const steps = ['Event', 'Design', 'Contact'] as const
 const PICKUP = deliveryOptions[0]
+const DELIVERIES = deliveryOptions.slice(1)
+const money = (n: number) => '$' + n
+const sizeGroups = [
+  ['Round', 'Round'],
+  ['Sheet', 'Sheet'],
+  ['Multi-tier', 'Tiered'],
+] as const
 const NOT_SURE = 'Not sure'
 const MAX_INSPIRATION = 3
 const guestPresets = [10, 20, 30, 50, 75, 100]
@@ -45,10 +55,11 @@ const empty = {
   guests: '',
   size: NOT_SURE,
   budget: budgets[0] as string,
-  fulfillment: PICKUP as string,
+  delivery: false,
+  deliveryOption: '',
   deliveryAddress: '',
-  designStyle: '',
-  referenceLink: '',
+  styles: [] as string[],
+  links: [''],
   flavor: 'Please recommend',
   filling: 'Please recommend',
   cakeMessage: '',
@@ -74,6 +85,74 @@ function Tile({ selected, onClick, children }: { selected: boolean; onClick: () 
     >
       {children}
     </button>
+  )
+}
+
+/** Sizes to tap, with servings and starting prices. "Best fit" marks the suggestion for the guest count. */
+function SizeGuide({
+  value,
+  onChange,
+  bestFit,
+}: {
+  value: string
+  onChange: (value: string) => void
+  bestFit?: CakeSpec | null
+}) {
+  const row = (selected: boolean) =>
+    cn(
+      'flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-secondary',
+      selected && 'bg-primary text-primary-foreground hover:bg-primary',
+    )
+  return (
+    <div className="space-y-4">
+      <button
+        type="button"
+        aria-pressed={value === NOT_SURE}
+        onClick={() => onChange(NOT_SURE)}
+        className={row(value === NOT_SURE)}
+      >
+        <span className="font-semibold">Not sure, please suggest</span>
+      </button>
+      {sizeGroups.map(([category, name]) => (
+        <div key={category}>
+          <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-muted-foreground">{name}</p>
+          <ul>
+            {cakeCatalog
+              .filter(cake => cake.category === category)
+              .map(cake => {
+                const selected = value === cake.value
+                const range = priceRange(cake)
+                return (
+                  <li key={cake.value}>
+                    <button
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => onChange(cake.value)}
+                      className={row(selected)}
+                    >
+                      <span className="min-w-0">
+                        <span className="font-semibold">
+                          {cake.label.replace(' round', '').replace(/^\d-Tier · /, '')}
+                        </span>
+                        <span
+                          className={cn(
+                            'block text-xs',
+                            selected ? 'text-primary-foreground/85' : 'text-muted-foreground',
+                          )}
+                        >
+                          Serves {cake.servings}
+                          {bestFit?.value === cake.value && ' · Best fit'}
+                        </span>
+                      </span>
+                      <span className="price shrink-0">{range ? `from ${money(range[0])}` : 'quoted'}</span>
+                    </button>
+                  </li>
+                )
+              })}
+          </ul>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -120,7 +199,37 @@ export function CustomCakeInquiry() {
   }
 
   const guests = /^\d{1,3}$/.test(data.guests) ? Number(data.guests) : 0
-  const hasReference = photos.length > 0 || !!data.referenceLink.trim() || !!data.designStyle
+  const bestFit = useMemo(() => (guests > 0 ? recommend(guests, 'Any', 'Please recommend').best : null), [guests])
+  const fulfillment = data.delivery ? data.deliveryOption : PICKUP
+  // Starting price: the cake (by filling when one is chosen) plus delivery. The design is quoted on top.
+  const cake = findCake(data.size) ?? bestFit
+  const cakeFrom = cake ? (startingPrice(cake, data.filling) ?? priceRange(cake)?.[0] ?? null) : null
+  const fee = data.delivery ? (data.deliveryOption ? deliveryFee(data.deliveryOption) : null) : 0
+  const sizeText = !cake
+    ? 'We’ll suggest one'
+    : cake === bestFit && data.size === NOT_SURE
+      ? `${cake.label} (best fit)`
+      : cake.label
+  const estimate = (
+    <dl className="space-y-2 text-sm">
+      <div className="flex justify-between gap-3">
+        <dt className="text-muted-foreground">Cake</dt>
+        <dd className="text-right font-semibold">{sizeText}</dd>
+      </div>
+      <div className="flex justify-between gap-3">
+        <dt className="text-muted-foreground">{data.delivery ? 'Delivery' : 'Pickup'}</dt>
+        <dd className="text-right font-semibold">
+          {!data.delivery ? 'Free' : fee === null ? (data.deliveryOption ? 'Quoted' : 'Choose an option') : money(fee)}
+        </dd>
+      </div>
+      {cakeFrom !== null && (
+        <div className="flex items-baseline justify-between gap-3 border-t pt-2">
+          <dt className="font-semibold">Starting at</dt>
+          <dd className="price text-2xl text-primary">{money(cakeFrom + (fee ?? 0))}</dd>
+        </div>
+      )}
+    </dl>
+  )
 
   /** [message, id of the field to mark] */
   function check(): [string, string] | null {
@@ -128,10 +237,9 @@ export function CustomCakeInquiry() {
       if (!data.date) return ['Choose your event date.', 'ci-date']
       if (!data.eventType) return ['Choose the occasion.', 'ci-event']
       if (!guests) return ['Enter how many guests.', 'ci-guests']
-      if (data.fulfillment !== PICKUP && !data.deliveryAddress.trim())
-        return ['Enter the delivery address or hotel.', 'ci-address']
+      if (data.delivery && !data.deliveryOption) return ['Choose a delivery option.', 'ci-delivery']
+      if (data.delivery && !data.deliveryAddress.trim()) return ['Enter the delivery address or hotel.', 'ci-address']
     }
-    if (step === 1 && !hasReference) return ['Add a photo, a link or a style.', 'ci-reference']
     if (step === 2) {
       if (!data.name.trim()) return ['Enter your full name.', 'ci-name']
       if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) return ['Enter a valid email address.', 'ci-email']
@@ -172,11 +280,14 @@ export function CustomCakeInquiry() {
         filling: data.filling,
         cakeMessage: data.cakeMessage,
         budget: data.budget,
-        designStyle: data.designStyle,
-        referenceLink: data.referenceLink.trim(),
+        designStyle: designStyles.filter(style => data.styles.includes(style)).join(STYLE_SEPARATOR),
+        referenceLink: data.links
+          .map(link => link.trim())
+          .filter(Boolean)
+          .join('\n'),
         textOk: data.textOk ? 'yes' : 'no',
-        fulfillment: data.fulfillment,
-        deliveryAddress: data.fulfillment === PICKUP ? '' : data.deliveryAddress,
+        fulfillment,
+        deliveryAddress: data.delivery ? data.deliveryAddress : '',
         notes: data.notes,
         requestId: requestId.current,
       }
@@ -226,8 +337,25 @@ export function CustomCakeInquiry() {
   const bad = (id: string) => (invalid === id ? 'true' : undefined)
 
   return (
-    <div ref={top} className="mx-auto max-w-3xl scroll-mt-[var(--header-height)]">
-      <form onSubmit={next} noValidate aria-busy={busy} className="sm:rounded-lg sm:border sm:bg-card sm:card-pad">
+    <div
+      ref={top}
+      className="mx-auto grid max-w-6xl scroll-mt-[var(--header-height)] items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
+    >
+      {/* Wide screens: the size guide and starting price stay beside the questions. */}
+      <aside
+        aria-label="Size guide"
+        className="sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden max-h-[calc(100dvh-var(--header-height)-3rem)] overflow-y-auto rounded-lg bg-surface p-5 lg:block"
+      >
+        <div className="mb-5 rounded-md bg-card p-4">{estimate}</div>
+        <p className="heading-3 mb-3">Size guide</p>
+        <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
+      </aside>
+      <form
+        onSubmit={next}
+        noValidate
+        aria-busy={busy}
+        className="min-w-0 sm:rounded-lg sm:border sm:bg-card sm:card-pad"
+      >
         <ol aria-label="Progress" className="mb-4 grid grid-cols-3 gap-2 sm:mb-6">
           {steps.map((name, index) => (
             <li
@@ -325,84 +453,89 @@ export function CustomCakeInquiry() {
                   />
                 </div>
               </fieldset>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="ci-size" className={label}>
-                    Cake size
-                  </label>
-                  <NativeSelect id="ci-size" value={data.size} onChange={e => set('size', e.target.value)}>
-                    <option value={NOT_SURE}>Not sure, please suggest</option>
-                    {(['Round', 'Sheet', 'Multi-tier'] as const).map(category => (
-                      <optgroup key={category} label={category === 'Multi-tier' ? 'Tiered' : category}>
-                        {cakeCatalog
-                          .filter(cake => cake.category === category)
-                          .map(cake => (
-                            <option key={cake.value} value={cake.value}>
-                              {cake.label} · serves {cake.servings}
-                            </option>
-                          ))}
-                      </optgroup>
-                    ))}
-                  </NativeSelect>
+              {/* Phones and tablets: the size guide in the step (it sits beside the form on wide screens). */}
+              <fieldset className="lg:hidden">
+                <legend className={label}>Cake size</legend>
+                <div className="rounded-lg bg-surface p-3">
+                  <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
                 </div>
-                <div>
-                  <label htmlFor="ci-budget" className={label}>
-                    Budget
-                  </label>
-                  <NativeSelect id="ci-budget" value={data.budget} onChange={e => set('budget', e.target.value)}>
-                    {budgets.map(budget => (
-                      <option key={budget} value={budget}>
-                        {budget === budgets[0] ? 'Not sure yet' : budget}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </div>
-              </div>
+              </fieldset>
               <div>
-                <label htmlFor="ci-fulfillment" className={label}>
-                  Pickup or delivery
+                <label htmlFor="ci-budget" className={label}>
+                  Budget
                 </label>
-                <NativeSelect
-                  id="ci-fulfillment"
-                  value={data.fulfillment}
-                  onChange={e => set('fulfillment', e.target.value)}
-                >
-                  {deliveryOptions.map(option => (
-                    <option key={option} value={option}>
-                      {option === PICKUP ? `Pickup at ${SITE.street}` : option}
+                <NativeSelect id="ci-budget" value={data.budget} onChange={e => set('budget', e.target.value)}>
+                  {budgets.map(budget => (
+                    <option key={budget} value={budget}>
+                      {budget === budgets[0] ? 'Not sure yet' : budget}
                     </option>
                   ))}
                 </NativeSelect>
               </div>
-              {data.fulfillment !== PICKUP && (
-                <div>
-                  <label htmlFor="ci-address" className={label}>
-                    Delivery address or hotel
-                  </label>
-                  <Input
-                    id="ci-address"
-                    autoComplete="street-address"
-                    maxLength={500}
-                    aria-invalid={bad('ci-address')}
-                    value={data.deliveryAddress}
-                    onChange={e => set('deliveryAddress', e.target.value)}
-                  />
+              <fieldset>
+                <legend className={label}>Pickup or delivery</legend>
+                <div className="grid grid-cols-2 gap-3">
+                  <Tile selected={!data.delivery} onClick={() => set('delivery', false)}>
+                    <span>
+                      Pickup
+                      <span className="block text-sm font-normal opacity-85">{SITE.street}</span>
+                    </span>
+                  </Tile>
+                  <Tile selected={data.delivery} onClick={() => set('delivery', true)}>
+                    <span>
+                      Delivery
+                      <span className="block text-sm font-normal opacity-85">from {money(30)}</span>
+                    </span>
+                  </Tile>
                 </div>
+              </fieldset>
+              {data.delivery && (
+                <>
+                  <fieldset id="ci-delivery" tabIndex={-1} aria-invalid={bad('ci-delivery')}>
+                    <legend className={label}>Delivery to</legend>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {DELIVERIES.map(option => {
+                        const [title, cost] = option.split(' — ')
+                        return (
+                          <Tile
+                            key={option}
+                            selected={data.deliveryOption === option}
+                            onClick={() => set('deliveryOption', option)}
+                          >
+                            <span>
+                              {title}
+                              <span className="block text-sm font-normal opacity-85">
+                                {cost === 'please advise' ? 'Quoted' : cost}
+                              </span>
+                            </span>
+                          </Tile>
+                        )
+                      })}
+                    </div>
+                  </fieldset>
+                  <div>
+                    <label htmlFor="ci-address" className={label}>
+                      Delivery address or hotel
+                    </label>
+                    <Input
+                      id="ci-address"
+                      autoComplete="street-address"
+                      maxLength={500}
+                      aria-invalid={bad('ci-address')}
+                      value={data.deliveryAddress}
+                      onChange={e => set('deliveryAddress', e.target.value)}
+                    />
+                  </div>
+                </>
               )}
+              {/* Phones and tablets: the starting price under the questions. */}
+              <div className="rounded-lg bg-surface p-4 lg:hidden">{estimate}</div>
             </>
           )}
 
           {step === 1 && (
             <>
-              <div
-                id="ci-reference"
-                tabIndex={-1}
-                aria-invalid={bad('ci-reference')}
-                className={cn(
-                  'space-y-5 rounded-lg border border-dashed bg-surface p-4 sm:p-5',
-                  invalid === 'ci-reference' ? 'border-destructive' : 'border-primary/40',
-                )}
-              >
+              <div className="space-y-5 rounded-lg border border-dashed border-primary/40 bg-surface p-4 sm:p-5">
                 <p className="text-sm">
                   Adding a photo or link helps our decorators provide the most accurate quote and ensures we match your
                   exact vision!
@@ -471,29 +604,57 @@ export function CustomCakeInquiry() {
                     </ul>
                   )}
                 </div>
-                <div>
-                  <label htmlFor="ci-link" className={label}>
-                    Instagram, Pinterest or web link
+                <div className="space-y-2">
+                  <label htmlFor="ci-link-0" className={label}>
+                    Instagram, Pinterest or web links
                   </label>
-                  <Input
-                    id="ci-link"
-                    type="url"
-                    inputMode="url"
-                    autoComplete="off"
-                    maxLength={MAX_REFERENCE_LINK}
-                    placeholder="https://"
-                    value={data.referenceLink}
-                    onChange={e => set('referenceLink', e.target.value)}
-                  />
+                  {data.links.map((link, index) => (
+                    <Input
+                      key={index}
+                      id={`ci-link-${index}`}
+                      type="url"
+                      inputMode="url"
+                      autoComplete="off"
+                      maxLength={MAX_REFERENCE_LINK}
+                      placeholder="https://"
+                      aria-label={index ? `Link ${index + 1}` : undefined}
+                      value={link}
+                      onChange={e =>
+                        set(
+                          'links',
+                          data.links.map((l, i) => (i === index ? e.target.value : l)),
+                        )
+                      }
+                    />
+                  ))}
+                  {data.links.length < MAX_REFERENCE_LINKS && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set('links', [...data.links, ''])
+                        requestAnimationFrame(() => document.getElementById(`ci-link-${data.links.length}`)?.focus())
+                      }}
+                      className="inline-flex min-h-11 cursor-pointer items-center gap-1 text-sm font-semibold text-primary"
+                    >
+                      <Plus aria-hidden="true" className="size-4" />
+                      Add another link
+                    </button>
+                  )}
                 </div>
                 <fieldset>
-                  <legend className={label}>Or pick a style</legend>
-                  <div className="grid grid-cols-2 gap-3">
+                  <legend className={label}>Styles</legend>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {designStyles.map(style => (
                       <Tile
                         key={style}
-                        selected={data.designStyle === style}
-                        onClick={() => set('designStyle', data.designStyle === style ? '' : style)}
+                        selected={data.styles.includes(style)}
+                        onClick={() => {
+                          setData(d => ({
+                            ...d,
+                            styles: d.styles.includes(style) ? d.styles.filter(s => s !== style) : [...d.styles, style],
+                          }))
+                          requestId.current = ''
+                        }}
                       >
                         {style}
                       </Tile>

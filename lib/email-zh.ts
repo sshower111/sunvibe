@@ -84,7 +84,9 @@ const options: Record<string, string> = {
   // Design styles (Character / Theme is with the events)
   'Vintage Piping': '復古唧花',
   'Minimalist Floral': '簡約花卉',
-  'Abstract Buttercream': '抽象牛油忌廉',
+  'Fresh Flowers': '鮮花裝飾',
+  'Drip Cake': '滴落淋面蛋糕',
+  'Edible Photo Print': '可食用相片打印',
   // OK to text
   Yes: '可以',
   No: '不可以',

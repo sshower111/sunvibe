@@ -4,7 +4,14 @@
 // Run: pnpm test
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
+const sharp = require('sharp')
 const { createLoader } = require('../helpers/load-ts.cjs')
+
+/** A real image of the given size, like an uploaded reference photo. */
+const photo = (width, height, format = 'png') =>
+  sharp({ create: { width, height, channels: 3, background: '#f4c2c2' } })
+    [format]()
+    .toBuffer()
 
 process.env.CAMPAIGN_STORAGE_SECRET = 'test-secret'
 const requests = []
@@ -28,7 +35,7 @@ const { load } = createLoader({
     },
     './inquiry-photos': {
       inquiryPhotoMime: name => ({ jpg: 'image/jpeg', png: 'image/png' })[name.split('.')[1]],
-      readInquiryPhoto: async () => Buffer.from('saved photo'),
+      readInquiryPhoto: async () => photo(600, 400, 'jpeg'),
     },
     './database': {
       verifiedDatabase:
@@ -156,6 +163,14 @@ test('code checks guests, budget, short notice and open prices', () => {
   const open = ai.codeChecks(other, output(), ai.quoteFor(other, output()), now)
   assert(open.includes('Delivery fee still to quote.'))
   assert(open.some(c => c.startsWith('Custom tier combination')))
+  // A suggested size that is too small is caught too.
+  const unsure = inquiry({ budget: '$200–$350' })
+  const tooSmall = output({ suggestedSize: '10-inch' })
+  assert(
+    ai
+      .codeChecks(unsure, tooSmall, ai.quoteFor(unsure, tooSmall), now)
+      .includes('10-inch round (suggested) serves 25, but 30 guests are expected.'),
+  )
   const fine = inquiry({ budget: '$200–$350' })
   assert.deepEqual(ai.codeChecks(fine, output(), ai.quoteFor(fine, output()), now), [])
 })
@@ -186,8 +201,9 @@ test('the Claude request: model, fallbacks, structured output, photos and no con
   requests.length = 0
   queries.length = 0
   const result = await server.runInquiryAssistant(inquiry(), [
-    { name: '1.png', data: Buffer.from('png bytes') },
+    { name: '1.png', data: await photo(1400, 1050) },
     { name: '2.gif', data: Buffer.from('not allowed') },
+    { name: '3.jpg', data: Buffer.from('not really a photo') },
   ])
   assert.equal(result.output.headline, 'Unicorn birthday, 30 guests')
   assert.equal(result.inputTokens, 100)
@@ -198,8 +214,11 @@ test('the Claude request: model, fallbacks, structured output, photos and no con
   assert.equal(request.output_config.effort, 'medium')
   assert.equal(request.output_config.format.type, 'json_schema')
   const content = request.messages[0].content
-  assert.equal(content.filter(c => c.type === 'image').length, 1, 'only supported image types are sent')
-  assert.equal(content[0].source.data, Buffer.from('png bytes').toString('base64'))
+  assert.equal(content.filter(c => c.type === 'image').length, 1, 'unsupported or unreadable photos are left out')
+  // Sent smaller (800px on the long side) as JPEG, keeping the shape.
+  assert.equal(content[0].source.media_type, 'image/jpeg')
+  const sent = await sharp(Buffer.from(content[0].source.data, 'base64')).metadata()
+  assert.deepEqual([sent.width, sent.height, sent.format], [800, 600, 'jpeg'])
   assert(!JSON.stringify(request).includes('jordan@example.com'))
   // Saved encrypted, with cost and speed in the clear.
   assert.equal(queries.length, 1)
@@ -211,7 +230,8 @@ test('the Claude request: model, fallbacks, structured output, photos and no con
 test('saved photos are read for "Redo AI notes"', async () => {
   requests.length = 0
   await server.runInquiryAssistant(inquiry({ photos: ['1.jpg'], photoCount: 1 }))
-  assert.equal(requests[0].messages[0].content[0].source.data, Buffer.from('saved photo').toString('base64'))
+  const sent = await sharp(Buffer.from(requests[0].messages[0].content[0].source.data, 'base64')).metadata()
+  assert.deepEqual([sent.width, sent.height], [600, 400], 'small photos are not enlarged')
 })
 
 test('a refusal, a cut-off or an unreadable answer gives no notes instead of an error', async () => {

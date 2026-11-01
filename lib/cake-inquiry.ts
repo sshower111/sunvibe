@@ -34,17 +34,24 @@ export const isCustomFilling = (value: string) => value.startsWith('Something el
 export const fillingText = (filling: string, customFilling = '') =>
   isCustomFilling(filling) && customFilling ? customFilling : filling
 export const MAX_CAKE_MESSAGE = 60
-// /custom-cakes asks for at least one design reference: photos, a link, or one of these styles.
+// Design references on /custom-cakes, all optional: photos, links and any of these styles.
 export const designStyles = [
   'Vintage Piping',
   'Minimalist Floral',
   'Character / Theme',
-  'Abstract Buttercream',
+  'Fresh Flowers',
+  'Drip Cake',
+  'Edible Photo Print',
 ] as const
+/** Several styles are stored as one string, "Drip Cake, Fresh Flowers". */
+export const STYLE_SEPARATOR = ', '
+export const MAX_REFERENCE_LINKS = 3
 export const MAX_REFERENCE_LINK = 500
-/** True when the inquiry has a design reference besides photos (photos are checked by the API). */
-export const hasDesignReference = (v: { designStyle?: string; referenceLink?: string }) =>
-  !!(v.designStyle || v.referenceLink)
+/** Links are stored one per line. */
+export const referenceLinks = (value = '') => value.split('\n').filter(Boolean)
+// People often paste "instagram.com/p/…" without https://.
+const withScheme = (link: string) => (/^https?:\/\//i.test(link) ? link : 'https://' + link)
+const isLink = (link: string) => /^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(link)
 // 10 × 400 KB keeps the whole upload under Vercel’s 4.5 MB request limit (photos are resized to 1400px in the browser).
 export const MAX_PHOTO_BYTES = 400 * 1024
 export const MAX_PHOTOS = 10
@@ -146,18 +153,31 @@ export const cakeInquirySchema = z
       .max(MAX_CUSTOM_FILLING, `Please keep the filling under ${MAX_CUSTOM_FILLING} characters.`)
       .default(''),
     budget: z.enum(budgets),
-    // Design reference from /custom-cakes (older inquiries have neither).
-    designStyle: z.enum(['', ...designStyles]).default(''),
-    referenceLink: z
+    // Design references from /custom-cakes (older inquiries have neither): styles joined by ", ", links one per line.
+    designStyle: z
       .string()
       .trim()
-      .max(MAX_REFERENCE_LINK, 'Please keep the link under 500 characters.')
-      // People often paste "instagram.com/p/…" without https://.
-      .transform(v => (v && !/^https?:\/\//i.test(v) ? 'https://' + v : v))
       .refine(
-        v => !v || /^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(v),
+        v => !v || v.split(STYLE_SEPARATOR).every(s => (designStyles as readonly string[]).includes(s)),
+        'Choose a style from the list.',
+      )
+      .default(''),
+    referenceLink: z
+      .string()
+      .max(MAX_REFERENCE_LINKS * (MAX_REFERENCE_LINK + 1), 'Please keep each link under 500 characters.')
+      .transform(v =>
+        v
+          .split('\n')
+          .map(link => link.trim())
+          .filter(Boolean)
+          .map(withScheme),
+      )
+      .refine(links => links.length <= MAX_REFERENCE_LINKS, `Please add up to ${MAX_REFERENCE_LINKS} links.`)
+      .refine(
+        links => links.every(link => link.length <= MAX_REFERENCE_LINK && isLink(link)),
         'Paste a link to the design, for example from Instagram or Pinterest.',
       )
+      .transform(links => links.join('\n'))
       .default(''),
     // The customer ticked "OK to text updates regarding this quote".
     textOk: z.enum(['yes', 'no']).default('no'),

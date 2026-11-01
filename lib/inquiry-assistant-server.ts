@@ -1,6 +1,7 @@
 import 'server-only'
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
+import sharp from 'sharp'
 import { verifiedDatabase } from './database'
 import { decode, encode } from './storage-crypto'
 import { inquiryPhotoMime, readInquiryPhoto } from './inquiry-photos'
@@ -26,33 +27,42 @@ export const assistantEnabled = () => !!process.env.ANTHROPIC_API_KEY
 let client: Anthropic | undefined
 const anthropic = () => (client ??= new Anthropic({ timeout: 90_000, maxRetries: 1 }))
 
-const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
-type ImageType = (typeof IMAGE_TYPES)[number]
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+/**
+ * Photos are sent at most 800px on the long side (uploads are 1400px): enough to read a design, with far fewer
+ * image tokens, which are most of the input. A photo that can't be read is left out.
+ */
+export const MODEL_PHOTO_SIZE = 800
+export async function imageForModel(photo: Photo) {
+  if (!IMAGE_TYPES.includes(inquiryPhotoMime(photo.name))) return []
+  try {
+    const data = await sharp(photo.data)
+      .rotate()
+      .resize({ width: MODEL_PHOTO_SIZE, height: MODEL_PHOTO_SIZE, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toBuffer()
+    return [
+      {
+        type: 'image' as const,
+        source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data: data.toString('base64') },
+      },
+    ]
+  } catch {
+    return []
+  }
+}
 
 /** Asks Claude for notes on one inquiry. Throws when the answer is refused, cut off or doesn't match the schema. */
 export async function analyzeInquiry(inquiry: Inquiry, photos: Photo[], now = new Date()): Promise<AssistantNote> {
   const started = Date.now()
-  const images = photos.flatMap(photo => {
-    const mediaType = inquiryPhotoMime(photo.name)
-    return (IMAGE_TYPES as readonly string[]).includes(mediaType)
-      ? [
-          {
-            type: 'image' as const,
-            source: {
-              type: 'base64' as const,
-              media_type: mediaType as ImageType,
-              data: photo.data.toString('base64'),
-            },
-          },
-        ]
-      : []
-  })
+  const images = (await Promise.all(photos.map(imageForModel))).flat()
   const response = await anthropic().beta.messages.parse({
     model: ASSISTANT_MODEL,
     max_tokens: 16000,
     // If a safety check declines the request, the API retries it on a suitable model in the same call.
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
+    // Medium, not low: low was ~$0.01 cheaper per inquiry but suggested a cake too small for the guests (Nov 2026).
     output_config: { effort: 'medium', format: betaZodOutputFormat(assistantOutputSchema) },
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content: [...images, { type: 'text', text: userPrompt(inquiry, now) }] }],

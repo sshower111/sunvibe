@@ -222,9 +222,12 @@ const budgetMax: Partial<Record<(typeof budgets)[number], number>> = {
 export function codeChecks(i: Inquiry, output: AssistantOutput, quote: Quote, now = new Date()): string[] {
   const checks: string[] = []
   const guests = Number(i.servings)
-  const chosen = i.size === 'Not sure' ? null : findCake(i.size)
-  if (chosen && chosen.servings < guests)
-    checks.push(`${chosen.label} serves ${chosen.servings}, but ${guests} guests are expected.`)
+  // The customer's size, or the AI's suggestion when they weren't sure: either can be too small.
+  const quoted = findCake(quote.size)
+  if (quoted && quoted.servings < guests)
+    checks.push(
+      `${quoted.label}${i.size === 'Not sure' ? ' (suggested)' : ''} serves ${quoted.servings}, but ${guests} guests are expected.`,
+    )
   const max = budgetMax[i.budget as keyof typeof budgetMax]
   if (max && quote.total !== null && quote.total > max)
     checks.push(`Estimate $${quote.total} is over the customer's budget (${i.budget}).`)

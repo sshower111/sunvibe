@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   fillingText,
+  referenceLinks,
   formatEventTime,
   inquiryRef,
   inquiryStatuses,
@@ -217,20 +218,24 @@ export function AdminCakeInquiries() {
       ['Cake', `${i.servings} servings · ${cakeLabel(i.size)}`],
       ['Flavor', flavorText],
       ['Writing', i.cakeMessage || 'None'],
-      ...(i.designStyle ? ([['Style', i.designStyle]] as [string, string][]) : []),
+      ...(i.designStyle ? ([['Styles', i.designStyle]] as [string, string][]) : []),
       ...(i.referenceLink
         ? ([
             [
-              'Link',
-              <a
-                key="link"
-                href={i.referenceLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="break-all text-primary underline"
-              >
-                {i.referenceLink}
-              </a>,
+              'Links',
+              <span key="links" className="flex flex-col">
+                {referenceLinks(i.referenceLink).map(link => (
+                  <a
+                    key={link}
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-primary underline"
+                  >
+                    {link}
+                  </a>
+                ))}
+              </span>,
             ],
           ] as [string, React.ReactNode][])
         : []),

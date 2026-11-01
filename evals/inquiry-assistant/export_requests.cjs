@@ -14,7 +14,7 @@ const { betaZodOutputFormat } = require('@anthropic-ai/sdk/helpers/beta/zod')
 
 const { load } = createLoader()
 const ai = load('lib/inquiry-assistant.ts')
-const { ASSISTANT_MODEL } = load('lib/inquiry-assistant-server.ts')
+const { ASSISTANT_MODEL, imageForModel } = load('lib/inquiry-assistant-server.ts')
 const schema = betaZodOutputFormat(ai.assistantOutputSchema).schema
 const outDir = path.join(__dirname, 'out')
 fs.mkdirSync(outDir, { recursive: true })
@@ -38,12 +38,14 @@ async function main() {
   const lines = []
   if (real) {
     const { listCakeInquiries } = load('lib/cake-inquiries-store.ts')
-    const { readInquiryPhoto, inquiryPhotoMime } = load('lib/inquiry-photos.ts')
+    const { readInquiryPhoto } = load('lib/inquiry-photos.ts')
     for (const inquiry of (await listCakeInquiries()).filter(i => !i.test)) {
       const photos = []
       for (const name of inquiry.photos ?? []) {
         try {
-          photos.push({ mediaType: inquiryPhotoMime(name), data: (await readInquiryPhoto(inquiry.id, name)).toString('base64') })
+          // Resized exactly as the site does before sending.
+          for (const image of await imageForModel({ name, data: await readInquiryPhoto(inquiry.id, name) }))
+            photos.push({ mediaType: image.source.media_type, data: image.source.data })
         } catch {
           // A photo that can't be read is left out, as on the site.
         }
