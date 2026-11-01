@@ -198,18 +198,21 @@ export function CustomCakeInquiry() {
     })
   }
 
-  const guests = /^\d{1,3}$/.test(data.guests) ? Number(data.guests) : 0
-  const bestFit = useMemo(() => (guests > 0 ? recommend(guests, 'Any', 'Please recommend').best : null), [guests])
+  const guestCount = (value: string) => (/^\d{1,3}$/.test(value) ? Number(value) : 0)
+  const bestFitFor = (count: number) => (count > 0 ? recommend(count, 'Any', 'Please recommend').best : null)
+  const guests = guestCount(data.guests)
+  const bestFit = useMemo(() => bestFitFor(guests), [guests])
+  /** A new guest count selects its best-fit size (the customer can still pick another in the size guide). */
+  const setGuests = (value: string) => {
+    set('guests', value)
+    setData(d => ({ ...d, size: bestFitFor(guestCount(value))?.value ?? NOT_SURE }))
+  }
   const fulfillment = data.delivery ? data.deliveryOption : PICKUP
   // Starting price: the cake (by filling when one is chosen) plus delivery. The design is quoted on top.
-  const cake = findCake(data.size) ?? bestFit
+  const cake = findCake(data.size)
   const cakeFrom = cake ? (startingPrice(cake, data.filling) ?? priceRange(cake)?.[0] ?? null) : null
   const fee = data.delivery ? (data.deliveryOption ? deliveryFee(data.deliveryOption) : null) : 0
-  const sizeText = !cake
-    ? 'We’ll suggest one'
-    : cake === bestFit && data.size === NOT_SURE
-      ? `${cake.label} (best fit)`
-      : cake.label
+  const sizeText = !cake ? 'We’ll suggest one' : cake === bestFit ? `${cake.label} (best fit)` : cake.label
   const estimate = (
     <dl className="space-y-2 text-sm">
       <div className="flex justify-between gap-3">
@@ -427,11 +430,7 @@ export function CustomCakeInquiry() {
                 <legend className={label}>Guests</legend>
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                   {guestPresets.map(value => (
-                    <Tile
-                      key={value}
-                      selected={data.guests === String(value)}
-                      onClick={() => set('guests', String(value))}
-                    >
+                    <Tile key={value} selected={data.guests === String(value)} onClick={() => setGuests(String(value))}>
                       {value === 100 ? '100+' : value}
                     </Tile>
                   ))}
@@ -449,7 +448,7 @@ export function CustomCakeInquiry() {
                     placeholder="e.g., 24"
                     aria-invalid={bad('ci-guests')}
                     value={data.guests}
-                    onChange={e => set('guests', e.target.value)}
+                    onChange={e => setGuests(e.target.value)}
                   />
                 </div>
               </fieldset>
