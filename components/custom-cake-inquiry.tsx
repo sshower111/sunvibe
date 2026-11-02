@@ -177,6 +177,83 @@ function SizeGuide({
   )
 }
 
+/** Phones and tablets: a few suggested sizes for the guest count, and every size behind "See all sizes". */
+function SizePicker({ value, onChange, guests }: { value: string; onChange: (value: string) => void; guests: number }) {
+  const [showAll, setShowAll] = useState(false)
+  const picked = findCake(value)
+  const [tab, setTab] = useState<CakeSpec['category']>(picked?.category ?? 'Round')
+  const result = guests > 0 ? recommend(guests, 'Any', 'Please recommend') : null
+  // The best fit and its closest alternatives; a size picked from the full list stays in view too.
+  const suggested = [picked, result?.best, ...(result?.others ?? []), result?.bigger]
+    .filter((cake, index, list): cake is CakeSpec => !!cake && list.findIndex(c => c?.value === cake.value) === index)
+    .slice(0, 3)
+  const tile = (cake: CakeSpec) => {
+    const range = priceRange(cake)
+    return (
+      <Tile key={cake.value} selected={value === cake.value} onClick={() => onChange(cake.value)} className="min-h-24">
+        <span>
+          {cake.label.replace(' round', '')}
+          <span className="block text-sm font-normal opacity-85">
+            Serves {cake.servings} · {range ? `from ${money(range[0])}` : 'quoted'}
+          </span>
+          {result?.best?.value === cake.value && (
+            <span className="mt-1 block text-xs font-semibold uppercase tracking-wide opacity-85">Best fit</span>
+          )}
+        </span>
+      </Tile>
+    )
+  }
+  const link =
+    'inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-primary underline underline-offset-4'
+  return (
+    <div className="space-y-3">
+      {!showAll ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {suggested.map(tile)}
+            <Tile selected={value === NOT_SURE} onClick={() => onChange(NOT_SURE)} className="min-h-24">
+              Not sure
+            </Tile>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setTab(picked?.category ?? 'Round')
+              setShowAll(true)
+            }}
+            className={link}
+          >
+            See all sizes
+          </button>
+        </>
+      ) : (
+        <>
+          <div role="group" aria-label="Cake shape" className="grid grid-cols-3 gap-2">
+            {sizeGroups.map(([category, name]) => (
+              <button
+                key={category}
+                type="button"
+                aria-pressed={tab === category}
+                onClick={() => setTab(category)}
+                className={cn(
+                  'min-h-11 cursor-pointer rounded-full border text-sm font-semibold',
+                  tab === category ? 'border-primary bg-primary text-primary-foreground' : 'border-subtle bg-base',
+                )}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">{cakeCatalog.filter(cake => cake.category === tab).map(tile)}</div>
+          <button type="button" onClick={() => setShowAll(false)} className={link}>
+            {guests > 0 ? 'Back to suggestions' : 'Hide sizes'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 function PhotoPreview({ file }: { file: File }) {
   const [url, setUrl] = useState('')
   useEffect(() => {
@@ -524,16 +601,14 @@ export function CustomCakeInquiry() {
               {/* Phones and tablets: the size guide in the step (it sits beside the form on wide screens). */}
               <fieldset id="ci-size-guide" className="lg:hidden">
                 <legend className={label}>Cake size</legend>
-                <div className="rounded-xl border border-subtle bg-base p-3">
-                  <SizeGuide
-                    value={data.size}
-                    onChange={value => {
-                      set('size', value)
-                      reveal('ci-budget')
-                    }}
-                    bestFit={bestFit}
-                  />
-                </div>
+                <SizePicker
+                  value={data.size}
+                  guests={guests}
+                  onChange={value => {
+                    set('size', value)
+                    reveal('ci-budget')
+                  }}
+                />
               </fieldset>
               <div>
                 <label htmlFor="ci-budget" className={label}>
