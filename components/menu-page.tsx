@@ -53,7 +53,7 @@ function ProductImage({ product, detail = false }: { product: MenuProduct; detai
       className={
         detail
           ? 'mx-auto block size-[min(calc(100vw-4rem),42dvh,28rem)] shrink-0 overflow-hidden rounded-lg bg-secondary'
-          : 'block size-28 shrink-0 overflow-hidden rounded-md bg-secondary sm:aspect-square sm:h-auto sm:w-full sm:rounded-none'
+          : 'block size-28 shrink-0 overflow-hidden rounded-md bg-secondary sm:aspect-square sm:h-auto sm:w-full sm:rounded-none sm:rounded-t-xl'
       }
     >
       {valid && !failed ? (
@@ -329,7 +329,7 @@ export default function MenuPage({
                   <Link
                     key={item}
                     href="/order-cake"
-                    className="action-button shrink-0 border border-border bg-card text-foreground hover:border-input hover:bg-secondary"
+                    className="action-button shrink-0 rounded-full border border-subtle bg-base text-foreground hover:border-input hover:bg-surface"
                   >
                     {item}
                   </Link>
@@ -344,10 +344,10 @@ export default function MenuPage({
                       setActiveSuggestion(-1)
                     }}
                     className={
-                      'action-button shrink-0 border ' +
+                      'action-button shrink-0 rounded-full border ' +
                       (category === item
                         ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border bg-card text-foreground hover:border-input hover:bg-secondary')
+                        : 'border-subtle bg-base text-foreground hover:border-input hover:bg-surface')
                     }
                   >
                     {item}

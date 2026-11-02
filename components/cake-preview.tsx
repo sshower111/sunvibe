@@ -6,7 +6,7 @@ import { findCake } from '@/lib/cake-catalog'
 // writing and (for custom designs) flowers on top. Round cakes sit on a plate, sheet cakes on a board.
 // Colors are the food's own; the page chrome stays in the design tokens.
 
-const sponge: Record<string, string> = {
+export const sponge: Record<string, string> = {
   Vanilla: '#f3d98b',
   Chocolate: '#6b4029',
   Coffee: '#a77a52',
@@ -14,7 +14,7 @@ const sponge: Record<string, string> = {
   Orange: '#f2b552',
   Pandan: '#9cc47a',
 }
-const filling: Record<string, string> = {
+export const filling: Record<string, string> = {
   'Mixed Fresh Fruit': '#e4695a',
   Strawberry: '#e2707e',
   Banana: '#f4e1a0',

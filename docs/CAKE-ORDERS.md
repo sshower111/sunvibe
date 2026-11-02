@@ -11,7 +11,7 @@ Customers tap **Cakes** on the menu (`/menu`), which opens `/order-cake`, choose
 
 ## Display cakes and kitchen confirmation (Nov 1, 2026)
 
-- **8" round** (`INSTANT_SIZES` in `lib/cake-order.ts`): a display cake. Any listed flavor and filling, ready with **4 hours' notice**, charged when ordered (status Paid, no approval). The order page shows "Ready in 4 hours" once it is chosen.
+- **8" round** (`INSTANT_SIZES` in `lib/cake-order.ts`): a display cake. Any listed flavor and filling, ready with **4 hours' notice**, charged when ordered (status Paid, no approval). The order page shows "4-Hour Express Pickup" once it is chosen (the hours follow `INSTANT_NOTICE_HOURS`).
 - **Every other size**: shows "Requires Kitchen Confirmation (4h Lead Time)" on the order page once chosen, needs **4 hours' notice** like the 8", and is held on the card until the bakery approves (below).
 - To change which sizes are display cakes or the notice, edit `INSTANT_SIZES`, `INSTANT_NOTICE_HOURS` and `CONFIRM_NOTICE_HOURS`. If a display cake can't be made, use **⋯ → Refund** on the order (below).
 

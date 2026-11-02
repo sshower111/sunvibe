@@ -395,7 +395,7 @@ html {
   }
   @media (hover: hover) {
     &:hover .menu-card-photo {
-      transform: scale(1.04);
+      transform: scale(1.05);
     }
   }
   /* Keyboard focus on the card's hidden button outlines the whole card. */

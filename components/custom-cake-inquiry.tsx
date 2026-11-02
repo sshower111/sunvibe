@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImagePlus, Plus } from 'lucide-react'
+import { ImagePlus, PartyPopper, Plus } from 'lucide-react'
 import { SITE } from '@/lib/site-info'
 import { cn } from '@/lib/utils'
 import { cakeCatalog, deliveryOptions, findCake, type CakeSpec } from '@/lib/cake-catalog'
@@ -71,14 +71,25 @@ const empty = {
 }
 type Data = typeof empty
 
-function Tile({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
+function Tile({
+  selected,
+  onClick,
+  children,
+  className,
+}: {
+  selected: boolean
+  onClick: () => void
+  children: React.ReactNode
+  className?: string
+}) {
   return (
     <button
       type="button"
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        'flex min-h-14 w-full cursor-pointer items-center justify-center rounded-lg border bg-card px-3 py-3 text-center font-semibold transition-colors hover:border-foreground/40 hover:bg-secondary',
+        'flex min-h-14 w-full cursor-pointer items-center justify-center rounded-xl border border-subtle bg-base px-3 py-3 text-center font-semibold transition-colors hover:border-input hover:bg-surface',
+        className,
         selected && 'border-primary bg-primary text-primary-foreground hover:border-primary hover:bg-primary',
       )}
     >
@@ -108,7 +119,11 @@ function SizeGuide({
         type="button"
         aria-pressed={value === NOT_SURE}
         onClick={() => onChange(NOT_SURE)}
-        className={row(value === NOT_SURE)}
+        className={cn(
+          row(value === NOT_SURE),
+          'border',
+          value === NOT_SURE ? 'border-primary' : 'border-subtle bg-base',
+        )}
       >
         <span className="font-semibold">Not sure, please suggest</span>
       </button>
@@ -162,7 +177,9 @@ function PhotoPreview({ file }: { file: File }) {
     setUrl(value)
     return () => URL.revokeObjectURL(value)
   }, [file])
-  return url ? <img src={url} alt="Your inspiration photo" className="size-20 rounded-md object-cover" /> : null
+  return url ? (
+    <img src={url} alt="Your inspiration photo" className="size-20 rounded-lg border border-subtle object-cover" />
+  ) : null
 }
 
 export function CustomCakeInquiry() {
@@ -315,15 +332,17 @@ export function CustomCakeInquiry() {
 
   if (sent)
     return (
-      <div
-        ref={top}
-        role="status"
-        className="mx-auto max-w-2xl space-y-4 rounded-lg border bg-card card-pad text-center"
-      >
+      <div ref={top} role="status" className="card-surface card-pad-lg mx-auto max-w-2xl space-y-4 text-center">
+        <span
+          aria-hidden="true"
+          className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/[0.08] text-primary"
+        >
+          <PartyPopper className="size-6" strokeWidth={1.75} />
+        </span>
         <h2 className="heading-2">Inquiry received!</h2>
         <p className="text-lg">
-          Our kitchen team reviews custom requests daily and will send your official quote via email/text within 24–48
-          hours.
+          Our kitchen team reviews custom requests daily and will send your official quote via email/text within{' '}
+          <strong className="font-semibold">24–48 hours</strong>.
         </p>
         <p className="text-sm text-muted-foreground">
           Questions? Call{' '}
@@ -346,18 +365,13 @@ export function CustomCakeInquiry() {
       {/* Wide screens: the size guide and starting price stay beside the questions. */}
       <aside
         aria-label="Size guide"
-        className="sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden max-h-[calc(100dvh-var(--header-height)-3rem)] overflow-y-auto rounded-lg bg-surface p-5 lg:block"
+        className="card-surface sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden max-h-[calc(100dvh-var(--header-height)-3rem)] overflow-y-auto p-5 lg:block"
       >
-        <div className="mb-5 rounded-md bg-card p-4">{estimate}</div>
+        <div className="mb-5 rounded-lg bg-base p-4">{estimate}</div>
         <p className="heading-3 mb-3">Size guide</p>
         <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
       </aside>
-      <form
-        onSubmit={next}
-        noValidate
-        aria-busy={busy}
-        className="min-w-0 sm:rounded-lg sm:border sm:bg-card sm:card-pad"
-      >
+      <form onSubmit={next} noValidate aria-busy={busy} className="min-w-0 sm:card-surface sm:card-pad">
         <ol aria-label="Progress" className="mb-4 grid grid-cols-3 gap-2 sm:mb-6">
           {steps.map((name, index) => (
             <li
@@ -454,7 +468,7 @@ export function CustomCakeInquiry() {
               {/* Phones and tablets: the size guide in the step (it sits beside the form on wide screens). */}
               <fieldset className="lg:hidden">
                 <legend className={label}>Cake size</legend>
-                <div className="rounded-lg bg-surface p-3">
+                <div className="rounded-xl border border-subtle bg-base p-3">
                   <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
                 </div>
               </fieldset>
@@ -527,117 +541,120 @@ export function CustomCakeInquiry() {
                 </>
               )}
               {/* Phones and tablets: the starting price under the questions. */}
-              <div className="rounded-lg bg-surface p-4 lg:hidden">{estimate}</div>
+              <div className="rounded-xl border border-subtle bg-base p-4 lg:hidden">{estimate}</div>
             </>
           )}
 
           {step === 1 && (
             <>
-              <div className="space-y-5 rounded-lg border border-dashed border-primary/40 bg-surface p-4 sm:p-5">
+              <div className="space-y-5 rounded-xl border border-dashed border-input bg-base p-4 sm:p-5">
                 <p className="text-sm">
                   Adding a photo or link helps our decorators provide the most accurate quote and ensures we match your
                   exact vision!
                 </p>
-                <div>
-                  <input
-                    id="ci-photos"
-                    type="file"
-                    multiple
-                    className="peer sr-only"
-                    disabled={preparing || photos.length >= MAX_INSPIRATION}
-                    accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif"
-                    onChange={async event => {
-                      const selected = Array.from(event.target.files || [])
-                      event.target.value = ''
-                      if (photos.length + selected.length > MAX_INSPIRATION)
-                        return setError(`Please choose up to ${MAX_INSPIRATION} photos.`)
-                      setPreparing(true)
-                      setError('')
-                      setInvalid('')
-                      try {
-                        const prepared: File[] = []
-                        for (const file of selected)
-                          prepared.push(await prepareGalleryPhoto(file, { maxSide: 1400, maxBytes: MAX_PHOTO_BYTES }))
-                        setPhotos(current => [...current, ...prepared])
-                        requestId.current = ''
-                      } catch (e) {
-                        setError(e instanceof Error ? e.message : 'This photo could not be added.')
-                      } finally {
-                        setPreparing(false)
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor="ci-photos"
-                    className={cn(
-                      'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md border bg-card px-4 py-3 text-sm font-semibold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:bg-secondary',
-                      (preparing || photos.length >= MAX_INSPIRATION) && 'cursor-not-allowed opacity-50',
-                    )}
-                  >
-                    <ImagePlus aria-hidden="true" className="size-5 text-primary" />
-                    {preparing
-                      ? 'Preparing photo…'
-                      : photos.length
-                        ? `Add more (${photos.length} of ${MAX_INSPIRATION})`
-                        : 'Upload inspiration photos'}
-                  </label>
-                  {photos.length > 0 && (
-                    <ul className="mt-3 flex flex-wrap gap-3">
-                      {photos.map((file, index) => (
-                        <li key={file.name + index} className="relative">
-                          <PhotoPreview file={file} />
-                          <button
-                            type="button"
-                            aria-label={`Remove photo ${index + 1}`}
-                            onClick={() => {
-                              setPhotos(current => current.filter((_, i) => i !== index))
-                              requestId.current = ''
-                            }}
-                            className="absolute -top-3 -right-3 flex size-8 cursor-pointer items-center justify-center rounded-full bg-ink text-sm text-white"
-                          >
-                            ×
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="ci-link-0" className={label}>
-                    Instagram, Pinterest or web links
-                  </label>
-                  {data.links.map((link, index) => (
-                    <Input
-                      key={index}
-                      id={`ci-link-${index}`}
-                      type="url"
-                      inputMode="url"
-                      autoComplete="off"
-                      maxLength={MAX_REFERENCE_LINK}
-                      placeholder="https://"
-                      aria-label={index ? `Link ${index + 1}` : undefined}
-                      value={link}
-                      onChange={e =>
-                        set(
-                          'links',
-                          data.links.map((l, i) => (i === index ? e.target.value : l)),
-                        )
-                      }
-                    />
-                  ))}
-                  {data.links.length < MAX_REFERENCE_LINKS && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        set('links', [...data.links, ''])
-                        requestAnimationFrame(() => document.getElementById(`ci-link-${data.links.length}`)?.focus())
+                <div className="grid items-start gap-5 sm:grid-cols-2">
+                  <div>
+                    <p className={label}>Inspiration photos</p>
+                    <input
+                      id="ci-photos"
+                      type="file"
+                      multiple
+                      className="peer sr-only"
+                      disabled={preparing || photos.length >= MAX_INSPIRATION}
+                      accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif"
+                      onChange={async event => {
+                        const selected = Array.from(event.target.files || [])
+                        event.target.value = ''
+                        if (photos.length + selected.length > MAX_INSPIRATION)
+                          return setError(`Please choose up to ${MAX_INSPIRATION} photos.`)
+                        setPreparing(true)
+                        setError('')
+                        setInvalid('')
+                        try {
+                          const prepared: File[] = []
+                          for (const file of selected)
+                            prepared.push(await prepareGalleryPhoto(file, { maxSide: 1400, maxBytes: MAX_PHOTO_BYTES }))
+                          setPhotos(current => [...current, ...prepared])
+                          requestId.current = ''
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : 'This photo could not be added.')
+                        } finally {
+                          setPreparing(false)
+                        }
                       }}
-                      className="inline-flex min-h-11 cursor-pointer items-center gap-1 text-sm font-semibold text-primary"
+                    />
+                    <label
+                      htmlFor="ci-photos"
+                      className={cn(
+                        'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-input bg-card px-4 py-3 text-sm font-semibold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring hover:bg-surface',
+                        (preparing || photos.length >= MAX_INSPIRATION) && 'cursor-not-allowed opacity-50',
+                      )}
                     >
-                      <Plus aria-hidden="true" className="size-4" />
-                      Add another link
-                    </button>
-                  )}
+                      <ImagePlus aria-hidden="true" className="size-5 text-primary" />
+                      {preparing
+                        ? 'Preparing photo…'
+                        : photos.length
+                          ? `Add more (${photos.length} of ${MAX_INSPIRATION})`
+                          : 'Upload inspiration photos'}
+                    </label>
+                    {photos.length > 0 && (
+                      <ul className="mt-3 flex flex-wrap gap-3">
+                        {photos.map((file, index) => (
+                          <li key={file.name + index} className="relative">
+                            <PhotoPreview file={file} />
+                            <button
+                              type="button"
+                              aria-label={`Remove photo ${index + 1}`}
+                              onClick={() => {
+                                setPhotos(current => current.filter((_, i) => i !== index))
+                                requestId.current = ''
+                              }}
+                              className="absolute -top-3 -right-3 flex size-8 cursor-pointer items-center justify-center rounded-full bg-ink text-sm text-white"
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="ci-link-0" className={label}>
+                      Instagram, Pinterest or web links
+                    </label>
+                    {data.links.map((link, index) => (
+                      <Input
+                        key={index}
+                        id={`ci-link-${index}`}
+                        type="url"
+                        inputMode="url"
+                        autoComplete="off"
+                        maxLength={MAX_REFERENCE_LINK}
+                        placeholder="https://"
+                        aria-label={index ? `Link ${index + 1}` : undefined}
+                        value={link}
+                        onChange={e =>
+                          set(
+                            'links',
+                            data.links.map((l, i) => (i === index ? e.target.value : l)),
+                          )
+                        }
+                      />
+                    ))}
+                    {data.links.length < MAX_REFERENCE_LINKS && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          set('links', [...data.links, ''])
+                          requestAnimationFrame(() => document.getElementById(`ci-link-${data.links.length}`)?.focus())
+                        }}
+                        className="inline-flex min-h-11 cursor-pointer items-center gap-1 text-sm font-semibold text-primary"
+                      >
+                        <Plus aria-hidden="true" className="size-4" />
+                        Add another link
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <fieldset>
                   <legend className={label}>Styles</legend>
@@ -645,6 +662,8 @@ export function CustomCakeInquiry() {
                     {designStyles.map(style => (
                       <Tile
                         key={style}
+                        // White on the cream photo panel, so the tiles stand out from it.
+                        className="bg-card hover:bg-card"
                         selected={data.styles.includes(style)}
                         onClick={() => {
                           setData(d => ({

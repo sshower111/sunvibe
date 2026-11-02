@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/select'
 import { FormAlert } from '@/components/ui/form-message'
-import { CakePreview } from '@/components/cake-preview'
+import { CakePreview, filling as fillingColor, sponge as spongeColor } from '@/components/cake-preview'
 
 // Checkout for menu cakes (/order-cake, from the menu's Cakes chip; ?size= preselects a size). The 8" display cake is charged when ordered; every other
 // size is held on the card until the kitchen confirms (lib/cake-order.ts). Custom designs go to /custom-cakes.
@@ -38,6 +38,11 @@ const steps = ['Cake', 'Pickup', 'Pay'] as const
 const PAY = 2
 const money = (n: number) => '$' + (Number.isInteger(n) ? n : n.toFixed(2))
 const sizes = cakeCatalog.filter(cake => (ORDER_SIZES as readonly string[]).includes(cake.value))
+// Round cakes and sheet cakes are chosen from their own rows.
+const sizeGroups = [
+  { title: 'Round cakes', cols: 'sm:grid-cols-4', items: sizes.filter(cake => cake.category === 'Round') },
+  { title: 'Sheet cakes', cols: 'grid-cols-3', items: sizes.filter(cake => cake.category === 'Sheet') },
+]
 /** Phones and tablets: the one-column layout (the cake drawing beside the steps starts at lg). */
 const narrow = () => window.matchMedia('(max-width: 1023px)').matches
 
@@ -54,17 +59,17 @@ const empty = {
 }
 type Data = typeof empty
 
-/** Lead time for the chosen size: ready in 4 hours (8"), or the kitchen confirms first (also 4 hours' notice). */
+/** Lead time for the chosen size: express pickup (8"), or the kitchen confirms first. */
 function CakeLeadBadge({ size }: { size: string }) {
   const instant = isInstantCake(size)
   return (
     <span
       className={cn(
-        'inline-flex w-fit items-center rounded-md px-2.5 py-1.5 text-left text-xs font-medium',
-        instant ? 'bg-success-tint text-success' : 'bg-warning-tint text-warning',
+        'inline-flex w-fit items-center rounded-full px-3 py-1 text-left text-xs font-semibold',
+        instant ? 'border border-subtle bg-base text-ink' : 'bg-primary/10 text-primary',
       )}
     >
-      {instant ? `Ready in ${INSTANT_NOTICE_HOURS} hours` : CONFIRM_BADGE}
+      {instant ? `${INSTANT_NOTICE_HOURS}-Hour Express Pickup` : CONFIRM_BADGE}
     </span>
   )
 }
@@ -75,11 +80,14 @@ function Choice({
   onClick,
   title,
   sub,
+  dot,
 }: {
   selected: boolean
   onClick: () => void
   title: string
   sub?: string
+  /** The food's own color, shown as a small dot before the title. */
+  dot?: string
 }) {
   return (
     <button
@@ -87,11 +95,20 @@ function Choice({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        'flex min-h-16 w-full cursor-pointer flex-col items-center justify-center rounded-lg border bg-card px-3 py-3 text-center transition-colors hover:border-foreground/40 hover:bg-secondary',
+        'flex min-h-16 w-full cursor-pointer flex-col items-center justify-center rounded-xl border border-subtle bg-base px-3 py-3 text-center transition-colors hover:border-input hover:bg-surface',
         selected && 'border-primary bg-primary text-primary-foreground hover:border-primary hover:bg-primary',
       )}
     >
-      <span className="font-semibold sm:text-lg">{title}</span>
+      <span className="flex items-center gap-2 font-semibold sm:text-lg">
+        {dot && (
+          <span
+            aria-hidden="true"
+            style={{ backgroundColor: dot }}
+            className={cn('size-2.5 shrink-0 rounded-full ring-1', selected ? 'ring-white/70' : 'ring-ink/15')}
+          />
+        )}
+        {title}
+      </span>
       {sub && (
         <span className={cn('mt-1 text-sm', selected ? 'text-primary-foreground/85' : 'text-muted-foreground')}>
           {sub}
@@ -107,19 +124,27 @@ function Pills({
   options,
   value,
   onChange,
+  colors,
 }: {
   name: string
   legend: string
   options: readonly string[]
   value: string
   onChange: (value: string) => void
+  colors: Record<string, string>
 }) {
   return (
     <fieldset id={name}>
       <legend className="mb-3 text-sm font-semibold">{legend}</legend>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {options.map(option => (
-          <Choice key={option} title={option} selected={value === option} onClick={() => onChange(option)} />
+          <Choice
+            key={option}
+            title={option}
+            dot={colors[option]}
+            selected={value === option}
+            onClick={() => onChange(option)}
+          />
         ))}
       </div>
     </fieldset>
@@ -330,7 +355,7 @@ export function CakeOrderFlow({ square, initialSize = '' }: { square: SquareConf
       {/* Wide screens: the cake stays in view beside the questions. */}
       <aside
         aria-label="Your cake"
-        className="sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden rounded-lg bg-surface p-6 lg:block"
+        className="card-surface sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden p-6 lg:block"
       >
         <p className="heading-3">Your cake</p>
         <div className="mt-4">{preview}</div>
@@ -343,12 +368,7 @@ export function CakeOrderFlow({ square, initialSize = '' }: { square: SquareConf
           </>
         )}
       </aside>
-      <form
-        onSubmit={next}
-        noValidate
-        aria-busy={busy}
-        className="relative min-w-0 sm:rounded-lg sm:border sm:bg-card sm:card-pad"
-      >
+      <form onSubmit={next} noValidate aria-busy={busy} className="relative min-w-0 sm:card-surface sm:card-pad">
         <ol aria-label="Progress" className="mb-4 grid grid-cols-3 gap-2 sm:mb-6">
           {steps.map((name, index) => (
             <li
@@ -396,18 +416,25 @@ export function CakeOrderFlow({ square, initialSize = '' }: { square: SquareConf
             <>
               <fieldset id="flow-size">
                 <legend className="mb-3 text-sm font-semibold">Size</legend>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {sizes.map(item => (
-                    <Choice
-                      key={item.value}
-                      title={item.label.replace(' round', '')}
-                      sub={`Serves ${item.servings}`}
-                      selected={data.size === item.value}
-                      onClick={() => {
-                        set('size', item.value)
-                        reveal('flow-flavor')
-                      }}
-                    />
+                <div className="space-y-4">
+                  {sizeGroups.map(group => (
+                    <div key={group.title} role="group" aria-label={group.title}>
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">{group.title}</p>
+                      <div className={cn('grid grid-cols-2 gap-3', group.cols)}>
+                        {group.items.map(item => (
+                          <Choice
+                            key={item.value}
+                            title={item.label.replace(' round', '')}
+                            sub={`Serves ${item.servings}`}
+                            selected={data.size === item.value}
+                            onClick={() => {
+                              set('size', item.value)
+                              reveal('flow-flavor')
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
                 {data.size && (
@@ -422,6 +449,7 @@ export function CakeOrderFlow({ square, initialSize = '' }: { square: SquareConf
                 name="flow-flavor"
                 legend="Cake flavor"
                 options={ORDER_FLAVORS}
+                colors={spongeColor}
                 value={data.flavor}
                 onChange={value => {
                   set('flavor', value)
@@ -432,6 +460,7 @@ export function CakeOrderFlow({ square, initialSize = '' }: { square: SquareConf
                 name="flow-filling"
                 legend="Filling"
                 options={ORDER_FILLINGS}
+                colors={fillingColor}
                 value={data.filling}
                 onChange={value => {
                   set('filling', value)

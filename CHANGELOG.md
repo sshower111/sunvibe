@@ -4,6 +4,11 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-11-02
+
+- **Custom cakes page in the new look**: the form and the Size guide panel are white cards with a sand border and soft shadow; the starting price sits in a cream box. "Not sure, please suggest" now has a sand border when not chosen. Occasion, guests, pickup/delivery and style tiles are cream with a sand border until chosen (then solid terracotta), the same on the cake order page. The photo and link panel is cream with a dashed sand border; Inspiration photos and the links now sit side by side on wider screens, and thumbnails have a sand border. The thank-you card has a party icon and puts "24–48 hours" in bold. (`components/custom-cake-inquiry.tsx`, `components/cake-order-flow.tsx`, `docs/UI-DESIGN-SYSTEM.md`)
+- **Menu and cake order page in the new look**: menu category chips are now pills (the chosen one solid terracotta, the others cream with a sand border), card photos are clipped to the card's rounded top and zoom to 105% on hover. On the cake order page the sizes are split into **Round cakes** (6", 8", 10", 12" in one row of 4) and **Sheet cakes** (1/4, 1/2, Full in one row of 3), so there are no empty slots. Flavor and filling tiles show a small dot in the food's color (green for Green Tea, purple for Taro, pink for Strawberry, brown for Chocolate and so on). The lead-time note is now a pill: "4-Hour Express Pickup" (cream) for the 8" (it said "Ready in 4 hours"), and the kitchen-confirmation badge in a terracotta tint. The Your cake sidebar is a white card. (`components/menu-page.tsx`, `components/cake-order-flow.tsx`, `components/cake-preview.tsx`, `app/globals.css`, `docs/UI-DESIGN-SYSTEM.md`, `docs/CAKE-ORDERS.md`)
+
 ## 2026-11-01
 
 - **Header: underline back instead of the dot**: the current page in the header is marked with the terracotta underline again (and the short bar in the phone menu), instead of the small dot. (`components/navigation.tsx`, `docs/UI-DESIGN-SYSTEM.md`)
