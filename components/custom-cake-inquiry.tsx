@@ -221,6 +221,22 @@ export function CustomCakeInquiry() {
     })
   }
 
+  /**
+   * After an answer, brings the next question into view under the header (the first of `ids` that is shown, so a
+   * phones-only field can fall back to the next one). Leaves the page alone when it is already fully in view.
+   */
+  const reveal = (...ids: string[]) =>
+    requestAnimationFrame(() => {
+      const target = ids.map(id => document.getElementById(id)).find(el => el?.offsetParent)
+      if (!target) return
+      const cover = (document.querySelector('header')?.getBoundingClientRect().bottom ?? 0) + 16
+      // Phones: the Next button is pinned to the bottom of the screen.
+      const bottom = window.innerHeight - (narrow() ? 96 : 24)
+      const box = target.getBoundingClientRect()
+      if (box.top >= cover && box.bottom <= bottom) return
+      window.scrollBy({ top: box.top - cover, behavior: 'smooth' })
+    })
+
   const guestCount = (value: string) => (/^\d{1,3}$/.test(value) ? Number(value) : 0)
   const bestFitFor = (count: number) => (count > 0 ? recommend(count, 'Any', 'Please recommend').best : null)
   const guests = guestCount(data.guests)
@@ -441,24 +457,41 @@ export function CustomCakeInquiry() {
                   value={data.date}
                   minDate={minDate}
                   invalid={invalid === 'ci-date'}
-                  onChange={value => set('date', value)}
+                  onChange={value => {
+                    set('date', value)
+                    reveal('ci-event')
+                  }}
                 />
               </div>
               <fieldset id="ci-event" tabIndex={-1} aria-invalid={bad('ci-event')}>
                 <legend className={label}>Occasion</legend>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {eventTypes.map(type => (
-                    <Tile key={type} selected={data.eventType === type} onClick={() => set('eventType', type)}>
+                    <Tile
+                      key={type}
+                      selected={data.eventType === type}
+                      onClick={() => {
+                        set('eventType', type)
+                        reveal('ci-guest-count')
+                      }}
+                    >
                       {type}
                     </Tile>
                   ))}
                 </div>
               </fieldset>
-              <fieldset>
+              <fieldset id="ci-guest-count">
                 <legend className={label}>Guests</legend>
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                   {guestPresets.map(value => (
-                    <Tile key={value} selected={data.guests === String(value)} onClick={() => setGuests(String(value))}>
+                    <Tile
+                      key={value}
+                      selected={data.guests === String(value)}
+                      onClick={() => {
+                        setGuests(String(value))
+                        reveal('ci-size-guide', 'ci-budget')
+                      }}
+                    >
                       {value === 100 ? '100+' : value}
                     </Tile>
                   ))}
@@ -477,21 +510,43 @@ export function CustomCakeInquiry() {
                     aria-invalid={bad('ci-guests')}
                     value={data.guests}
                     onChange={e => setGuests(e.target.value)}
+                    enterKeyHint="done"
+                    // Typing stays put; done (Enter or leaving the box) moves on.
+                    onKeyDown={e => {
+                      if (e.key !== 'Enter') return
+                      e.preventDefault()
+                      e.currentTarget.blur()
+                    }}
+                    onBlur={() => guests > 0 && reveal('ci-size-guide', 'ci-budget')}
                   />
                 </div>
               </fieldset>
               {/* Phones and tablets: the size guide in the step (it sits beside the form on wide screens). */}
-              <fieldset className="lg:hidden">
+              <fieldset id="ci-size-guide" className="lg:hidden">
                 <legend className={label}>Cake size</legend>
                 <div className="rounded-xl border border-subtle bg-base p-3">
-                  <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
+                  <SizeGuide
+                    value={data.size}
+                    onChange={value => {
+                      set('size', value)
+                      reveal('ci-budget')
+                    }}
+                    bestFit={bestFit}
+                  />
                 </div>
               </fieldset>
               <div>
                 <label htmlFor="ci-budget" className={label}>
                   Budget
                 </label>
-                <NativeSelect id="ci-budget" value={data.budget} onChange={e => set('budget', e.target.value)}>
+                <NativeSelect
+                  id="ci-budget"
+                  value={data.budget}
+                  onChange={e => {
+                    set('budget', e.target.value)
+                    reveal('ci-fulfillment')
+                  }}
+                >
                   {budgets.map(budget => (
                     <option key={budget} value={budget}>
                       {budget === budgets[0] ? 'Not sure yet' : budget}
@@ -499,16 +554,28 @@ export function CustomCakeInquiry() {
                   ))}
                 </NativeSelect>
               </div>
-              <fieldset>
+              <fieldset id="ci-fulfillment">
                 <legend className={label}>Pickup or delivery</legend>
                 <div className="grid grid-cols-2 gap-3">
-                  <Tile selected={!data.delivery} onClick={() => set('delivery', false)}>
+                  <Tile
+                    selected={!data.delivery}
+                    onClick={() => {
+                      set('delivery', false)
+                      reveal('ci-next')
+                    }}
+                  >
                     <span>
                       Pickup
                       <span className="block text-sm font-normal opacity-85">{SITE.street}</span>
                     </span>
                   </Tile>
-                  <Tile selected={data.delivery} onClick={() => set('delivery', true)}>
+                  <Tile
+                    selected={data.delivery}
+                    onClick={() => {
+                      set('delivery', true)
+                      reveal('ci-delivery')
+                    }}
+                  >
                     <span>
                       Delivery
                       <span className="block text-sm font-normal opacity-85">from {money(30)}</span>
@@ -527,7 +594,10 @@ export function CustomCakeInquiry() {
                           <Tile
                             key={option}
                             selected={data.deliveryOption === option}
-                            onClick={() => set('deliveryOption', option)}
+                            onClick={() => {
+                              set('deliveryOption', option)
+                              reveal('ci-address')
+                            }}
                           >
                             <span>
                               {title}
@@ -699,7 +769,17 @@ export function CustomCakeInquiry() {
                   <label htmlFor="ci-flavor" className={label}>
                     Cake flavor
                   </label>
-                  <NativeSelect id="ci-flavor" value={data.flavor} onChange={e => set('flavor', e.target.value)}>
+                  <NativeSelect
+                    id="ci-flavor"
+                    value={data.flavor}
+                    onChange={e => {
+                      set('flavor', e.target.value)
+                      // Other: type the flavor first; otherwise on to the filling.
+                      if (isCustomFlavor(e.target.value))
+                        requestAnimationFrame(() => document.getElementById('ci-custom-flavor')?.focus())
+                      else reveal('ci-filling')
+                    }}
+                  >
                     {flavors.map(flavor => (
                       <option key={flavor} value={flavor}>
                         {optionLabel(flavor)}
@@ -724,7 +804,16 @@ export function CustomCakeInquiry() {
                   <label htmlFor="ci-filling" className={label}>
                     Filling
                   </label>
-                  <NativeSelect id="ci-filling" value={data.filling} onChange={e => set('filling', e.target.value)}>
+                  <NativeSelect
+                    id="ci-filling"
+                    value={data.filling}
+                    onChange={e => {
+                      set('filling', e.target.value)
+                      if (isCustomFilling(e.target.value))
+                        requestAnimationFrame(() => document.getElementById('ci-custom-filling')?.focus())
+                      else reveal('ci-message')
+                    }}
+                  >
                     {fillings.map(filling => (
                       <option key={filling} value={filling}>
                         {optionLabel(filling)}
@@ -843,7 +932,13 @@ export function CustomCakeInquiry() {
               'max-sm:sticky max-sm:bottom-0 max-sm:z-20 max-sm:-mx-[var(--gutter)] max-sm:bg-background max-sm:px-[var(--gutter)] max-sm:pt-3 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:shadow-pop',
             )}
           >
-            <Button type="submit" loading={busy} disabled={busy || preparing} className="w-full sm:w-auto sm:min-w-56">
+            <Button
+              id="ci-next"
+              type="submit"
+              loading={busy}
+              disabled={busy || preparing}
+              className="w-full sm:w-auto sm:min-w-56"
+            >
               {step < 2 ? 'Next' : busy ? 'Sending…' : 'Request a quote'}
             </Button>
           </div>
