@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   fillingText,
+  flavorText as typedFlavor,
   referenceLinks,
   formatEventTime,
   inquiryRef,
@@ -192,7 +193,7 @@ export function AdminCakeInquiries() {
     const draft = drafts[i.id] ?? i.staffNotes
     const flavorText = i.tierFlavors
       ? tierFlavorLines(i.size, i.tierFlavors, v => fillingText(v, i.customFilling)).join('\n')
-      : `${i.flavor} / ${fillingText(i.filling, i.customFilling)}`
+      : `${typedFlavor(i.flavor, i.customFlavor)} / ${fillingText(i.filling, i.customFilling)}`
     const menu: MenuItem[] = [
       { label: 'Call ' + i.phone, href: 'tel:' + i.phone.replace(/[^+0-9]/g, '') },
       { label: 'Email ' + i.email, href: 'mailto:' + i.email },

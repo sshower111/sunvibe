@@ -4,6 +4,7 @@ import { SITE } from '@/lib/site-info'
 import {
   type CakeInquiry,
   fillingText,
+  flavorText,
   inquiryRef,
   formatEventTime,
   tierFlavorLines,
@@ -36,6 +37,7 @@ export async function sendBakeryEmail(data: CakeInquiry, { requestId, attachment
     size: cakeLabel(data.size),
     eventTime: formatEventTime(data.eventTime) || 'Not decided yet',
     deliveryAddress: data.fulfillment === 'Pickup' ? 'Bakery pickup' : data.deliveryAddress,
+    flavor: flavorText(data.flavor, data.customFlavor),
     textOk: data.textOk === 'yes' ? 'Yes' : 'No',
     // Different flavor per tier: one line per tier under Flavor.
     ...(tierFlavors && {
@@ -130,7 +132,7 @@ export async function sendCustomerCopy(data: CakeInquiry, { requestId, test }: O
     eventTime: formatEventTime(data.eventTime) || 'Not decided yet',
     flavors: tierFlavors
       ? tierFlavorLines(data.size, tierFlavors, v => fillingText(v, data.customFilling)).join('; ')
-      : `${data.flavor} / ${fillingText(data.filling, data.customFilling)}`,
+      : `${flavorText(data.flavor, data.customFlavor)} / ${fillingText(data.filling, data.customFilling)}`,
   }
   try {
     const copy = await mailer().emails.send(

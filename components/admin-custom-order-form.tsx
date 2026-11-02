@@ -4,6 +4,7 @@ import { cakeCatalog, deliveryOptions, findCake } from '@/lib/cake-catalog'
 import {
   fillingText,
   isCustomFilling,
+  isCustomFlavor,
   flavors,
   fillings,
   MAX_CAKE_MESSAGE,
@@ -40,7 +41,9 @@ export function AdminCustomOrderForm({
   const [withDeposit, setWithDeposit] = useState(false)
   const [data, setData] = useState({
     size: pick(inquiry.size, ['Not sure']),
-    flavor: byTier(inquiry, 'flavor') ?? pick(inquiry.flavor, ['Please recommend']),
+    flavor:
+      byTier(inquiry, 'flavor') ??
+      (isCustomFlavor(inquiry.flavor) ? inquiry.customFlavor || '' : pick(inquiry.flavor, ['Please recommend'])),
     filling:
       byTier(inquiry, 'filling') ??
       (isCustomFilling(inquiry.filling) ? inquiry.customFilling || '' : pick(inquiry.filling, ['Please recommend'])),
@@ -115,7 +118,7 @@ export function AdminCustomOrderForm({
             onChange={e => update('flavor', e.target.value)}
           />
           <datalist id={id('flavors')}>
-            {flavors.slice(1).map(f => (
+            {flavors.slice(1, -1).map(f => (
               <option key={f} value={f} />
             ))}
           </datalist>

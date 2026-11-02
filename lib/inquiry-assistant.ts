@@ -82,6 +82,7 @@ export function inquiryForModel(i: Inquiry) {
     size: i.size,
     flavor: i.flavor,
     filling: i.filling,
+    ...(i.customFlavor ? { customFlavor: i.customFlavor } : {}),
     ...(i.customFilling ? { customFilling: i.customFilling } : {}),
     ...(i.tierFlavors ? { tierFlavors: i.tierFlavors } : {}),
     cakeMessage: i.cakeMessage,
@@ -116,7 +117,7 @@ export const SYSTEM_PROMPT = `You help Sunville Bakery in Las Vegas answer custo
 
 ## The bakery
 Asian-style cakes: light chiffon sponge, fresh fruit, not overly sweet, decorated with light whipped cream.
-Flavors: ${flavors.filter(f => f !== 'Please recommend').join(', ')}.
+Flavors: ${flavors.filter(f => f !== 'Please recommend' && f !== 'Something else').join(', ')}.
 Fillings: ${fillings.filter(f => f !== 'Please recommend').join(', ')} (other fillings are possible on request).
 
 Cakes and starting prices. Round and sheet prices are by filling group: ${priceGroups.join(' | ')}. Tiered cakes have one price.

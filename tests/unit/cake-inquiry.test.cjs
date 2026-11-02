@@ -282,3 +282,17 @@ test('"Something else" needs the customer to type their filling, which the email
   assert.equal((await post({ filling: 'Mango', requestId: '44444444-4444-4444-8444-444444444444' })).status, 200)
   assert(!mail[0].body.html.includes('Their filling'))
 })
+
+test('"Other" flavor: the customer types it, and the emails and order flavors show it', async () => {
+  mail.length = 0
+  const custom = { flavor: 'Something else', requestId: '55555555-5555-4555-8555-555555555555' }
+  assert.equal((await post(custom)).status, 400)
+  assert.equal((await post({ ...custom, customFlavor: 'x'.repeat(61) })).status, 400)
+  assert.equal((await post({ ...custom, customFlavor: 'Black sesame' })).status, 200)
+  assert(row(mail[0].body.html, 'Flavor preference', 'Black sesame'))
+  assert(row(mail[0].body.html, '口味偏好', 'Black sesame'))
+  assert(mail[1].body.text.includes('Black sesame / Please recommend'))
+  assert.equal(saved.at(-1).customFlavor, 'Black sesame')
+  // Paid orders only offer listed flavors.
+  assert(!load('lib/cake-order.ts').ORDER_FLAVORS.includes('Something else'))
+})

@@ -12,7 +12,23 @@ export const budgets = [
   '$500–$800',
   '$800+',
 ] as const
-export const flavors = ['Please recommend', 'Vanilla', 'Chocolate', 'Coffee', 'Green Tea', 'Orange', 'Pandan'] as const
+export const flavors = [
+  'Please recommend',
+  'Vanilla',
+  'Chocolate',
+  'Coffee',
+  'Green Tea',
+  'Orange',
+  'Pandan',
+  'Something else',
+] as const
+// A flavor we don't list: the customer types it (customFlavor). Not offered for paid orders (lib/cake-order.ts).
+export const CUSTOM_FLAVOR = flavors[flavors.length - 1]
+export const MAX_CUSTOM_FLAVOR = 60
+export const isCustomFlavor = (value: string) => value === CUSTOM_FLAVOR
+/** The flavor as people should read it: a typed flavor replaces "Something else". */
+export const flavorText = (flavor: string, customFlavor = '') =>
+  isCustomFlavor(flavor) && customFlavor ? customFlavor : flavor
 export const fillings = [
   'Please recommend',
   'Mixed Fresh Fruit',
@@ -152,6 +168,11 @@ export const cakeInquirySchema = z
       .trim()
       .max(MAX_CUSTOM_FILLING, `Please keep the filling under ${MAX_CUSTOM_FILLING} characters.`)
       .default(''),
+    customFlavor: z
+      .string()
+      .trim()
+      .max(MAX_CUSTOM_FLAVOR, `Please keep the flavor under ${MAX_CUSTOM_FLAVOR} characters.`)
+      .default(''),
     budget: z.enum(budgets),
     // Design references from /custom-cakes (older inquiries have neither): styles joined by ", ", links one per line.
     designStyle: z
@@ -198,6 +219,10 @@ export const cakeInquirySchema = z
   .refine(v => !usesCustomFilling(v) || v.customFilling, {
     message: 'Tell us which filling you’d like.',
     path: ['customFilling'],
+  })
+  .refine(v => !isCustomFlavor(v.flavor) || v.customFlavor, {
+    message: 'Tell us which flavor you’d like.',
+    path: ['customFlavor'],
   })
 export type CakeInquiry = z.infer<typeof cakeInquirySchema>
 /** True when the cake, or any of its tiers, has a filling the customer typed. */

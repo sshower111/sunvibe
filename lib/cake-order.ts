@@ -35,7 +35,7 @@ export const CONFIRM_NOTICE_HOURS = 4
 export const CONFIRM_BADGE = `Requires Kitchen Confirmation (${CONFIRM_NOTICE_HOURS}h Lead Time)`
 export const noticeHours = (size: string) => (isInstantCake(size) ? INSTANT_NOTICE_HOURS : CONFIRM_NOTICE_HOURS)
 
-export const ORDER_FLAVORS = flavors.filter(f => f !== 'Please recommend')
+export const ORDER_FLAVORS = flavors.filter(f => f !== 'Please recommend' && f !== 'Something else')
 // Each filling is priced with one column of the pricing sheet (lib/cake-catalog.ts priceGroups).
 export const FILLING_PRICE_GROUP: Record<string, number> = {
   Custard: 0,

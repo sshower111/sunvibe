@@ -13,6 +13,10 @@ import {
   eventTypes,
   fillings,
   flavors,
+  isCustomFilling,
+  isCustomFlavor,
+  MAX_CUSTOM_FILLING,
+  MAX_CUSTOM_FLAVOR,
   MAX_CAKE_MESSAGE,
   MAX_PHOTO_BYTES,
   MAX_REFERENCE_LINK,
@@ -47,7 +51,8 @@ const MAX_INSPIRATION = 3
 const guestPresets = [10, 20, 30, 50, 75, 100]
 /** Phones and tablets. */
 const narrow = () => window.matchMedia('(max-width: 1023px)').matches
-const notSure = (value: string) => (value === 'Please recommend' ? 'Not sure yet' : value)
+const optionLabel = (value: string) =>
+  value === 'Please recommend' ? 'Not sure yet' : value.startsWith('Something else') ? 'Other' : value
 
 const empty = {
   date: '',
@@ -62,6 +67,8 @@ const empty = {
   links: [''],
   flavor: 'Please recommend',
   filling: 'Please recommend',
+  customFlavor: '',
+  customFilling: '',
   cakeMessage: '',
   notes: '',
   name: '',
@@ -259,6 +266,12 @@ export function CustomCakeInquiry() {
       if (data.delivery && !data.deliveryOption) return ['Choose a delivery option.', 'ci-delivery']
       if (data.delivery && !data.deliveryAddress.trim()) return ['Enter the delivery address or hotel.', 'ci-address']
     }
+    if (step === 1) {
+      if (isCustomFlavor(data.flavor) && !data.customFlavor.trim())
+        return ['Tell us which flavor you’d like.', 'ci-custom-flavor']
+      if (isCustomFilling(data.filling) && !data.customFilling.trim())
+        return ['Tell us which filling you’d like.', 'ci-custom-filling']
+    }
     if (step === 2) {
       if (!data.name.trim()) return ['Enter your full name.', 'ci-name']
       if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) return ['Enter a valid email address.', 'ci-email']
@@ -297,6 +310,8 @@ export function CustomCakeInquiry() {
         size: data.size,
         flavor: data.flavor,
         filling: data.filling,
+        customFlavor: isCustomFlavor(data.flavor) ? data.customFlavor.trim() : '',
+        customFilling: isCustomFilling(data.filling) ? data.customFilling.trim() : '',
         cakeMessage: data.cakeMessage,
         budget: data.budget,
         designStyle: designStyles.filter(style => data.styles.includes(style)).join(STYLE_SEPARATOR),
@@ -687,25 +702,48 @@ export function CustomCakeInquiry() {
                   <NativeSelect id="ci-flavor" value={data.flavor} onChange={e => set('flavor', e.target.value)}>
                     {flavors.map(flavor => (
                       <option key={flavor} value={flavor}>
-                        {notSure(flavor)}
+                        {optionLabel(flavor)}
                       </option>
                     ))}
                   </NativeSelect>
+                  {isCustomFlavor(data.flavor) && (
+                    <Input
+                      id="ci-custom-flavor"
+                      aria-label="Which flavor?"
+                      placeholder="Which flavor?"
+                      className="mt-2"
+                      maxLength={MAX_CUSTOM_FLAVOR}
+                      autoComplete="off"
+                      aria-invalid={bad('ci-custom-flavor')}
+                      value={data.customFlavor}
+                      onChange={e => set('customFlavor', e.target.value)}
+                    />
+                  )}
                 </div>
                 <div>
                   <label htmlFor="ci-filling" className={label}>
                     Filling
                   </label>
                   <NativeSelect id="ci-filling" value={data.filling} onChange={e => set('filling', e.target.value)}>
-                    {/* A filling we don't list goes in the notes. */}
-                    {fillings
-                      .filter(filling => !filling.startsWith('Something else'))
-                      .map(filling => (
-                        <option key={filling} value={filling}>
-                          {notSure(filling)}
-                        </option>
-                      ))}
+                    {fillings.map(filling => (
+                      <option key={filling} value={filling}>
+                        {optionLabel(filling)}
+                      </option>
+                    ))}
                   </NativeSelect>
+                  {isCustomFilling(data.filling) && (
+                    <Input
+                      id="ci-custom-filling"
+                      aria-label="Which filling?"
+                      placeholder="Which filling?"
+                      className="mt-2"
+                      maxLength={MAX_CUSTOM_FILLING}
+                      autoComplete="off"
+                      aria-invalid={bad('ci-custom-filling')}
+                      value={data.customFilling}
+                      onChange={e => set('customFilling', e.target.value)}
+                    />
+                  )}
                 </div>
               </div>
               <div>
