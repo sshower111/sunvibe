@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { AdminStorageKey } from '@/components/admin-storage-key'
 import { AdminNotifications } from '@/components/admin-notifications'
-import { AdminStaffPhones } from '@/components/admin-staff-phones'
 
 export function AdminSettings() {
   const [maintenanceMode, setMaintenanceMode] = useState<boolean | null>(null)
@@ -17,7 +16,6 @@ export function AdminSettings() {
   return (
     <div className="space-y-4">
       <AdminNotifications />
-      <AdminStaffPhones />
       <section aria-labelledby="settings-heading" className="space-y-4 rounded-xl border bg-white p-4 sm:p-6">
         <h2 id="settings-heading" className="heading-2">
           Settings

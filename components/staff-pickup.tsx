@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { isDelivery, kitchenText, orderRef, type StoredCakeOrder } from '@/lib/cake-order'
+import { isDelivery, orderRef, sizeLabel, zhPickup, type StoredCakeOrder } from '@/lib/cake-order'
+import { zhOption } from '@/lib/email-zh'
 import { Button } from './ui/button'
-import { StaffShell, StaffSignIn, useStaffSession } from './staff-sign-in'
+import { StaffSignIn, useStaffSession } from './staff-sign-in'
 
 // The pickup screen, in Chinese for the bakery staff: opened by scanning the QR code in the customer's
-// confirmation email (lib/pickup-qr.ts). Shows the order and confirms the pickup (or delivery) with one tap.
+// confirmation email (lib/pickup-qr.ts). The order at a glance and one button to confirm the pickup or delivery.
 // Staff phones and admins can use it (app/api/staff/pickup/route.ts); it shows nothing else.
 
 type Done = { at: string; action: string }
@@ -20,25 +21,34 @@ const zhTime = (iso: string) =>
     hour: 'numeric',
     minute: '2-digit',
   })
+const NOT_READY: Partial<Record<StoredCakeOrder['status'], string>> = {
+  awaiting_payment: '客人還未付款',
+  expired: '客人還未付款',
+  awaiting_approval: '訂單還未確認',
+  checking_kitchen: '訂單還未確認',
+  hold_expired: '訂單還未確認',
+  processing: '正在付款，請稍後刷新',
+  declined: '訂單已取消',
+  refunded: '訂單已退款',
+  failed: '付款失敗',
+}
+
+function Page({ children }: { children: React.ReactNode }) {
+  return (
+    <main lang="zh-Hant" className="min-h-dvh bg-white">
+      <div className="mx-auto max-w-md px-5 pb-48 pt-[max(1.5rem,env(safe-area-inset-top))]">{children}</div>
+    </main>
+  )
+}
 
 export function StaffPickup({ id }: { id: string }) {
   const { role, setRole } = useStaffSession()
-  if (role === undefined)
-    return (
-      <StaffShell>
-        <p className="text-center text-muted-foreground">載入中…</p>
-      </StaffShell>
-    )
-  if (role === null)
-    return (
-      <StaffShell>
-        <StaffSignIn onSignedIn={() => setRole('staff')} />
-      </StaffShell>
-    )
   return (
-    <StaffShell>
-      <PickupOrder id={id} admin={role === 'admin'} onSignedOut={() => setRole(null)} />
-    </StaffShell>
+    <Page>
+      {role === undefined && <p className="pt-10 text-center text-muted-foreground">載入中…</p>}
+      {role === null && <StaffSignIn onSignedIn={() => setRole('staff')} />}
+      {role && <PickupOrder id={id} admin={role === 'admin'} onSignedOut={() => setRole(null)} />}
+    </Page>
   )
 }
 
@@ -65,7 +75,7 @@ function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; o
     [id, onSignedOut],
   )
   const load = useCallback(
-    () => request('get').catch(e => setError((e as Error).message || '找不到這張訂單，或網絡有問題。請重試。')),
+    () => request('get').catch(e => setError((e as Error).message || '找不到這張訂單。')),
     [request],
   )
   useEffect(() => {
@@ -73,115 +83,113 @@ function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; o
   }, [load])
 
   if (!order)
-    return (
-      <section className="space-y-3">
-        {error ? (
-          <>
-            <p role="alert" className="text-lg text-danger">
-              {error}
-            </p>
-            <Button onClick={() => void load()}>重試</Button>
-          </>
-        ) : (
-          <p className="text-muted-foreground">載入中…</p>
-        )}
-      </section>
+    return error ? (
+      <div className="space-y-4 pt-10 text-center">
+        <p role="alert" className="text-lg text-danger">
+          {error}
+        </p>
+        <Button variant="outline" onClick={() => void load()}>
+          重試
+        </Button>
+      </div>
+    ) : (
+      <p className="pt-10 text-center text-muted-foreground">載入中…</p>
     )
 
   const delivery = isDelivery(order)
   const done = order.status === 'picked_up'
   const ready = order.status === 'paid' || order.status === 'deposit_paid'
   const balance = order.deposit && order.status === 'deposit_paid' ? order.price - order.deposit : 0
-  const rows = kitchenText(order)
-    .split('\n')
-    .map(line => {
-      const [label, ...value] = line.split('：')
-      return [label, value.join('：')] as const
-    })
+  const verb = delivery ? '送達' : '取貨'
   const confirm = () => {
-    if (!window.confirm(`確認 ${orderRef(order)} ${delivery ? '已送達' : '已取貨'}？`)) return
+    if (!window.confirm(`確認已${verb}？`)) return
     setBusy(true)
     request('confirm')
       .catch(e => setError((e as Error).message || '未能更新，請重試。'))
       .finally(() => setBusy(false))
   }
-  const blocked: Partial<Record<StoredCakeOrder['status'], string>> = {
-    awaiting_payment: '客人還未付款。請先收款。',
-    expired: '付款連結已過期，客人還未付款。',
-    awaiting_approval: '訂單還未確認（未收款）。',
-    checking_kitchen: '訂單還未確認（未收款）。',
-    hold_expired: '訂單還未確認（未收款）。',
-    processing: '正在付款中，請稍等再刷新。',
-    declined: '此訂單已取消。',
-    refunded: '此訂單已退款。',
-    failed: '此訂單付款失敗。',
-  }
+  const details: [string, string][] = [
+    ['蛋糕上的字', order.cakeMessage],
+    ['備註', order.notes],
+    ...(delivery ? ([['地址', order.deliveryAddress ?? '']] as [string, string][]) : []),
+  ].filter(([, value]) => value) as [string, string][]
 
   return (
-    <section className="space-y-4">
-      <header>
-        <p className="text-sm text-muted-foreground">{delivery ? '送貨' : '取貨'}</p>
-        <h1 className="text-2xl font-bold">
-          {order.test && (
-            <span className="mr-2 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-sm text-amber-900">測試</span>
-          )}
-          訂單 {orderRef(order)} · {order.name}
-        </h1>
+    <>
+      <header className="space-y-1">
+        <p className="text-muted-foreground">
+          {order.test && '測試 · '}
+          {delivery ? '送貨' : '取貨'} · {orderRef(order)}
+        </p>
+        <h1 className="font-sans text-3xl font-semibold text-foreground">{order.name}</h1>
+        <p className="text-lg">{zhPickup(order.pickupDate, order.pickupTime)}</p>
+        <a href={'tel:' + order.phone.replace(/[^+0-9]/g, '')} className="inline-block text-lg text-primary">
+          {order.phone}
+        </a>
       </header>
 
-      {done && (
-        <p className="rounded-xl border-2 border-green-600 bg-green-50 p-4 text-xl font-bold text-green-800">
-          ✓ {doneAt?.action === 'delivered' || (delivery && !doneAt) ? '已送達' : '已取貨'}
-          {doneAt && <span className="ml-2 text-[1rem] font-normal">{zhTime(doneAt.at)}</span>}
-        </p>
-      )}
-      {!done && !ready && (
-        <p className="rounded-xl border-2 border-red-600 bg-red-50 p-4 text-lg font-bold text-red-800">
-          {blocked[order.status] ?? '此訂單現在不能取貨。'}
-        </p>
-      )}
-      {!done && balance > 0 && (
-        <p className="rounded-xl border-2 border-red-600 bg-red-50 p-4 text-xl font-bold text-red-800">
-          請收取餘款 {money(balance)}
-          <span className="block text-[1rem] font-normal">
-            總價 {money(order.price)}，已付訂金 {money(order.deposit!)}
-          </span>
-        </p>
-      )}
-      {!done && ready && balance === 0 && (
-        <p className="rounded-xl bg-green-50 p-3 text-lg font-semibold text-green-800">已付全款 {money(order.price)}</p>
-      )}
-
-      <dl className="divide-y rounded-xl border bg-white text-lg">
-        {rows.map(([label, value]) => (
-          <div key={label} className="grid grid-cols-[5.5rem_1fr] gap-2 px-4 py-3">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="whitespace-pre-wrap break-words font-medium">
-              {label === '電話' ? (
-                <a href={'tel:' + value.replace(/[^+0-9]/g, '')} className="text-primary underline">
-                  {value}
-                </a>
-              ) : (
-                value
-              )}
-            </dd>
+      <dl className="mt-6 grid grid-cols-3 gap-3 border-y py-5 text-lg">
+        {[
+          ['尺寸', zhOption(sizeLabel(order.size))],
+          ['口味', zhOption(order.flavor)],
+          ['餡料', zhOption(order.filling)],
+        ].map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-sm text-muted-foreground">{label}</dt>
+            <dd className="font-medium">{value}</dd>
           </div>
         ))}
       </dl>
 
-      <p role="alert" className="text-danger empty:hidden">
-        {error}
-      </p>
-      {ready && (
-        <Button size="lg" className="h-16 w-full text-xl" onClick={confirm} disabled={busy}>
-          {busy ? '更新中…' : delivery ? '確認已送達' : '確認已取貨'}
-        </Button>
+      {details.length > 0 && (
+        <dl className="space-y-4 border-b py-5 text-lg">
+          {details.map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-sm text-muted-foreground">{label}</dt>
+              <dd className="whitespace-pre-wrap break-words font-medium">{value}</dd>
+            </div>
+          ))}
+        </dl>
       )}
+
+      {!done && !ready && (
+        <p className="py-5 text-lg font-semibold text-danger">{NOT_READY[order.status] ?? '現在不能取貨'}</p>
+      )}
+      {ready && balance === 0 && <p className="py-5 text-lg text-muted-foreground">已付全款</p>}
+
       {admin && (
-        <Link href={`/admin/orders?open=${order.id}`} className="block text-center text-sm text-primary underline">
-          Open in Cake orders (English)
+        <Link href={`/admin/orders?open=${order.id}`} className="text-sm text-muted-foreground underline">
+          Open in admin
         </Link>
       )}
-    </section>
+
+      {(ready || done) && (
+        <div className="fixed inset-x-0 bottom-0 border-t bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
+          <div className="mx-auto max-w-md">
+            <p role="alert" className="mb-2 text-center text-danger empty:hidden">
+              {error}
+            </p>
+            {!done && balance > 0 && (
+              <p className="mb-3 flex items-baseline justify-between gap-3">
+                <span className="text-2xl font-semibold text-danger">收取餘款 {money(balance)}</span>
+                <span className="text-sm text-muted-foreground">
+                  總價 {money(order.price)} · 訂金 {money(order.deposit!)}
+                </span>
+              </p>
+            )}
+            {done ? (
+              <p className="flex h-16 items-center justify-center gap-2 rounded-xl bg-green-50 text-xl font-semibold text-green-800">
+                ✓ 已{doneAt?.action === 'delivered' || (delivery && !doneAt) ? '送達' : '取貨'}
+                {doneAt && <span className="text-[1rem] font-normal">{zhTime(doneAt.at)}</span>}
+              </p>
+            ) : (
+              <Button size="lg" className="h-16 w-full text-xl" onClick={confirm} disabled={busy}>
+                {busy ? '更新中…' : `確認已${verb}`}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   )
 }

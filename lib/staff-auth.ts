@@ -18,8 +18,6 @@ const RENEW_AFTER_SECONDS = 24 * 60 * 60
 const digest = (value: string) => createHash('sha256').update(value).digest()
 const same = (a: string, b: string) => timingSafeEqual(digest(a), digest(b))
 
-export const staffConfigured = () => !!process.env.STAFF_PASSWORD
-
 export function isStaffPassword(password: unknown) {
   if (typeof password !== 'string' || !password) return false
   const staff = process.env.STAFF_PASSWORD

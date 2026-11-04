@@ -18,22 +18,7 @@ export function useStaffSession() {
       .catch(() => setRole(null))
   }, [])
   useEffect(check, [check])
-  const signOut = () =>
-    fetch('/api/staff/session', { method: 'DELETE' })
-      .catch(() => {})
-      .then(() => setRole(null))
-  return { role, setRole, signOut }
-}
-
-export function StaffShell({ children }: { children: React.ReactNode }) {
-  return (
-    <main lang="zh-Hant" className="min-h-dvh bg-gray-50 px-4 pb-10 pt-[max(1.25rem,env(safe-area-inset-top))]">
-      <div className="mx-auto max-w-md space-y-4">
-        <img src="/logo-dark.png" alt="Sunville Bakery" width={160} height={39} className="mx-auto h-auto w-40" />
-        {children}
-      </div>
-    </main>
-  )
+  return { role, setRole }
 }
 
 export function StaffSignIn({ onSignedIn }: { onSignedIn: () => void }) {
@@ -61,11 +46,11 @@ export function StaffSignIn({ onSignedIn }: { onSignedIn: () => void }) {
     }
   }
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
-      <h1 className="text-2xl font-bold">員工登入</h1>
-      <p className="text-muted-foreground">只需登入一次，這部手機會記住登入。</p>
+    <form onSubmit={submit} className="space-y-4 pt-10">
+      <img src="/logo-dark.png" alt="Sunville Bakery" width={160} height={39} className="mx-auto h-auto w-40" />
+      <h1 className="pt-4 font-sans text-2xl font-semibold text-foreground">員工登入</h1>
       <div className="space-y-2">
-        <label htmlFor="staff-password" className="block font-medium">
+        <label htmlFor="staff-password" className="block text-muted-foreground">
           密碼
         </label>
         <Input
