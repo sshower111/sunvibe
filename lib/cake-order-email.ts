@@ -87,6 +87,8 @@ const text = (
 /** The bakery's look for customer emails (lib/email-layout.ts): paragraphs become the intro, `after` the closing. */
 type Branded = {
   headline: string
+  /** A picture from public/email/ under the logo (optional). */
+  illustration?: string
   detailsTitle: string
   beforeButton?: string[]
   button?: { label: string; url: string }
@@ -103,6 +105,7 @@ const brandedHtml = (
     extra,
     siteUrl: SITE_URL,
     headline: escapeHtml(b.headline),
+    illustration: b.illustration,
     intro: paragraphs.map(escapeHtml),
     detailsTitle: escapeHtml(b.detailsTitle),
     rows: rows.map(([label, value]) => [escapeHtml(label), escapeHtml(value)]),
@@ -112,6 +115,8 @@ const brandedHtml = (
     footer: escapeHtml(`${SITE.name} · ${SITE.address} · ${SITE.phone}`),
     note: test ? 'TEST email: no real customer received this.' : undefined,
   })
+
+const HAPPY = 'happy-customer.png'
 
 /** Customer emails for a test order go to the bakery inbox instead. */
 const customerEmail = (o: StoredCakeOrder) => (o.test ? bakeryInbox() : o.email)
@@ -229,6 +234,11 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
       : [`Hi ${o.name}, thanks for your order! It is confirmed and paid.`],
     rows: cakeRows(o),
     after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
+    test: o.test,
+    branded: {
+      headline: held ? 'We received your order!' : 'Your cake is confirmed!',
+      detailsTitle: `Order ${ref}`,
+    },
   })
   return Promise.all([bakery, customer])
 }
@@ -242,7 +252,7 @@ export const sendApprovedEmail = (o: StoredCakeOrder) =>
     rows: cakeRows(o),
     test: o.test,
     pickupQr: o,
-    branded: { headline: 'Your cake is confirmed!', detailsTitle: `Order ${orderRef(o)}` },
+    branded: { headline: 'Your cake is confirmed!', detailsTitle: `Order ${orderRef(o)}`, illustration: HAPPY },
     after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
   })
 
@@ -255,9 +265,11 @@ export const sendNotAcceptedEmail = (o: StoredCakeOrder) =>
     paragraphs: [
       `Hi ${o.name}, we're sorry, but we can't make this cake for ${pickup(o)}.`,
       `The hold on your card has been released and you have not been charged. Your bank may take a few days to remove it from your statement.`,
-      `Please choose a later pickup time on our website, or call ${SITE.phone} and we'll try to help.`,
     ],
     rows: cakeRows(o).filter(([label]) => label !== 'Total'),
+    after: [`Please choose a later pickup time on our website, or call ${SITE.phone} and we'll try to help.`],
+    test: o.test,
+    branded: { headline: "We're sorry, we can't make this cake", detailsTitle: `Order ${orderRef(o)}` },
   })
 
 /** Refund from admin: the online payment (the deposit for deposit orders) goes back to the card. */
@@ -269,9 +281,11 @@ export const sendRefundedEmail = (o: StoredCakeOrder) =>
     paragraphs: [
       `Hi ${o.name}, we've refunded ${money(amountDueNow(o))} for your cake order ${orderRef(o)} to the card you paid with.`,
       `Your bank may take 5–10 business days to show it on your statement.`,
-      `Questions? Reply to this email or call ${SITE.phone}.`,
     ],
     rows: cakeRows(o).filter(([label]) => label !== 'Total'),
+    after: [`Questions? Reply to this email or call ${SITE.phone}.`],
+    test: o.test,
+    branded: { headline: 'Your refund is on its way', detailsTitle: `Order ${orderRef(o)}` },
   })
 
 // Orders paid through a link: custom cakes (made in admin from an inquiry), and online orders approved after
@@ -299,6 +313,7 @@ export const sendPaymentRequestEmail = (o: StoredCakeOrder) =>
     branded: {
       headline: o.kind === 'custom' ? 'Your cake is confirmed!' : 'We can make your cake!',
       detailsTitle: `Order ${orderRef(o)}`,
+      illustration: HAPPY,
       beforeButton: [
         `To reserve your cake, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time).`,
       ],
@@ -323,7 +338,7 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
       after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
       test: o.test,
       pickupQr: o,
-      branded: { headline: 'Payment received', detailsTitle: `Order ${orderRef(o)}` },
+      branded: { headline: 'Payment received', detailsTitle: `Order ${orderRef(o)}`, illustration: HAPPY },
     }),
     send(`cake-order-custom-paid-bakery-${o.id}`, {
       to: bakeryInbox(),

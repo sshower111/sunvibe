@@ -6,6 +6,8 @@ Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.
 
 ## 2026-11-04
 
+- **Every customer email in the bakery's look**: "We received your cake inquiry", "We received your cake order" (card held), "We can't make your cake order" and "Your cake order has been refunded" now have the logo, a centered headline and the details table, like the confirmation, pay link and payment received emails. The illustration is optional per email (`illustration`), on those three for now. (`lib/email-layout.ts`, `lib/cake-order-email.ts`, `lib/cake-inquiry-email.ts`)
+
 - **Emails: space under the logo line**: Gmail dropped the divider's margins, so the illustration touched the line under the logo. The logo and the illustration are now separate rows with padding. (`lib/email-layout.ts`)
 
 - **Fix: confirmation emails with the pickup QR code were not sent**: the QR image was passed to Resend as raw bytes, which it rejects, so the approval and payment-received emails failed (silently). It now goes as base64 with its type; if the QR code can't be made the email is sent without it, and email failures are logged in Vercel. (`lib/cake-order-email.ts`, `tests/unit/cake-order.test.cjs`)

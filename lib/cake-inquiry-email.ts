@@ -14,7 +14,16 @@ import {
 import { cakeLabel } from '@/lib/cake-catalog'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { escapeHtml } from '@/lib/security'
-import { emailHeading, emailNote, emailPage, emailParagraph, emailRows, SUBJECT_TAG } from '@/lib/email-layout'
+import {
+  emailBranded,
+  emailHeading,
+  emailNote,
+  emailPage,
+  emailParagraph,
+  emailRows,
+  SUBJECT_TAG,
+} from '@/lib/email-layout'
+import { SITE_URL } from '@/lib/seo'
 
 // The two custom cake inquiry emails: one to the bakery (English + Chinese), one copy to the customer.
 // Used by the public form and by the admin "Send test inquiry" button, so a test looks exactly like the real thing.
@@ -141,7 +150,7 @@ export async function sendCustomerCopy(data: CakeInquiry, { requestId, test }: O
         to: test ? bakeryInbox() : values.email,
         replyTo: bakeryInbox(),
         subject: `${test ? '[TEST] ' : ''}We received your cake inquiry ${inquiryRef(requestId)} — ${SITE.name}`,
-        ...customerCopy(values),
+        ...customerCopy({ ...values, ref: inquiryRef(requestId) }, test),
       },
       { idempotencyKey: `cake-copy-${requestId}` },
     )
@@ -152,7 +161,7 @@ export async function sendCustomerCopy(data: CakeInquiry, { requestId, test }: O
 }
 
 // Only the customer's own choices; free-text notes and addresses are left out of an email sent to a typed address.
-function customerCopy(values: Record<string, string>) {
+function customerCopy(values: Record<string, string>, test?: boolean) {
   const rows: [string, string][] = [
     ['Event', [values.eventType, values.eventDate, values.eventTime].filter(Boolean).join(' · ')],
     ['Cake', `${values.servings} servings · ${values.size}`],
@@ -175,12 +184,16 @@ function customerCopy(values: Record<string, string>) {
       '',
       `${SITE.name} · ${SITE.phone}`,
     ].join('\n'),
-    html: emailPage(
-      emailParagraph(escapeHtml(intro)) +
-        emailRows(rows.map(([label, value]) => [label, escapeHtml(value)])) +
-        emailParagraph(`<strong>${change}</strong>`) +
-        emailParagraph(notConfirmed) +
-        emailParagraph(`${SITE.name} · ${SITE.phone}`),
-    ),
+    html: emailBranded({
+      siteUrl: SITE_URL,
+      headline: 'We got your cake inquiry!',
+      intro: [escapeHtml(intro)],
+      detailsTitle: escapeHtml(`Inquiry ${values.ref}`),
+      rows: rows.map(([label, value]) => [label, escapeHtml(value)]),
+      beforeButton: [`<strong>${escapeHtml(change)}</strong>`, escapeHtml(notConfirmed)],
+      closing: [escapeHtml(`Questions? Call us at ${SITE.phone}.`)],
+      footer: escapeHtml(`${SITE.name} · ${SITE.address} · ${SITE.phone}`),
+      note: test ? 'TEST email: no real customer received this.' : undefined,
+    }),
   }
 }

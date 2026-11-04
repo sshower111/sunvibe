@@ -66,6 +66,8 @@ export type BrandedEmail = {
   closing?: string[]
   /** Address and phone in the footer. */
   footer: string
+  /** Picture under the logo, a file in public/email/ (e.g. 'happy-customer.png'), shown 106×220. None when left out. */
+  illustration?: string
   /** Highlighted line at the very top, e.g. "TEST". */
   note?: string
 }
@@ -101,7 +103,9 @@ export function emailBranded(e: BrandedEmail) {
     `<img src="${e.siteUrl}/logo-dark.png" width="180" height="43" alt="Sunville Bakery" style="display:block;margin:0 auto;border:0;height:auto;max-width:180px">` +
     '</td></tr>' +
     '<tr><td style="padding:28px 28px 8px;text-align:center">' +
-    `<img src="${e.siteUrl}/email/happy-customer.png" width="106" height="220" alt="" style="display:block;margin:0 auto 8px;border:0;width:106px;height:220px">` +
+    (e.illustration
+      ? `<img src="${e.siteUrl}/email/${e.illustration}" width="106" height="220" alt="" style="display:block;margin:0 auto 8px;border:0;width:106px;height:220px">`
+      : '') +
     `<h1 style="font-size:24px;line-height:1.3;margin:8px 0 12px;color:#222;text-align:center">${e.headline}</h1>` +
     e.intro.map(p => centered(p, `color:#444`)).join('') +
     '</td></tr>' +
