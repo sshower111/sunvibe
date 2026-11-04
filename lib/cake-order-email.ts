@@ -237,6 +237,7 @@ export async function sendNewOrderEmails(o: StoredCakeOrder) {
     branded: {
       headline: held ? 'We received your order!' : 'Your cake is confirmed!',
       detailsTitle: `Order ${ref}`,
+      illustration: held ? 'order-received' : 'order-confirmed',
     },
   })
   return Promise.all([bakery, customer])

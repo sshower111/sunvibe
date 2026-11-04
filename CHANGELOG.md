@@ -6,6 +6,8 @@ Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.
 
 ## 2026-11-04
 
+- **Email illustrations**: each customer email now has its own picture under the logo, from undraw.co recolored to the bakery's red and cream: envelope (inquiry received), chef (order received), birthday cake (confirmed), cancel (can't make it), money back (refund), card and phone (pay link), happy customer (payment received). The inquiry email shows the event date as "Sun, Nov 15" like the order emails. (`public/email/`, `lib/email-layout.ts`, `lib/cake-order-email.ts`, `lib/cake-inquiry-email.ts`)
+
 - **Every customer email in the bakery's look**: "We received your cake inquiry", "We received your cake order" (card held), "We can't make your cake order" and "Your cake order has been refunded" now have the logo, a centered headline and the details table, like the confirmation, pay link and payment received emails. The illustration is optional per email (`illustration`), on those three for now. (`lib/email-layout.ts`, `lib/cake-order-email.ts`, `lib/cake-inquiry-email.ts`)
 
 - **Emails: space under the logo line**: Gmail dropped the divider's margins, so the illustration touched the line under the logo. The logo and the illustration are now separate rows with padding. (`lib/email-layout.ts`)

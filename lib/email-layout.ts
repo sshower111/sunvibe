@@ -54,6 +54,7 @@ const MUTED = '#6b6b6b'
  */
 export const ILLUSTRATIONS = {
   'inquiry-received': [223, 200],
+  'order-received': [128, 200],
   'order-confirmed': [175, 200],
   'cant-make-it': [178, 200],
   refunded: [230, 200],

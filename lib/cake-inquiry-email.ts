@@ -12,6 +12,7 @@ import {
   STYLE_SEPARATOR,
 } from '@/lib/cake-inquiry'
 import { cakeLabel } from '@/lib/cake-catalog'
+import { formatPickupDate } from '@/lib/cake-order'
 import { ZH, zhHtml, zhOption, zhText } from '@/lib/email-zh'
 import { escapeHtml } from '@/lib/security'
 import {
@@ -163,7 +164,13 @@ export async function sendCustomerCopy(data: CakeInquiry, { requestId, test }: O
 // Only the customer's own choices; free-text notes and addresses are left out of an email sent to a typed address.
 function customerCopy(values: Record<string, string>, test?: boolean) {
   const rows: [string, string][] = [
-    ['Event', [values.eventType, values.eventDate, values.eventTime].filter(Boolean).join(' · ')],
+    // "Sun, Nov 15", like the order emails (the form sends 2026-11-15).
+    [
+      'Event',
+      [values.eventType, values.eventDate && formatPickupDate(values.eventDate), values.eventTime]
+        .filter(Boolean)
+        .join(' · '),
+    ],
     ['Cake', `${values.servings} servings · ${values.size}`],
     ['Flavor / filling', values.flavors],
     ['Writing on cake', values.cakeMessage || 'None'],
