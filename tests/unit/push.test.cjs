@@ -157,10 +157,36 @@ test('Discord messages: order card with the details, inquiry card, paid pay link
     customFlavor: 'Ube',
     filling: 'Custard',
     photoCount: 2,
+    fulfillment: 'Pickup',
+    deliveryAddress: '',
+    budget: '$100–$200',
+    notes: 'Pink flowers, gold drip',
   }).discord
   assert.equal(inquiry.content, '**💬 Custom cake inquiry · #0000** — Linda Park')
   assert.equal(inquiry.embed.description, undefined)
-  assert.equal(inquiry.embed.fields.find(f => f.name === '🎂 Cake').value, 'Not sure · Ube / Custard')
+  const got = name => inquiry.embed.fields.find(f => f.name === name)?.value
+  assert.equal(got('🎂 Cake'), 'Size not sure · Ube / Custard')
+  assert.equal(got('🏪 Pickup or delivery'), 'Pickup')
+  assert.equal(got('📝 Notes'), 'Pink flowers, gold drip')
+  assert.equal(got('💰 Budget'), '$100–$200')
+
+  const delivered = msg.newInquiryPush({
+    id: '00000000-0000-4000-8000-000000000009',
+    name: 'Linda Park',
+    eventType: 'Birthday',
+    servings: '20',
+    size: '8-inch',
+    flavor: 'Vanilla',
+    filling: 'Custard',
+    fulfillment: 'Casino / Hotel delivery — $50',
+    deliveryAddress: 'Aria, room 1204',
+    notes: '',
+  }).discord.embed.fields
+  assert.equal(delivered.find(f => f.name === '🚚 Delivery').value, 'Casino / Hotel delivery — $50\n📍 Aria, room 1204')
+  assert.equal(
+    delivered.find(f => f.name === '📝 Notes'),
+    undefined,
+  )
 })
 
 test('postToDiscord: posts to the webhook with the mention, never throws', async () => {

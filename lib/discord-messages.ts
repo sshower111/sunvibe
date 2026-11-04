@@ -7,7 +7,7 @@ import {
   sizeLabel,
   type StoredCakeOrder,
 } from './cake-order'
-import { inquiryRef, type StoredCakeInquiry } from './cake-inquiry'
+import { inquiryRef, tierFlavorLines, type StoredCakeInquiry } from './cake-inquiry'
 import { SITE_URL } from './seo'
 
 // What the Discord notifications look like: one message per event in the bakery's Discord channel,
@@ -214,6 +214,11 @@ export function inquiryDiscord(i: StoredCakeInquiry): DiscordMessage {
     ? `${formatPickupDate(i.eventDate)}${i.eventTime ? ' · ' + formatPickupTime(i.eventTime) : ''}`
     : 'Not set'
   const flavor = [i.customFlavor || i.flavor, i.customFilling || i.filling].filter(Boolean).join(' / ')
+  const cake = [
+    `${i.size === 'Not sure' ? 'Size not sure' : sizeLabel(i.size)} · ${flavor}`,
+    ...(i.tierFlavors ? tierFlavorLines(i.size, i.tierFlavors) : []),
+  ].join('\n')
+  const delivery = !!i.fulfillment && i.fulfillment !== 'Pickup'
   return {
     content: cut(`**${title}** — ${i.name}`, 1900),
     embed: {
@@ -226,9 +231,18 @@ export function inquiryDiscord(i: StoredCakeInquiry): DiscordMessage {
         ...field('📧 Email', i.email, true),
         ...field('🎉 Event', `${i.eventType} · ${i.servings} servings`, true),
         ...field('📅 Date', when, true),
-        ...field('🎂 Cake', `${i.size} · ${flavor}`),
+        ...field(
+          delivery ? '🚚 Delivery' : '🏪 Pickup or delivery',
+          delivery ? `${i.fulfillment}\n📍 ${i.deliveryAddress || 'No address given'}` : i.fulfillment,
+        ),
+        ...field('💰 Budget', i.budget, true),
+        ...field('🎂 Cake', cake),
         ...field('✍️ Writing on cake', i.cakeMessage),
+        ...field('🎨 Style', i.designStyle),
+        ...field('🔗 Links', i.referenceLink),
+        ...field('📝 Notes', i.notes),
         ...field('📷 Photos', i.photoCount ? String(i.photoCount) : '', true),
+        ...field('💬 OK to text', i.textOk === 'yes' ? 'Yes' : '', true),
       ],
     },
     channel: 'inquiries',
