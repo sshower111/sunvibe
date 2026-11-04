@@ -683,7 +683,12 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   assert(square.calls.at(-1)[1].idempotencyKey.length <= 45)
   assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
   assert.equal((await inquiries.getCakeInquiry(inquiryId)).status, 'confirmed_paid')
-  assert(emails.some(e => e.subject.startsWith('Payment received for your custom cake')))
+  const receipt = emails.find(e => e.subject.startsWith('Payment received for your custom cake'))
+  // The receipt carries the pickup QR code (inline image) that opens the Chinese pickup screen in admin.
+  assert(receipt.html.includes('src="cid:pickup-qr"'))
+  const qr = receipt.attachments.find(a => a.contentId === 'pickup-qr')
+  assert(qr && qr.content.subarray(1, 4).toString() === 'PNG')
+  assert.match(receipt.text, /pickup code/)
   const bakery = emails.find(e => e.subject.startsWith('[Order] Paid: custom cake'))
   assert(bakery.text.includes('方式：賭場／酒店送貨 — $50'))
   assert(bakery.text.includes('地址：Bellagio, Las Vegas'))
@@ -694,6 +699,11 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   assert.equal((await adminCall({ action: 'picked_up', id: order.id })).status, 200)
   assert.equal((await adminCall({ action: 'not_picked_up', id: order.id })).status, 200)
   assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
+  // Scanning the QR code on a delivery: "Delivered" in the history, status Picked up.
+  assert.equal((await adminCall({ action: 'delivered', id: order.id, scanned: true })).status, 200)
+  assert.equal((await store.getCakeOrder(order.id)).status, 'picked_up')
+  assert.equal((await store.listOrderEvents(order.id)).at(-1).action, 'delivered')
+  assert.equal((await adminCall({ action: 'not_picked_up', id: order.id })).status, 200)
 
   // Full payment, declined card: back to awaiting payment so the customer can retry.
   const fullId = '66666666-6666-4666-8666-666666666666'

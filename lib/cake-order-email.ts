@@ -5,6 +5,7 @@ import { SITE_URL } from '@/lib/seo'
 import { escapeHtml } from '@/lib/security'
 import {
   emailBranded,
+  emailPickupCode,
   emailDivider,
   emailHeading,
   emailPage,
@@ -23,6 +24,7 @@ import {
   sizeLabel,
   type StoredCakeOrder,
 } from '@/lib/cake-order'
+import { PICKUP_QR_CID, pickupQrPng } from '@/lib/pickup-qr'
 
 // Emails for online cake orders. Every send uses an idempotency key, so a retry never sends twice.
 
@@ -43,10 +45,11 @@ const cakeRows = (o: StoredCakeOrder): [string, string][] => [
     : []),
   ...(o.notes ? ([[o.kind === 'custom' ? 'Design notes' : 'Notes', o.notes]] as [string, string][]) : []),
 ]
-const html = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string) =>
+const html = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string, extra = '') =>
   emailPage(
     paragraphs.map(p => emailParagraph(escapeHtml(p))).join('') +
       emailRows(rows.map(([label, value]) => [label, escapeHtml(value)])) +
+      extra +
       after.map(p => emailParagraph(escapeHtml(p).replace(/\n/g, '<br>'))).join('') +
       // Kitchen copy lines are "label：value", shown as a second table.
       (kitchen
@@ -94,8 +97,10 @@ const brandedHtml = (
   rows: [string, string][],
   after: string[] = [],
   test?: boolean,
+  extra?: string,
 ) =>
   emailBranded({
+    extra,
     siteUrl: SITE_URL,
     headline: escapeHtml(b.headline),
     intro: paragraphs.map(escapeHtml),
@@ -125,10 +130,14 @@ async function send(
     /** Customer emails with the bakery's logo, illustration and centered layout. */
     branded?: Branded
     test?: boolean
+    /** Adds the pickup QR code (customer confirmation emails once the cake is paid). */
+    pickupQr?: StoredCakeOrder
     replyTo?: string
   },
 ) {
   try {
+    const qr = message.pickupQr
+    const extra = qr ? emailPickupCode(PICKUP_QR_CID, isDelivery(qr)) : ''
     const result = await mailer().emails.send(
       {
         from: EMAIL_FROM,
@@ -136,9 +145,25 @@ async function send(
         ...(message.replyTo ? { replyTo: message.replyTo } : {}),
         subject: message.subject,
         html: message.branded
-          ? brandedHtml(message.branded, message.paragraphs, message.rows, message.after, message.test)
-          : html(message.paragraphs, message.rows, message.after, message.kitchen),
-        text: text(message.paragraphs, message.rows, message.after, message.kitchen, message.branded),
+          ? brandedHtml(message.branded, message.paragraphs, message.rows, message.after, message.test, extra)
+          : html(message.paragraphs, message.rows, message.after, message.kitchen, extra),
+        text: text(
+          message.paragraphs,
+          message.rows,
+          qr
+            ? [
+                'Your pickup code is the QR code in this email. Showing it is optional: you can also just give your name.',
+                ...(message.after ?? []),
+              ]
+            : message.after,
+          message.kitchen,
+          message.branded,
+        ),
+        ...(qr
+          ? {
+              attachments: [{ filename: 'pickup-code.png', content: await pickupQrPng(qr), contentId: PICKUP_QR_CID }],
+            }
+          : {}),
       },
       { idempotencyKey: key },
     )
@@ -198,6 +223,9 @@ export const sendApprovedEmail = (o: StoredCakeOrder) =>
     subject: tag(o, `Your cake order ${orderRef(o)} is confirmed — Sunville Bakery`),
     paragraphs: [`Hi ${o.name}, good news: we can make your cake. Your card has now been charged ${money(o.price)}.`],
     rows: cakeRows(o),
+    test: o.test,
+    pickupQr: o,
+    branded: { headline: 'Your cake is confirmed!', detailsTitle: `Order ${orderRef(o)}` },
     after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
   })
 
@@ -277,6 +305,7 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
       rows: cakeRows(o),
       after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
       test: o.test,
+      pickupQr: o,
       branded: { headline: 'Payment received', detailsTitle: `Order ${orderRef(o)}` },
     }),
     send(`cake-order-custom-paid-bakery-${o.id}`, {

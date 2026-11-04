@@ -44,6 +44,7 @@ const eventLabels: Record<string, string> = {
   kitchen_sent: 'Sent to kitchen',
   paid: 'Paid',
   picked_up: 'Picked up',
+  delivered: 'Delivered',
   not_picked_up: 'Undo picked up',
   paid_offline: 'Paid in store / by phone',
   refunded: 'Refunded, customer emailed',

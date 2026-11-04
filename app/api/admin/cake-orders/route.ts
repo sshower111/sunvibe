@@ -23,6 +23,7 @@ const actionSchema = z.object({
     'ask_kitchen',
     'paid_offline',
     'picked_up',
+    'delivered',
     'not_picked_up',
     'delete',
     'resend_link',
@@ -32,6 +33,8 @@ const actionSchema = z.object({
   id: z.string().uuid(),
   /** Decline: email the customer that we can't make it. Refund: email the customer about the refund. */
   notify: z.boolean().optional(),
+  /** Picked up / delivered: confirmed by scanning the customer's pickup QR code (/admin/pickup/<id>). */
+  scanned: z.boolean().optional(),
 })
 
 /** The kitchen's mobile number for the Send to Kitchen / Ask Kitchen texts (Vercel env KITCHEN_PHONE). */
@@ -46,6 +49,7 @@ const ADMIN_NOTES: Partial<Record<string, string>> = {
   resend_link: '📨 Pay link sent again',
   kitchen_sent: '📲 Texted to the kitchen',
   picked_up: '🎉 Picked up',
+  delivered: '🚚 Delivered',
   not_picked_up: '↩️ Marked not picked up',
 }
 
@@ -103,9 +107,13 @@ export async function POST(req: NextRequest) {
         throw new Error('This order changed. Refresh the list.')
     } else if (action === 'resend_link') {
       if (!(await resendPayLink(id))) throw new Error('The email could not be sent. Please retry.')
-    } else if (action === 'picked_up') {
+    } else if (action === 'picked_up' || action === 'delivered') {
       // Deposit orders: the balance is taken at pickup, so they can be marked picked up too.
-      if (!(await moveCakeOrder(id, 'paid', 'picked_up')) && !(await moveCakeOrder(id, 'deposit_paid', 'picked_up')))
+      // Delivered orders have the same status (Picked up); their history says Delivered.
+      if (
+        !(await moveCakeOrder(id, 'paid', 'picked_up', action)) &&
+        !(await moveCakeOrder(id, 'deposit_paid', 'picked_up', action))
+      )
         throw new Error('This order changed. Refresh the list.')
     } else {
       const order = await getCakeOrder(id)
@@ -113,7 +121,8 @@ export async function POST(req: NextRequest) {
         throw new Error('This order changed. Refresh the list.')
     }
     // Discord: the order's card shows the new status and what was done.
-    await refreshOrderCardQuietly(id, ADMIN_NOTES[action])
+    const note = ADMIN_NOTES[action]
+    await refreshOrderCardQuietly(id, note && parsed.data.scanned ? note + ' (QR code scanned)' : note)
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : 'Cake orders unavailable. Please retry.'

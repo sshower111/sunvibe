@@ -153,7 +153,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/admin/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, device: isHomeScreenApp() }),
+        // The pickup screen is opened from the phone camera, in the browser: stay signed in there like the app.
+        body: JSON.stringify({ password, device: isHomeScreenApp() || pathname.startsWith('/admin/pickup') }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || 'Incorrect password.')
@@ -183,6 +184,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           className="w-full max-w-sm space-y-4 rounded-xl border bg-white card-pad shadow-sm"
         >
           <h1 className="heading-2">Sunville admin</h1>
+          {pathname.startsWith('/admin/pickup') && (
+            <p lang="zh-Hant" className="text-sm text-muted-foreground">
+              取貨碼：請先登入。這部手機會記住登入 90 天。
+            </p>
+          )}
           <div className="space-y-2">
             <label htmlFor="admin-password" className="block text-sm font-medium">
               Password

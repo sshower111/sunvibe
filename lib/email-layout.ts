@@ -60,6 +60,8 @@ export type BrandedEmail = {
   /** Paragraphs after the details, before the button (e.g. amount and deadline). */
   beforeButton?: string[]
   button?: { label: string; url: string }
+  /** Extra HTML after the details (e.g. the pickup QR code). */
+  extra?: string
   /** Small centered lines at the end (questions, contact). */
   closing?: string[]
   /** Address and phone in the footer. */
@@ -106,6 +108,7 @@ export function emailBranded(e: BrandedEmail) {
     `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 20px">${rows}</table>` +
     '</td></tr>' +
     '<tr><td style="padding:0 28px 20px;text-align:center">' +
+    (e.extra ?? '') +
     (e.beforeButton ?? []).map(p => centered(p)).join('') +
     button +
     (e.closing ?? []).map(p => centered(p, `font-size:14px;color:${MUTED}`)).join('') +
@@ -114,3 +117,15 @@ export function emailBranded(e: BrandedEmail) {
     '</div>'
   )
 }
+
+/** The pickup QR code box (lib/pickup-qr.ts); the image is an inline attachment (cid). */
+export const emailPickupCode = (cid: string, delivery: boolean) =>
+  '<div style="text-align:center;margin:4px 0 20px;padding:16px;border:1px dashed #d8c7ad;border-radius:10px">' +
+  '<p style="margin:0;font-weight:600;font-size:17px">Your pickup code</p>' +
+  `<img src="cid:${cid}" width="160" height="160" alt="Pickup QR code" style="display:block;margin:10px auto;border:0;width:160px;height:160px">` +
+  `<p style="margin:0;font-size:14px;color:${MUTED}">${
+    delivery
+      ? 'Show this to our driver when your cake arrives.'
+      : 'Show this at the counter when you pick up your cake.'
+  } It's optional: you can also just give your name.</p>` +
+  '</div>'
