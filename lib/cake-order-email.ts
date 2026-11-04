@@ -4,7 +4,7 @@ import { SITE } from '@/lib/site-info'
 import { SITE_URL } from '@/lib/seo'
 import { escapeHtml } from '@/lib/security'
 import {
-  emailButton,
+  emailBranded,
   emailDivider,
   emailHeading,
   emailPage,
@@ -43,17 +43,9 @@ const cakeRows = (o: StoredCakeOrder): [string, string][] => [
     : []),
   ...(o.notes ? ([[o.kind === 'custom' ? 'Design notes' : 'Notes', o.notes]] as [string, string][]) : []),
 ]
-type Button = { label: string; url: string }
-const html = (
-  paragraphs: string[],
-  rows: [string, string][],
-  after: string[] = [],
-  kitchen?: string,
-  button?: Button,
-) =>
+const html = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string) =>
   emailPage(
     paragraphs.map(p => emailParagraph(escapeHtml(p))).join('') +
-      (button ? emailButton(escapeHtml(button.label), escapeHtml(button.url)) : '') +
       emailRows(rows.map(([label, value]) => [label, escapeHtml(value)])) +
       after.map(p => emailParagraph(escapeHtml(p).replace(/\n/g, '<br>'))).join('') +
       // Kitchen copy lines are "label：value", shown as a second table.
@@ -74,17 +66,47 @@ const text = (
   rows: [string, string][],
   after: string[] = [],
   kitchen?: string,
-  button?: Button,
+  branded?: Branded,
 ) =>
   [
+    ...(branded ? [branded.headline, ''] : []),
     ...paragraphs,
-    ...(button ? [`${button.label}: ${button.url}`] : []),
     '',
+    ...(branded ? [branded.detailsTitle] : []),
     ...rows.map(([l, v]) => `${l}: ${v}`),
     '',
+    ...(branded?.beforeButton ?? []),
+    ...(branded?.button ? [`${branded.button.label}: ${branded.button.url}`, ''] : []),
     ...after,
     ...(kitchen ? ['', '— Chinese copy for the kitchen —', kitchen] : []),
   ].join('\n')
+
+/** The bakery's look for customer emails (lib/email-layout.ts): paragraphs become the intro, `after` the closing. */
+type Branded = {
+  headline: string
+  detailsTitle: string
+  beforeButton?: string[]
+  button?: { label: string; url: string }
+}
+const brandedHtml = (
+  b: Branded,
+  paragraphs: string[],
+  rows: [string, string][],
+  after: string[] = [],
+  test?: boolean,
+) =>
+  emailBranded({
+    siteUrl: SITE_URL,
+    headline: escapeHtml(b.headline),
+    intro: paragraphs.map(escapeHtml),
+    detailsTitle: escapeHtml(b.detailsTitle),
+    rows: rows.map(([label, value]) => [escapeHtml(label), escapeHtml(value)]),
+    beforeButton: b.beforeButton?.map(p => `<strong>${escapeHtml(p)}</strong>`),
+    button: b.button && { label: escapeHtml(b.button.label), url: escapeHtml(b.button.url) },
+    closing: after.map(escapeHtml),
+    footer: escapeHtml(`${SITE.name} · ${SITE.address} · ${SITE.phone}`),
+    note: test ? 'TEST email: no real customer received this.' : undefined,
+  })
 
 /** Customer emails for a test order go to the bakery inbox instead. */
 const customerEmail = (o: StoredCakeOrder) => (o.test ? bakeryInbox() : o.email)
@@ -100,8 +122,9 @@ async function send(
     after?: string[]
     /** Chinese copy for the kitchen (bakery emails only). */
     kitchen?: string
-    /** A link button under the paragraphs (the pay link). */
-    button?: Button
+    /** Customer emails with the bakery's logo, illustration and centered layout. */
+    branded?: Branded
+    test?: boolean
     replyTo?: string
   },
 ) {
@@ -112,8 +135,10 @@ async function send(
         to: message.to,
         ...(message.replyTo ? { replyTo: message.replyTo } : {}),
         subject: message.subject,
-        html: html(message.paragraphs, message.rows, message.after, message.kitchen, message.button),
-        text: text(message.paragraphs, message.rows, message.after, message.kitchen, message.button),
+        html: message.branded
+          ? brandedHtml(message.branded, message.paragraphs, message.rows, message.after, message.test)
+          : html(message.paragraphs, message.rows, message.after, message.kitchen),
+        text: text(message.paragraphs, message.rows, message.after, message.kitchen, message.branded),
       },
       { idempotencyKey: key },
     )
@@ -214,19 +239,26 @@ export const sendPaymentRequestEmail = (o: StoredCakeOrder) =>
   send(`cake-order-pay-request-${o.id}-${o.payBy}`, {
     to: customerEmail(o),
     replyTo: bakeryInbox(),
+    test: o.test,
     subject: tag(
       o,
       `Your ${o.kind === 'custom' ? 'custom cake' : 'cake order'} ${orderRef(o)} is confirmed — payment link inside`,
     ),
     paragraphs: [
       o.kind === 'custom'
-        ? `Hi ${o.name}, thank you for choosing Sunville Bakery! Here are the final details of your cake.`
+        ? `Hi ${o.name}, thank you for choosing Sunville Bakery! Here are the final details of your cake. Please check them before paying.`
         : `Hi ${o.name}, good news: we can make your cake! The hold on your card ended before we confirmed, so it was not charged.`,
-      `To reserve your cake, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time).`,
     ],
-    button: { label: `Pay ${o.deposit ? 'deposit ' : ''}${money(amountDueNow(o))}`, url: payLink(o) },
-    rows: [['Order', orderRef(o)], ...cakeRows(o)],
-    after: [`If anything above needs changing, just reply to this email or call ${SITE.phone} before paying.`],
+    rows: cakeRows(o),
+    after: [`If anything needs changing, just reply to this email or call ${SITE.phone} before paying.`],
+    branded: {
+      headline: o.kind === 'custom' ? 'Your cake is confirmed!' : 'We can make your cake!',
+      detailsTitle: `Order ${orderRef(o)}`,
+      beforeButton: [
+        `To reserve your cake, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time).`,
+      ],
+      button: { label: `Pay ${o.deposit ? 'deposit ' : ''}${money(amountDueNow(o))}`, url: payLink(o) },
+    },
   })
 
 /** Custom order paid: receipt to the customer, notice to the bakery. */
@@ -241,9 +273,11 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
         o,
         `Payment received for your ${o.kind === 'custom' ? 'custom cake' : 'cake order'} ${orderRef(o)} — Sunville Bakery`,
       ),
-      paragraphs: [`Hi ${o.name}, we've received your ${what}. Your cake is booked!`],
+      paragraphs: [`Hi ${o.name}, we've received your ${what}. Your cake is booked, and we can't wait to make it!`],
       rows: cakeRows(o),
       after: [`Questions or changes? Reply to this email or call ${SITE.phone}.`],
+      test: o.test,
+      branded: { headline: 'Payment received', detailsTitle: `Order ${orderRef(o)}` },
     }),
     send(`cake-order-custom-paid-bakery-${o.id}`, {
       to: bakeryInbox(),
