@@ -378,6 +378,7 @@ export const sendThankYouEmail = (o: StoredCakeOrder) =>
     branded: {
       headline: 'Thanks for celebrating with us!',
       detailsTitle: '',
+      illustration: 'thank-you',
       button: { label: 'Share a photo', url: `${SITE_URL}/photos/${o.id}` },
     },
   })

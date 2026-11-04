@@ -60,6 +60,7 @@ export const ILLUSTRATIONS = {
   refunded: [230, 200],
   'pay-link': [216, 200],
   'happy-customer': [97, 200],
+  'thank-you': [143, 200],
 } as const
 export type Illustration = keyof typeof ILLUSTRATIONS
 
@@ -101,13 +102,9 @@ export function emailBranded(e: BrandedEmail) {
     )
     .join('')
   const button = e.button
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px auto 8px"><tr><td style="border-radius:8px;background:${BRAND}">` +
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px auto 24px"><tr><td style="border-radius:8px;background:${BRAND}">` +
       `<a href="${e.button.url}" style="display:inline-block;padding:15px 36px;color:#ffffff;font-weight:600;font-size:17px;text-decoration:none;border-radius:8px">${e.button.label}</a>` +
-      '</td></tr></table>' +
-      centered(
-        `Or open: <a href="${e.button.url}" style="color:${MUTED};word-break:break-all">${e.button.url}</a>`,
-        `font-size:13px;color:${MUTED};margin-bottom:24px`,
-      )
+      '</td></tr></table>'
     : ''
   return (
     `<div style="background:#f6f1ea;padding:24px 12px;font-family:${FONT};font-size:16px;line-height:1.55;color:#222">` +
