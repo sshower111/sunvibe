@@ -124,8 +124,6 @@ export const emailPickupCode = (cid: string, delivery: boolean) =>
   '<p style="margin:0;font-weight:600;font-size:17px">Your pickup code</p>' +
   `<img src="cid:${cid}" width="160" height="160" alt="Pickup QR code" style="display:block;margin:10px auto;border:0;width:160px;height:160px">` +
   `<p style="margin:0;font-size:14px;color:${MUTED}">${
-    delivery
-      ? 'Show this to our driver when your cake arrives.'
-      : 'Show this at the counter when you pick up your cake.'
-  } It's optional: you can also just give your name.</p>` +
+    delivery ? 'Have this ready when we deliver your cake.' : 'Show this at the counter when you pick up your cake.'
+  } It's optional: you can also just tell us your name.</p>` +
   '</div>'

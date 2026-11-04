@@ -699,8 +699,8 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   assert.equal((await adminCall({ action: 'picked_up', id: order.id })).status, 200)
   assert.equal((await adminCall({ action: 'not_picked_up', id: order.id })).status, 200)
   assert.equal((await store.getCakeOrder(order.id)).status, 'deposit_paid')
-  // Scanning the QR code on a delivery: "Delivered" in the history, status Picked up.
-  assert.equal((await adminCall({ action: 'delivered', id: order.id, scanned: true })).status, 200)
+  // A delivery: "Delivered" in the history, status Picked up.
+  assert.equal((await adminCall({ action: 'delivered', id: order.id })).status, 200)
   assert.equal((await store.getCakeOrder(order.id)).status, 'picked_up')
   assert.equal((await store.listOrderEvents(order.id)).at(-1).action, 'delivered')
   assert.equal((await adminCall({ action: 'not_picked_up', id: order.id })).status, 200)

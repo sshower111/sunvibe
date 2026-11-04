@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { isDelivery, kitchenText, orderRef, type StoredCakeOrder } from '@/lib/cake-order'
-import { adminPost, SignedOutError } from '@/lib/admin-api'
-import { useAdmin } from '@/components/admin-shell'
 import { Button } from './ui/button'
+import { StaffShell, StaffSignIn, useStaffSession } from './staff-sign-in'
 
 // The pickup screen, in Chinese for the bakery staff: opened by scanning the QR code in the customer's
-// confirmation email. Shows the order and confirms the pickup (or delivery) with one tap.
+// confirmation email (lib/pickup-qr.ts). Shows the order and confirms the pickup (or delivery) with one tap.
+// Staff phones and admins can use it (app/api/staff/pickup/route.ts); it shows nothing else.
 
-type OrderEvent = { at: string; action: string }
+type Done = { at: string; action: string }
 const money = (n: number) => '$' + (Number.isInteger(n) ? n : n.toFixed(2))
 const zhTime = (iso: string) =>
   new Date(iso).toLocaleString('zh-Hant', {
@@ -21,41 +21,60 @@ const zhTime = (iso: string) =>
     minute: '2-digit',
   })
 
-export function AdminPickup({ id }: { id: string }) {
-  const { signedOut } = useAdmin()
+export function StaffPickup({ id }: { id: string }) {
+  const { role, setRole } = useStaffSession()
+  if (role === undefined)
+    return (
+      <StaffShell>
+        <p className="text-center text-muted-foreground">載入中…</p>
+      </StaffShell>
+    )
+  if (role === null)
+    return (
+      <StaffShell>
+        <StaffSignIn onSignedIn={() => setRole('staff')} />
+      </StaffShell>
+    )
+  return (
+    <StaffShell>
+      <PickupOrder id={id} admin={role === 'admin'} onSignedOut={() => setRole(null)} />
+    </StaffShell>
+  )
+}
+
+function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; onSignedOut: () => void }) {
   const [order, setOrder] = useState<StoredCakeOrder | null>(null)
-  const [events, setEvents] = useState<OrderEvent[]>([])
+  const [doneAt, setDoneAt] = useState<Done | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   const request = useCallback(
-    async (body: Record<string, unknown>) => {
-      try {
-        return await adminPost('/api/admin/cake-orders', { id, ...body })
-      } catch (e) {
-        if (e instanceof SignedOutError) signedOut()
-        throw e
-      }
-    },
-    [id, signedOut],
-  )
-  const load = useCallback(async () => {
-    try {
-      const r = await request({ action: 'get' })
-      setOrder(r.order)
-      setEvents(r.events ?? [])
+    async (action: 'get' | 'confirm') => {
+      const r = await fetch('/api/staff/pickup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, id }),
+      })
+      if (r.status === 401) onSignedOut()
+      const data = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(data.error || '網絡有問題，請重試。')
+      setOrder(data.order)
+      setDoneAt(data.doneAt)
       setError('')
-    } catch {
-      setError('找不到這張訂單，或網絡有問題。請重試。')
-    }
-  }, [request])
+    },
+    [id, onSignedOut],
+  )
+  const load = useCallback(
+    () => request('get').catch(e => setError((e as Error).message || '找不到這張訂單，或網絡有問題。請重試。')),
+    [request],
+  )
   useEffect(() => {
     void load()
   }, [load])
 
   if (!order)
     return (
-      <section className="mx-auto max-w-md space-y-3" lang="zh-Hant">
+      <section className="space-y-3">
         {error ? (
           <>
             <p role="alert" className="text-lg text-danger">
@@ -73,7 +92,6 @@ export function AdminPickup({ id }: { id: string }) {
   const done = order.status === 'picked_up'
   const ready = order.status === 'paid' || order.status === 'deposit_paid'
   const balance = order.deposit && order.status === 'deposit_paid' ? order.price - order.deposit : 0
-  const doneAt = [...events].reverse().find(e => e.action === 'picked_up' || e.action === 'delivered')
   const rows = kitchenText(order)
     .split('\n')
     .map(line => {
@@ -83,8 +101,7 @@ export function AdminPickup({ id }: { id: string }) {
   const confirm = () => {
     if (!window.confirm(`確認 ${orderRef(order)} ${delivery ? '已送達' : '已取貨'}？`)) return
     setBusy(true)
-    request({ action: delivery ? 'delivered' : 'picked_up', scanned: true })
-      .then(load)
+    request('confirm')
       .catch(e => setError((e as Error).message || '未能更新，請重試。'))
       .finally(() => setBusy(false))
   }
@@ -101,7 +118,7 @@ export function AdminPickup({ id }: { id: string }) {
   }
 
   return (
-    <section className="mx-auto max-w-md space-y-4" lang="zh-Hant">
+    <section className="space-y-4">
       <header>
         <p className="text-sm text-muted-foreground">{delivery ? '送貨' : '取貨'}</p>
         <h1 className="text-2xl font-bold">
@@ -160,9 +177,11 @@ export function AdminPickup({ id }: { id: string }) {
           {busy ? '更新中…' : delivery ? '確認已送達' : '確認已取貨'}
         </Button>
       )}
-      <Link href={`/admin/orders?open=${order.id}`} className="block text-center text-sm text-primary underline">
-        Open in Cake orders (English)
-      </Link>
+      {admin && (
+        <Link href={`/admin/orders?open=${order.id}`} className="block text-center text-sm text-primary underline">
+          Open in Cake orders (English)
+        </Link>
+      )}
     </section>
   )
 }

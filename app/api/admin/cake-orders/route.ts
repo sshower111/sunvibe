@@ -33,8 +33,6 @@ const actionSchema = z.object({
   id: z.string().uuid(),
   /** Decline: email the customer that we can't make it. Refund: email the customer about the refund. */
   notify: z.boolean().optional(),
-  /** Picked up / delivered: confirmed by scanning the customer's pickup QR code (/admin/pickup/<id>). */
-  scanned: z.boolean().optional(),
 })
 
 /** The kitchen's mobile number for the Send to Kitchen / Ask Kitchen texts (Vercel env KITCHEN_PHONE). */
@@ -121,8 +119,7 @@ export async function POST(req: NextRequest) {
         throw new Error('This order changed. Refresh the list.')
     }
     // Discord: the order's card shows the new status and what was done.
-    const note = ADMIN_NOTES[action]
-    await refreshOrderCardQuietly(id, note && parsed.data.scanned ? note + ' (QR code scanned)' : note)
+    await refreshOrderCardQuietly(id, ADMIN_NOTES[action])
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : 'Cake orders unavailable. Please retry.'

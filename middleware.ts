@@ -4,7 +4,16 @@ import { adminHome } from '@/lib/admin-nav'
 // Pages with forms, CAPTCHA or admin tools keep a strict per-request nonce policy (rendered on every request).
 // Read-only pages (home, menu, gallery, privacy) use a fixed policy so they can be cached and served
 // from Vercel's CDN instead of being rebuilt by a server function on every visit.
-const STRICT_PREFIXES = ['/admin', '/contact', '/pre-order', '/order-cake', '/custom-cakes', '/pay']
+const STRICT_PREFIXES = [
+  '/admin',
+  '/contact',
+  '/pre-order',
+  '/order-cake',
+  '/custom-cakes',
+  '/pay',
+  '/pickup',
+  '/staff',
+]
 const isStrict = (pathname: string) =>
   STRICT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'))
 
