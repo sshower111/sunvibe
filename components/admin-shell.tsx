@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Cake,
+  Camera,
   CalendarHeart,
   ClipboardList,
   Ellipsis,
@@ -26,6 +27,7 @@ const ICONS: Record<AdminSection, LucideIcon> = {
   inquiries: Inbox,
   menu: UtensilsCrossed,
   gallery: Images,
+  photos: Camera,
   occasions: CalendarHeart,
   'pre-orders': ClipboardList,
   settings: Settings,

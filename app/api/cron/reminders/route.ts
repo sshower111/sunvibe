@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { listCakeOrdersSettled } from '@/lib/cake-order-actions'
 import { claimReminder, pushToAdmins } from '@/lib/push'
 import { dueReminders } from '@/lib/push-messages'
+import { sendDueThankYous } from '@/lib/thank-you'
 
 export const runtime = 'nodejs'
 
@@ -28,7 +29,12 @@ async function run(request: NextRequest) {
         sent += result.sent
         if (result.discord) discord++
       }
-    return NextResponse.json({ ok: true, sent, discord })
+    // The thank-you email, a day after pickup or delivery (lib/thank-you.ts). Never fails the reminders.
+    const thanked = await sendDueThankYous().catch(error => {
+      console.error('Thank-you emails not sent', (error as Error).message)
+      return 0
+    })
+    return NextResponse.json({ ok: true, sent, discord, thanked })
   } catch (error) {
     console.error('Reminder job failed', (error as Error).message)
     return NextResponse.json({ error: 'Retry later' }, { status: 500 })

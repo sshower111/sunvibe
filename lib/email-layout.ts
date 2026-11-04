@@ -124,10 +124,13 @@ export function emailBranded(e: BrandedEmail) {
     `<h1 style="font-size:24px;line-height:1.3;margin:8px 0 12px;color:#222;text-align:center">${e.headline}</h1>` +
     e.intro.map(p => centered(p, `color:#444`)).join('') +
     '</td></tr>' +
-    '<tr><td style="padding:8px 28px 0">' +
-    `<h2 style="font-size:17px;margin:12px 0 4px;color:#222;text-align:left">${e.detailsTitle}</h2>` +
-    `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 20px">${rows}</table>` +
-    '</td></tr>' +
+    // No details table when there are no rows (the thank-you email).
+    (e.rows.length
+      ? '<tr><td style="padding:8px 28px 0">' +
+        `<h2 style="font-size:17px;margin:12px 0 4px;color:#222;text-align:left">${e.detailsTitle}</h2>` +
+        `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 20px">${rows}</table>` +
+        '</td></tr>'
+      : '') +
     '<tr><td style="padding:0 28px 20px;text-align:center">' +
     (e.extra ?? '') +
     (e.beforeButton ?? []).map(p => centered(p)).join('') +

@@ -14,6 +14,7 @@ import {
 import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
 import { deleteCard, refreshOrderCardQuietly } from '@/lib/discord-orders'
+import { sendThankYou } from '@/lib/thank-you'
 
 const actionSchema = z.object({
   action: z.enum([
@@ -29,6 +30,7 @@ const actionSchema = z.object({
     'resend_link',
     'kitchen_sent',
     'refund',
+    'send_thanks',
   ]),
   id: z.string().uuid(),
   /** Decline: email the customer that we can't make it. Refund: email the customer about the refund. */
@@ -81,6 +83,11 @@ export async function POST(req: NextRequest) {
       // Gone for good: the order, its history and its Discord card (with the thread under it).
       await deleteCakeOrder(id)
       return NextResponse.json({ success: true, discordDeleted: await deleteCard('order', id) })
+    }
+    if (action === 'send_thanks') {
+      // Normally sent a day after pickup by the reminder job; this sends it now (still only once per order).
+      if (!(await sendThankYou(id))) throw new Error('Already sent for this order, or it is not picked up.')
+      return NextResponse.json({ success: true })
     }
     if (action === 'approve') {
       const result = await approveOrder(id)

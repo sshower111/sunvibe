@@ -361,3 +361,23 @@ export async function sendCustomPaidEmails(o: StoredCakeOrder) {
     }),
   ])
 }
+
+/** The day after pickup or delivery (lib/thank-you.ts): thanks, and one button to share a photo. No order details. */
+export const sendThankYouEmail = (o: StoredCakeOrder) =>
+  send(`cake-order-thank-you-${o.id}`, {
+    to: customerEmail(o),
+    replyTo: bakeryInbox(),
+    test: o.test,
+    subject: tag(o, `Thanks for celebrating with us, ${o.name.split(' ')[0]} 🎂`),
+    paragraphs: [
+      `Hi ${o.name.split(' ')[0]}, we hope the celebration was wonderful and the cake was a hit.`,
+      "Got a photo of it? We'd love to see it, and with your OK we may share it on our website.",
+    ],
+    rows: [],
+    after: ['No need to reply. We just wanted to say thanks.', '— Sunville Bakery'],
+    branded: {
+      headline: 'Thanks for celebrating with us!',
+      detailsTitle: '',
+      button: { label: 'Share a photo', url: `${SITE_URL}/photos/${o.id}` },
+    },
+  })

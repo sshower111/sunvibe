@@ -235,6 +235,11 @@ export function AdminOrderPanel({
         return { label: 'Call ' + order.phone, href: 'tel:' + order.phone.replace(/[^+0-9]/g, '') }
       case 'email':
         return { label: 'Email customer', href: 'mailto:' + order.email }
+      case 'send_thanks':
+        return {
+          label: 'Send thank-you email now',
+          onSelect: () => void act('send_thanks', {}, () => 'Thank-you email sent.'),
+        }
       case 'not_picked_up':
         return { label: 'Undo picked up', onSelect: () => void act('not_picked_up') }
       case 'refund':

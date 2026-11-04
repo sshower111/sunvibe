@@ -13,6 +13,7 @@ const STRICT_PREFIXES = [
   '/pay',
   '/pickup',
   '/employee',
+  '/photos',
 ]
 const isStrict = (pathname: string) =>
   STRICT_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix + '/'))

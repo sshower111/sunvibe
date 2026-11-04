@@ -1,7 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { CalendarHeart, ChevronRight, ClipboardList, ExternalLink, Images, LogOut, Settings } from 'lucide-react'
+import {
+  CalendarHeart,
+  Camera,
+  ChevronRight,
+  ClipboardList,
+  ExternalLink,
+  Images,
+  LogOut,
+  Settings,
+} from 'lucide-react'
 import { useAdmin } from '@/components/admin-shell'
 import { adminPath } from '@/lib/admin-nav'
 
@@ -18,6 +27,7 @@ export function AdminMore() {
         {(
           [
             ['gallery', 'Gallery', Images],
+            ['photos', 'Customer photos', Camera],
             ['occasions', 'Occasions', CalendarHeart],
             ['pre-orders', 'Pre-orders', ClipboardList],
             ['settings', 'Settings', Settings],

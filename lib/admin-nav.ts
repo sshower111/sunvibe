@@ -1,13 +1,14 @@
 // Admin sections and their addresses. Phones show the four main tabs in a bottom bar; the rest sit under More.
 
 export type AdminSection =
-  'orders' | 'inquiries' | 'menu' | 'gallery' | 'occasions' | 'pre-orders' | 'settings' | 'more'
+  'orders' | 'inquiries' | 'menu' | 'gallery' | 'photos' | 'occasions' | 'pre-orders' | 'settings' | 'more'
 
 export const ADMIN_SECTIONS: { id: Exclude<AdminSection, 'more'>; label: string; main: boolean }[] = [
   { id: 'orders', label: 'Cake orders', main: true },
   { id: 'inquiries', label: 'Cake inquiries', main: true },
   { id: 'menu', label: 'Menu', main: true },
   { id: 'gallery', label: 'Gallery', main: false },
+  { id: 'photos', label: 'Customer photos', main: false },
   { id: 'occasions', label: 'Occasions', main: false },
   { id: 'pre-orders', label: 'Pre-orders', main: false },
   { id: 'settings', label: 'Settings', main: false },
