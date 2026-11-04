@@ -95,10 +95,12 @@ export function emailBranded(e: BrandedEmail) {
   return (
     `<div style="background:#f6f1ea;padding:24px 12px;font-family:${FONT};font-size:16px;line-height:1.55;color:#222">` +
     '<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="width:100%;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;border-collapse:separate">' +
-    '<tr><td style="padding:28px 28px 8px;text-align:center">' +
+    // Logo row with a line under it, then the illustration row. Padding, not margins: Gmail drops negative margins.
+    '<tr><td style="padding:28px 28px 20px;text-align:center;border-bottom:1px solid #eee">' +
     (e.note ? emailNote(e.note) : '') +
     `<img src="${e.siteUrl}/logo-dark.png" width="180" height="43" alt="Sunville Bakery" style="display:block;margin:0 auto;border:0;height:auto;max-width:180px">` +
-    '<div style="border-top:1px solid #eee;margin:20px -28px 20px"></div>' +
+    '</td></tr>' +
+    '<tr><td style="padding:28px 28px 8px;text-align:center">' +
     `<img src="${e.siteUrl}/email/happy-customer.png" width="106" height="220" alt="" style="display:block;margin:0 auto 8px;border:0;width:106px;height:220px">` +
     `<h1 style="font-size:24px;line-height:1.3;margin:8px 0 12px;color:#222;text-align:center">${e.headline}</h1>` +
     e.intro.map(p => centered(p, `color:#444`)).join('') +
