@@ -71,6 +71,28 @@ One-time setup (owner):
 
 To stop, delete the webhook in Discord or remove `DISCORD_WEBHOOK_URL` in Vercel. A Discord problem never stops an order or inquiry.
 
+#### Buttons on order messages (Discord bot)
+
+When the Discord bot is set up, the site posts as the bot instead of the webhook, and order messages get buttons:
+
+- **👍 Acknowledge**: opens a thread under the order with the Chinese kitchen text, ready to copy. An order that needs approval becomes **Checking with kitchen** (same as Ask kitchen in admin, with the same extra hour for urgent orders). Paid orders get this button too.
+- **✅ Approve & charge**: first asks "Charge Jane Doe $45 for #1042?" (only you see it); **Yes, charge** charges the card and emails the customer, like Approve in admin. After the card hold ended it reads **Approve (send pay link)** and emails a pay link instead.
+- **❌ Decline**: asks first; **Yes, decline** releases the card hold and emails the customer.
+
+The order message then shows the new status and who did what ("👍 Acknowledged by Keith", "✅ Approved by Keith · charged $45"), and its buttons change to match. If the order was already answered in admin, the button says so and changes nothing. Only the Discord users listed in `DISCORD_ADMIN_IDS` can use the buttons; anyone else gets "Not allowed". Test orders work the same and never charge a card.
+
+One-time setup (owner):
+
+1. At <https://discord.com/developers/applications> → **New Application** (Sunville Bakery). On **General Information** copy the **Application ID** and **Public Key**.
+2. **Installation** → Install Link: **None**. **Bot** → **Reset Token**, copy it (shown once; treat it like a password); turn off **Public Bot**. Leave the Privileged Gateway Intents off.
+3. **OAuth2 → URL Generator**: scope **bot**; permissions View Channels, Send Messages, Embed Links, Read Message History, Create Public Threads, Send Messages in Threads. Open the link and add the bot to the bakery server.
+4. In the Discord app: **User Settings → Advanced → Developer Mode** on. Right-click the channel → **Copy Channel ID**; right-click each person allowed to approve → **Copy User ID**.
+5. In Vercel (Production) add `DISCORD_BOT_TOKEN` (Secret), `DISCORD_APP_ID`, `DISCORD_PUBLIC_KEY`, `DISCORD_CHANNEL_ID` and `DISCORD_ADMIN_IDS` (user IDs, comma separated). Redeploy.
+6. Back on **General Information**, set **Interactions Endpoint URL** to `https://sunvillebakerylv.com/api/discord/interactions` and **Save** (Discord checks it right away; it only saves once step 5 is deployed).
+7. In admin → Settings → Notifications press **Send test notification**, then make an admin **Test order** to try the buttons.
+
+`DISCORD_WEBHOOK_URL` can stay: the site uses the bot when `DISCORD_BOT_TOKEN` and `DISCORD_CHANNEL_ID` are set, and the Gmail replies script keeps using the webhook.
+
 #### Customer email replies → Discord
 
 Customers reply to the bakery's Gmail directly, so the website never sees those emails. A small Google Apps Script in the bakery Gmail account posts them instead (sender, subject, the new part of the reply, and a link to the Gmail thread). It watches threads with `[Inquiry]` or `[Order]` subjects, "cake inquiry", "cake order" or "custom cake", and skips the bakery's own emails.

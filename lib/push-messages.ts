@@ -116,7 +116,7 @@ export function dueReminders(orders: StoredCakeOrder[], now = new Date()): Remin
             body: cakeLine(o, now),
             url: orderUrl(o),
             tag: 'order-' + o.id,
-            discord: orderDiscord(o, headline, '⏰', DISCORD_COLORS.pickup),
+            discord: { ...orderDiscord(o, headline, '⏰', DISCORD_COLORS.pickup), components: [] },
           },
         })
       }

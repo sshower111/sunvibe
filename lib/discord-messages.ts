@@ -21,7 +21,17 @@ export type DiscordEmbed = {
   color?: number
   fields?: DiscordField[]
 }
-export type DiscordMessage = { content: string; embed: DiscordEmbed }
+export type DiscordButton = {
+  type: 2
+  /** 1 blue, 2 grey, 3 green, 4 red */
+  style: 1 | 2 | 3 | 4
+  label: string
+  emoji?: { name: string }
+  custom_id: string
+}
+export type DiscordRow = { type: 1; components: DiscordButton[] }
+/** components: buttons, only shown when the site posts as its Discord bot (webhooks can't have buttons). */
+export type DiscordMessage = { content: string; embed: DiscordEmbed; components?: DiscordRow[] }
 
 export const DISCORD_COLORS = {
   approval: 0xf5a623,
@@ -80,6 +90,107 @@ export function orderDiscord(
       color: urgent ? DISCORD_COLORS.urgent : color,
       fields: orderFields(o),
     },
+    components: orderButtons(o),
+  }
+}
+
+// Buttons on order messages. custom_id is "<action>:<order id>"; the confirm step adds ":<message id>".
+// Acknowledge opens a thread under the message with the Chinese kitchen text (and, for an order waiting on
+// approval, marks it "Checking with kitchen"). Approve and Decline ask to confirm first (lib/discord-interactions.ts).
+export type ButtonAction = 'ack' | 'approve' | 'decline' | 'approve-yes' | 'decline-yes' | 'cancel'
+const button = (style: DiscordButton['style'], label: string, emoji: string, id: string): DiscordButton => ({
+  type: 2,
+  style,
+  label,
+  emoji: { name: emoji },
+  custom_id: id,
+})
+const ACKABLE = ['awaiting_approval', 'checking_kitchen', 'paid', 'deposit_paid']
+const ANSWERABLE = ['awaiting_approval', 'checking_kitchen', 'hold_expired']
+
+/** acknowledged: the message already has its kitchen thread. */
+export function orderButtons(o: Pick<StoredCakeOrder, 'id' | 'status'>, acknowledged = false): DiscordRow[] {
+  const buttons: DiscordButton[] = []
+  if (!acknowledged && ACKABLE.includes(o.status)) buttons.push(button(2, 'Acknowledge', '👍', 'ack:' + o.id))
+  if (ANSWERABLE.includes(o.status)) {
+    buttons.push(
+      button(3, o.status === 'hold_expired' ? 'Approve (send pay link)' : 'Approve & charge', '✅', 'approve:' + o.id),
+      button(4, 'Decline', '❌', 'decline:' + o.id),
+    )
+  }
+  return buttons.length ? [{ type: 1, components: buttons }] : []
+}
+
+/** "approve-yes:<order id>:<message id>" → its parts; null for anything else. */
+export function parseButton(customId: string) {
+  const [action, orderId, messageId] = customId.split(':')
+  const actions: ButtonAction[] = ['ack', 'approve', 'decline', 'approve-yes', 'decline-yes', 'cancel']
+  if (!actions.includes(action as ButtonAction) || !/^[0-9a-f-]{36}$/i.test(orderId ?? '')) return null
+  return {
+    action: action as ButtonAction,
+    orderId,
+    messageId: /^\d{5,25}$/.test(messageId ?? '') ? messageId : undefined,
+  }
+}
+
+/** The confirm question shown only to the person who pressed Approve or Decline. */
+export function confirmPrompt(o: StoredCakeOrder, action: 'approve' | 'decline', messageId: string) {
+  const amount = money(o.deposit ?? o.price)
+  const content =
+    action === 'decline'
+      ? `Decline ${orderRef(o)} for ${o.name}? The card hold is released and ${o.name} gets the "can't make it" email.`
+      : o.status === 'hold_expired'
+        ? `The card hold ended. Approve ${orderRef(o)} and email ${o.name} a pay link for ${amount}?`
+        : `Charge ${o.name} ${amount} for ${orderRef(o)}? They get the confirmation email.`
+  return {
+    content: (o.test ? '[TEST — no card is charged] ' : '') + content,
+    components: [
+      {
+        type: 1 as const,
+        components: [
+          action === 'decline'
+            ? button(4, 'Yes, decline', '❌', `decline-yes:${o.id}:${messageId}`)
+            : button(
+                3,
+                o.status === 'hold_expired' ? 'Yes, send pay link' : 'Yes, charge',
+                '✅',
+                `approve-yes:${o.id}:${messageId}`,
+              ),
+          button(2, 'Cancel', '↩️', 'cancel:' + o.id),
+        ],
+      },
+    ],
+  }
+}
+
+const STATUS_LOOK: Partial<Record<StoredCakeOrder['status'], { emoji: string; color: number }>> = {
+  awaiting_approval: { emoji: '⏳', color: DISCORD_COLORS.approval },
+  checking_kitchen: { emoji: '👩‍🍳', color: DISCORD_COLORS.approval },
+  hold_expired: { emoji: '⌛', color: DISCORD_COLORS.approval },
+  paid: { emoji: '✅', color: DISCORD_COLORS.paid },
+  deposit_paid: { emoji: '✅', color: DISCORD_COLORS.paid },
+  awaiting_payment: { emoji: '📨', color: DISCORD_COLORS.inquiry },
+  picked_up: { emoji: '🎉', color: DISCORD_COLORS.reminder },
+}
+
+/**
+ * The order message after a button was used: same details with the new status, and a running list of who did what
+ * ("👍 Acknowledged by Keith", "✅ Approved by Keith · charged $45") under the title.
+ */
+export function updatedOrderMessage(o: StoredCakeOrder, notes: string[], acknowledged: boolean) {
+  const look = STATUS_LOOK[o.status] ?? { emoji: '⛔', color: DISCORD_COLORS.reminder }
+  const title = `${o.test ? '[TEST] ' : ''}${look.emoji} ${cakeOrderStatusLabels[o.status] ?? o.status} · ${orderRef(o)}`
+  return {
+    embeds: [
+      {
+        title: cut(title, 256),
+        url: absolute(`/admin/orders/${o.id}`),
+        description: notes.length ? cut(notes.join('\n'), 4000) : undefined,
+        color: look.color,
+        fields: orderFields(o),
+      } satisfies DiscordEmbed,
+    ],
+    components: orderButtons(o, acknowledged),
   }
 }
 
