@@ -95,6 +95,15 @@ test('posted in the inquiry thread, or on its own when the message is unknown', 
   assert.equal(await replies.postEmailReply({ ...reply, subject: 'Re: Your cake order #1042 is confirmed' }), 'channel')
   assert.deepEqual(queries.at(-1), [1042])
   assert.equal(calls[0].path, '/channels/999999/messages')
+
+  // Other mail the Gmail search let through (no inquiry code or order number): nothing is posted.
+  calls.length = 0
+  for (const subject of [
+    'Did your recent Amazon order meet your expectations? Review it on Amazon',
+    "Get Sunville Bakery's first order on Uber Eats",
+  ])
+    assert.equal(await replies.postEmailReply({ ...reply, subject }), 'ignored')
+  assert.deepEqual(calls, [])
 })
 
 test('the endpoint needs the EMAIL_REPLY_SECRET', async () => {

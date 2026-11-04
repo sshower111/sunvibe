@@ -103,6 +103,8 @@ Customers reply to the bakery's Gmail directly, so the website never sees those 
 3. Replace the code with `scripts/gmail-replies-to-discord.gs` from this repo and put the same secret in `SECRET`. Save.
 4. Pick `setUp` in the function list and press **Run**. Allow access to Gmail when Google asks (it shows a warning because the script is your own and not published; choose Advanced → Go to project). From then on it checks every 5 minutes.
 
+If a reply doesn't show up: pick `showWhatItSees` in the function list and press **Run**. The log lists every matching email from the last 2 days with **NEW** (sends on the next run), **already sent** or **skipped**, and says whether the 5-minute timer is set up. To send the last hour's replies again (for example ones marked already sent that never arrived), run `resendLastHour`. **Executions** (list icon) shows each run's log, including the website's answer for every reply sent (200 = posted, 401 = `SECRET` doesn't match `EMAIL_REPLY_SECRET`). Only emails whose subject has the inquiry code (#1A2B) or order number (#1042) are sent, so other mail such as Amazon or Uber Eats never reaches Discord; the website ignores anything else too. Running `setUp` again is safe: it keeps its place. The script skips emails sent from the bakery Gmail itself, so test with another email account.
+
 To stop it: in the script, **Triggers** (clock icon) → delete the trigger.
 
 ## Menu

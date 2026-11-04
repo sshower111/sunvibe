@@ -11,8 +11,7 @@ import { emailReplyDiscord, replyTarget, type EmailReply } from './discord-messa
 type Found = { channelId: string; messageId: string }
 
 async function findMessage(subject: string): Promise<{ found?: Found; channel: 'orders' | 'inquiries' }> {
-  const target = replyTarget(subject)
-  if (!target) return { channel: 'inquiries' }
+  const target = replyTarget(subject)!
   const sql = await verifiedDatabase('content')
   const rows =
     target.kind === 'inquiry'
@@ -24,9 +23,13 @@ async function findMessage(subject: string): Promise<{ found?: Found; channel: '
   return rows[0] ? { found: { channelId: rows[0].channel_id, messageId: rows[0].message_id }, channel } : { channel }
 }
 
-/** Returns where it went: 'thread' or 'channel'. Throws when Discord or the database fails (the script retries). */
+/**
+ * Returns where it went: 'thread', 'channel', or 'ignored' when the subject names no inquiry or order (other mail
+ * the Gmail search let through). Throws when Discord or the database fails (the script retries).
+ */
 export async function postEmailReply(reply: EmailReply) {
   if (!botReady()) throw new Error('The Discord bot is not set up.')
+  if (!replyTarget(reply.subject)) return 'ignored' as const
   const { found, channel } = await findMessage(reply.subject)
   const message = emailReplyDiscord(reply, discordMention())
   const body = {
