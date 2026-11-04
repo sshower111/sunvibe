@@ -13,17 +13,8 @@ let admin = true
 const mail = []
 const saved = []
 const deleted = []
-const background = []
 const { load } = createLoader({
   mocks: {
-    'next/server': { ...require('next/server'), after: task => void background.push(task()) },
-    '@/lib/inquiry-assistant-server': {
-      assistantEnabled: () => false,
-      runInquiryAssistant: async () => null,
-      listInquiryNotes: async () => ({}),
-      getReplySigner: async () => 'May',
-      setReplySigner: async () => {},
-    },
     '@/lib/admin-auth': { isAdminRequest: () => admin },
     // The real module starts a cleanup timer that keeps the test process alive.
     '@/lib/security': {
@@ -66,7 +57,6 @@ test('admin can send a test cake inquiry to the bakery inbox', async () => {
   assert.match(mail[0].body.subject, /^\[TEST\] \[Inquiry\] Custom cake: Test Customer · Birthday · /)
   assert(mail[0].body.text.startsWith('TEST INQUIRY'))
   assert(row(mail[0].body.html, 'Writing on cake', 'Happy Birthday, Test!'))
-  await Promise.all(background)
   assert.equal(saved.length, 1, 'added to the list, marked as a test')
   assert.equal(saved[0].test, true)
   assert(!('acknowledged' in saved[0]))

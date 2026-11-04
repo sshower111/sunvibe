@@ -21,15 +21,8 @@ const mail = []
 const saved = []
 let storeDown = false
 
-// after() only works inside a real request; here the work runs at once and is awaited by the test.
-const background = []
-const assistantRuns = []
 const { load } = createLoader({
   mocks: {
-    'next/server': { ...require('next/server'), after: task => void background.push(task()) },
-    '@/lib/inquiry-assistant-server': {
-      runInquiryAssistant: async (inquiry, photos) => (assistantRuns.push({ inquiry, photos }), null),
-    },
     '@/lib/turnstile': {
       verifyTurnstile: async (_token, action) => {
         assert.equal(action, 'custom_cake')
@@ -236,30 +229,6 @@ test('custom cake inquiries are validated, escaped and emailed once', async () =
     body: new Uint8Array(schema.MAX_PHOTOS * schema.MAX_PHOTO_BYTES + 65537),
   })
   assert.equal((await route.POST(large)).status, 413)
-})
-
-test('new inquiries get AI notes after the response, with their photos', async () => {
-  assistantRuns.length = 0
-  verified = true
-  emailError = false
-  limited = false
-  storeDown = false
-  const png = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
-    'base64',
-  )
-  const response = await post({ requestId: '22222222-2222-4222-8222-222222222222' }, [
-    new File([png], 'cake.png', { type: 'image/png' }),
-  ])
-  assert.equal(response.status, 200)
-  await Promise.all(background)
-  assert.equal(assistantRuns.length, 1)
-  assert.equal(assistantRuns[0].inquiry.id, '22222222-2222-4222-8222-222222222222')
-  assert.deepEqual(
-    assistantRuns[0].photos.map(p => p.name),
-    ['1.png'],
-  )
-  assert(assistantRuns[0].photos[0].data.equals(png))
 })
 
 test('"Something else" needs the customer to type their filling, which the emails show', async () => {

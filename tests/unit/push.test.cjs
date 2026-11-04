@@ -143,26 +143,23 @@ test('Discord messages: order card with the details, inquiry card, paid pay link
   assert.equal(total, '$120 (deposit $50 paid, $70 due)')
   assert.equal(msg.paidLinkPush(order({ status: 'paid', kind: 'custom' }), now).title, 'Custom cake paid')
 
-  const inquiry = msg.newInquiryPush(
-    {
-      id: '00000000-0000-4000-8000-000000000009',
-      name: 'Linda Park',
-      phone: '7025550199',
-      email: 'linda@example.com',
-      eventType: 'Birthday',
-      eventDate: '2026-11-08',
-      eventTime: '',
-      servings: '20',
-      size: 'Not sure',
-      flavor: 'Other',
-      customFlavor: 'Ube',
-      filling: 'Custard',
-      photoCount: 2,
-    },
-    'Two-tier ube cake, pink flowers',
-  ).discord
+  const inquiry = msg.newInquiryPush({
+    id: '00000000-0000-4000-8000-000000000009',
+    name: 'Linda Park',
+    phone: '7025550199',
+    email: 'linda@example.com',
+    eventType: 'Birthday',
+    eventDate: '2026-11-08',
+    eventTime: '',
+    servings: '20',
+    size: 'Not sure',
+    flavor: 'Other',
+    customFlavor: 'Ube',
+    filling: 'Custard',
+    photoCount: 2,
+  }).discord
   assert.equal(inquiry.content, '**💬 Custom cake inquiry · #0000** — Linda Park')
-  assert.equal(inquiry.embed.description, 'Two-tier ube cake, pink flowers')
+  assert.equal(inquiry.embed.description, undefined)
   assert.equal(inquiry.embed.fields.find(f => f.name === '🎂 Cake').value, 'Not sure · Ube / Custard')
 })
 

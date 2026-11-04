@@ -73,16 +73,15 @@ export function paidLinkPush(o: StoredCakeOrder, now = new Date()): PushText {
   }
 }
 
-/** headline: the AI notes' one-line summary, added under the details when there is one. */
-export function newInquiryPush(i: StoredCakeInquiry, headline?: string): PushText {
+export function newInquiryPush(i: StoredCakeInquiry): PushText {
   const when = i.eventDate ? formatPickupDate(i.eventDate) : 'date not set'
   const details = `🎂 ${i.eventType} · ${when} · ${i.servings} servings · ${shortName(i.name)}`
   return {
     title: prefix(i.test, false) + 'Custom cake inquiry',
-    body: headline ? `${details}\n${headline.slice(0, 120)}` : details,
+    body: details,
     url: `/admin/inquiries/${i.id}`,
     tag: 'inquiry-' + i.id,
-    discord: inquiryDiscord(i, headline),
+    discord: inquiryDiscord(i),
   }
 }
 

@@ -83,7 +83,7 @@ export function orderDiscord(
   }
 }
 
-export function inquiryDiscord(i: StoredCakeInquiry, headline?: string): DiscordMessage {
+export function inquiryDiscord(i: StoredCakeInquiry): DiscordMessage {
   const test = i.test ? '[TEST] ' : ''
   const title = `${test}💬 Custom cake inquiry · ${inquiryRef(i.id)}`
   const when = i.eventDate
@@ -95,7 +95,6 @@ export function inquiryDiscord(i: StoredCakeInquiry, headline?: string): Discord
     embed: {
       title: cut(title, 256),
       url: absolute(`/admin/inquiries/${i.id}`),
-      description: headline ? cut(headline, 1000) : undefined,
       color: DISCORD_COLORS.inquiry,
       fields: [
         ...field('👤 Customer', i.name, true),

@@ -24,11 +24,9 @@ import { AdminSidePanel, PanelDetails, headCell, listBox, rowClass, useOpenParam
 import { NativeSelect } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { AdminCustomOrderForm } from './admin-custom-order-form'
-import { AdminInquiryAssistant } from './admin-inquiry-assistant'
-import type { AssistantNote } from '@/lib/inquiry-assistant'
 import { cakeOrderStatusLabels, formatPickupDate, type CakeOrderStatus } from '@/lib/cake-order'
 
-// Cake inquiries: a compact list; clicking one opens it in the side panel (details, photos, AI notes, private notes,
+// Cake inquiries: a compact list; clicking one opens it in the side panel (details, photos, private notes,
 // status and the custom order form).
 
 const filters = {
@@ -68,10 +66,6 @@ export function AdminCakeInquiries() {
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [notice, setNotice] = useState('')
-  const [notes, setNotes] = useState<Record<string, AssistantNote>>({})
-  const [signer, setSigner] = useState('')
-  const [assistant, setAssistant] = useState(false)
-  const [writing, setWriting] = useState<string[]>([])
   const { openId, open, close } = useOpenParam()
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-inquiries', body)
 
@@ -86,20 +80,9 @@ export function AdminCakeInquiries() {
       setBusy(false)
     }
   }
-  const showList = (list: {
-    inquiries: StoredCakeInquiry[]
-    notes: Record<string, AssistantNote>
-    signer: string
-    assistant: boolean
-  }) => {
-    setInquiries(list.inquiries)
-    setNotes(list.notes)
-    setSigner(list.signer)
-    setAssistant(list.assistant)
-  }
   const load = () =>
     run(async () => {
-      showList(await request({ action: 'list' }))
+      setInquiries((await request({ action: 'list' })).inquiries)
       setLoaded(true)
     })
   useEffect(() => {
@@ -121,20 +104,6 @@ export function AdminCakeInquiries() {
       setDrafts(({ [id]: _, ...rest }) => rest)
     })
 
-  // Takes 20–60 seconds; other actions stay usable meanwhile.
-  async function writeNotes(id: string) {
-    setWriting(w => [...w, id])
-    try {
-      const { note } = await request({ action: 'assistant', id })
-      setNotes(n => ({ ...n, [id]: note }))
-      setError('')
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setWriting(w => w.filter(x => x !== id))
-    }
-  }
-
   const removeTest = (id: string) =>
     run(async () => {
       await request({ action: 'delete', id })
@@ -145,7 +114,7 @@ export function AdminCakeInquiries() {
     run(async () => {
       setNotice('')
       const { sentTo } = await request({ action: 'test' })
-      showList(await request({ action: 'list' }))
+      setInquiries((await request({ action: 'list' })).inquiries)
       setFilter('open')
       setNotice(`Test inquiry sent to ${sentTo} (two emails starting with [TEST]) and added below.`)
     })
@@ -201,9 +170,6 @@ export function AdminCakeInquiries() {
         label: i.staffNotes ? 'Edit private notes' : 'Add private notes',
         onSelect: () => setDrafts(d => ({ ...d, [i.id]: i.staffNotes })),
       },
-      ...(assistant && !writing.includes(i.id)
-        ? [{ label: notes[i.id] ? 'Redo AI notes' : 'Write AI notes', onSelect: () => void writeNotes(i.id) }]
-        : []),
       ...(i.test
         ? [
             {
@@ -327,14 +293,6 @@ export function AdminCakeInquiries() {
               void load()
             }}
           />
-        )}
-
-        {writing.includes(i.id) ? (
-          <p role="status" className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 text-muted-foreground">
-            Writing AI notes…
-          </p>
-        ) : (
-          notes[i.id] && <AdminInquiryAssistant inquiry={i} note={notes[i.id]} signer={signer} />
         )}
 
         {editing ? (

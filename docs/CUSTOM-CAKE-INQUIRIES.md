@@ -69,36 +69,8 @@ Every inquiry that is emailed is also saved to `bakery_cake_inquiries` (schema: 
 - Private notes per inquiry for the agreed design, final price and payment.
 - Inquiries from the same email or phone are flagged on each other, so a second "correction" form is easy to spot and cancel.
 - After a delivered inquiry the customer gets a copy (their choices only, no notes or address) with reply-to set to the bakery inbox, so corrections come as replies. A failed copy is logged and does not fail the inquiry.
-- AI notes (below) when `ANTHROPIC_API_KEY` is set.
 - Customer details and private notes are encrypted at rest like pre-orders; RLS has no browser policies. API: `POST /api/admin/cake-inquiries` (admin session required).
 
-## AI notes
+## AI notes (removed)
 
-After an inquiry is saved and the customer has their answer, `after()` in `app/api/custom-cakes/route.ts` asks Claude for notes (`lib/inquiry-assistant-server.ts`), then sends the push notification with the notes' one-line summary (or without it when the notes failed or are off). The admin card shows them (`components/admin-inquiry-assistant.tsx`).
-
-**Who does what**
-
-| Part | Done by | Where |
-| --- | --- | --- |
-| One-line takeaway (what matters beyond the form), Chinese summary for the owner, suggested size, flavor ideas (only when the customer picked "Please recommend"), design extra ($0 or $25–50) and reason, price column for a typed filling, flags, questions, questions for the owner, reply text | Claude (`claude-sonnet-5-5`, effort medium, structured output checked against a zod schema) | `lib/inquiry-assistant.ts` `SYSTEM_PROMPT`, `assistantOutputSchema` |
-| Size vs guests for the chosen or suggested size, catalog price (a typed filling uses the column Claude picked, e.g. passion fruit in a higher one, marked for the owner to confirm), delivery fee, total, "from" prices, size vs guests, budget, short notice for ordered decorations, prices still to quote | Code | `quoteFor`, `codeChecks` |
-| "Hi <first name>,", the price in the drafts (`{{total}}`), closing and signature | Code | `emailDraft`, `textDraft` |
-
-**Guardrails**
-
-- Only the cake details go to the model (`inquiryForModel`): never the name, email, phone or delivery address. The customer's text is wrapped in `<inquiry>` and the prompt says to treat it as information, not instructions.
-- The schema allows only listed sizes, the design extras 0/25/30/35/40/45/50 and known flag kinds. An answer that is refused, cut off or doesn't match gives no notes; the inquiry is unaffected.
-- Prices come only from code; the model writes `{{total}}`, which the code fills in (or `[total]` when a price is still open).
-- House rules in the prompt: no fondant (offer whipped cream), sculpted cakes are the owner's call, online-ordered decorations need more time, dark colors are flagged for staff only, frosting ingredients and payment methods are never mentioned (the pay link comes after converting the inquiry to an order).
-- Server-side fallback (`fallbacks: "default"`) retries a safety decline on a suitable model in the same call.
-- Nothing is sent automatically: staff copy the drafts, edit and send them.
-
-**Storage and cost**: `bakery_cake_inquiry_notes` (`db/010-inquiry-assistant.sql`), one row per inquiry, payload encrypted; model, prompt version (`PROMPT_VERSION`), tokens and latency in the clear for monitoring. About 4.5k tokens in, 0.6–1k out on Sonnet 5.5: roughly $0.015–0.02 and 7–9 seconds per inquiry (Opus 5.5 was $0.04–0.05 and 13–16 seconds; Sonnet kept the house rules on the test inquiries but once picked a pricier 2-tier cake where Opus picked a 12-inch). The model is `ASSISTANT_MODEL` in `lib/inquiry-assistant-server.ts`; `run_eval.py --model` runs the eval on another model to compare. Photos are sent at most 800px on the long side (`MODEL_PHOTO_SIZE`). Effort is medium: low was tried and suggested a cake too small for the guests. At the bakery's volume there is nothing to batch or cache. The reply signature is in `bakery_settings` (`reply_signer`).
-
-**Eval** (`evals/inquiry-assistant/`): `cases.json` has 12 labelled inquiries (simple order, size too small, fondant, sculpted, dark colors, short-notice toppers, flavor recommendation, wedding, custom filling, prompt injection, busy design, low budget). `export_requests.cjs` writes the exact requests from `lib/inquiry-assistant.ts` (so the prompt lives in one place); `run_eval.py` sends them and grades each answer with code: expected size, flags, design-extra range, flavor ideas, owner questions, Chinese present, text length, no guessed pronouns, and nothing forbidden in the drafts (payment methods, frosting ingredients, color difficulty, written prices, followed injected instructions). `--real` runs saved inquiries (from the database, with their photos) with the universal checks only. Output stays in the git-ignored `out/` folder. Run it after changing the prompt, and bump `PROMPT_VERSION`.
-
-```
-pip install -r evals/inquiry-assistant/requirements.txt
-node evals/inquiry-assistant/export_requests.cjs
-python evals/inquiry-assistant/run_eval.py
-```
+Claude-written notes on each inquiry (summary, estimate, flags, reply drafts) were built and then removed on Nov 4, 2026 because they weren't practical for the bakery's volume. The full feature, its tests and its Python eval are kept on the `ai-inquiry-assistant` branch on GitHub. The tables it used (`bakery_cake_inquiry_notes`, `bakery_settings`) can be dropped in Supabase.
