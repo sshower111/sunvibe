@@ -100,6 +100,105 @@ test('reminders: still checking with kitchen every 3 hours, 9 AM to 8 PM only', 
   assert.deepEqual(kinds(minutes(12 * 60 + 5)), []) // 10:05 PM: quiet hours
 })
 
+test('reminders: 1 hour before pickup or delivery for paid orders, once the hour starts', () => {
+  // Pickup today at 11:30 AM; now is 10:00 AM.
+  const paid = order({ status: 'paid', pickupDate: '2026-10-31', pickupTime: '11:30' })
+  const kinds = (o, at) => msg.dueReminders([o], at).map(r => r.kind)
+  assert.deepEqual(kinds(paid, minutes(20)), [])
+  assert.deepEqual(kinds(paid, minutes(30)), ['pickup-1h'])
+  assert.deepEqual(kinds(paid, minutes(75)), ['pickup-1h'])
+  assert.deepEqual(kinds(paid, minutes(91)), [])
+  assert.deepEqual(kinds({ ...paid, status: 'deposit_paid' }, minutes(45)), ['pickup-1h'])
+  assert.deepEqual(kinds({ ...paid, status: 'picked_up' }, minutes(45)), [])
+  assert.deepEqual(kinds({ ...paid, status: 'awaiting_payment' }, minutes(45)), [])
+  const reminder = msg.dueReminders([paid], minutes(45))[0].push
+  assert.equal(reminder.title, 'Pickup in 1 hour')
+  assert.match(reminder.discord.content, /⏰ Pickup in 1 hour · #1042/)
+  const delivery = { ...paid, kind: 'custom', fulfillment: 'Delivery', deliveryAddress: '1 Main St' }
+  assert.equal(msg.dueReminders([delivery], minutes(45))[0].push.title, 'Delivery in 1 hour')
+})
+
+test('Discord messages: order card with the details, inquiry card, paid pay link', () => {
+  const held = msg.newOrderPush(order({ cakeMessage: 'Happy Birthday Jane', notes: 'Candles please' }), now).discord
+  assert.equal(held.content, '**⏳ Needs approval · #1042** — Jane Doe')
+  assert.equal(held.embed.url, 'https://sunvillebakerylv.com/admin/orders/00000000-0000-4000-8000-000000000001')
+  const fields = Object.fromEntries(held.embed.fields.map(f => [f.name, f.value]))
+  assert.equal(fields['👤 Customer'], 'Jane Doe')
+  assert.equal(fields['📞 Phone'], '7025550123')
+  assert.equal(fields['📅 Pickup'], 'Wed, Nov 4 · 2:00 PM')
+  assert.equal(fields['✍️ Writing on cake'], 'Happy Birthday Jane')
+  assert.equal(fields['📝 Notes'], 'Candles please')
+  assert.equal(fields['💵 Total'], '$45')
+
+  const urgent = msg.newOrderPush(order({ pickupDate: '2026-10-31' }), now).discord
+  assert.match(urgent.content, /^🚨 \*\*URGENT\*\*/)
+  assert.equal(
+    msg.newOrderPush(order({ status: 'paid', test: true }), now).discord.embed.title,
+    '[TEST] ✅ New paid cake order · #1042',
+  )
+
+  const deposit = msg.paidLinkPush(order({ status: 'deposit_paid', kind: 'custom', price: 120, deposit: 50 }), now)
+  assert.equal(deposit.title, 'Deposit paid')
+  const total = deposit.discord.embed.fields.find(f => f.name === '💵 Total').value
+  assert.equal(total, '$120 (deposit $50 paid, $70 due)')
+  assert.equal(msg.paidLinkPush(order({ status: 'paid', kind: 'custom' }), now).title, 'Custom cake paid')
+
+  const inquiry = msg.newInquiryPush(
+    {
+      id: '00000000-0000-4000-8000-000000000009',
+      name: 'Linda Park',
+      phone: '7025550199',
+      email: 'linda@example.com',
+      eventType: 'Birthday',
+      eventDate: '2026-11-08',
+      eventTime: '',
+      servings: '20',
+      size: 'Not sure',
+      flavor: 'Other',
+      customFlavor: 'Ube',
+      filling: 'Custard',
+      photoCount: 2,
+    },
+    'Two-tier ube cake, pink flowers',
+  ).discord
+  assert.equal(inquiry.content, '**💬 Custom cake inquiry · #0000** — Linda Park')
+  assert.equal(inquiry.embed.description, 'Two-tier ube cake, pink flowers')
+  assert.equal(inquiry.embed.fields.find(f => f.name === '🎂 Cake').value, 'Not sure · Ube / Custard')
+})
+
+test('postToDiscord: posts to the webhook with the mention, never throws', async () => {
+  const discord = load('lib/discord.ts')
+  const message = { content: '**hi**', embed: { title: 'hi' } }
+  const realFetch = global.fetch
+  const quiet = console.error
+  const calls = []
+  console.error = () => {}
+  try {
+    delete process.env.DISCORD_WEBHOOK_URL
+    global.fetch = async () => assert.fail('should not post without a webhook')
+    assert.equal(await discord.postToDiscord(message), false)
+    process.env.DISCORD_WEBHOOK_URL = 'https://discord.example/api/webhooks/1/abc'
+    process.env.DISCORD_MENTION = '@everyone'
+    global.fetch = async (url, init) => {
+      calls.push({ url, body: JSON.parse(init.body) })
+      return { ok: true }
+    }
+    assert.equal(await discord.postToDiscord(message), true)
+    assert.equal(calls[0].url, 'https://discord.example/api/webhooks/1/abc')
+    assert.equal(calls[0].body.content, '@everyone **hi**')
+    assert.deepEqual(calls[0].body.embeds, [{ title: 'hi' }])
+    global.fetch = async () => {
+      throw new Error('offline')
+    }
+    assert.equal(await discord.postToDiscord(message), false)
+  } finally {
+    global.fetch = realFetch
+    console.error = quiet
+    delete process.env.DISCORD_WEBHOOK_URL
+    delete process.env.DISCORD_MENTION
+  }
+})
+
 test('pushToAdmins: removes devices that are gone (404/410) and never throws', async () => {
   const deleted = []
   const updates = []
@@ -131,10 +230,14 @@ test('pushToAdmins: removes devices that are gone (404/410) and never throws', a
   console.error = () => {}
   try {
     // Not set up (no VAPID keys): nothing is sent.
-    assert.deepEqual(await push.pushToAdmins({ title: 't', body: 'b', url: '/admin' }), { sent: 0, failed: 0 })
+    assert.deepEqual(await push.pushToAdmins({ title: 't', body: 'b', url: '/admin' }), {
+      sent: 0,
+      failed: 0,
+      discord: false,
+    })
     Object.assign(process.env, { VAPID_PUBLIC_KEY: 'pub', VAPID_PRIVATE_KEY: 'priv', VAPID_SUBJECT: 'mailto:a@b.c' })
     const result = await push.pushToAdmins({ title: 't', body: 'b', url: '/admin' })
-    assert.deepEqual(result, { sent: 1, failed: 2 })
+    assert.deepEqual(result, { sent: 1, failed: 2, discord: false })
     assert.deepEqual(deleted, ['gone'])
     assert.deepEqual(updates, ['ok'])
     // A builder that throws is caught too.
@@ -142,7 +245,7 @@ test('pushToAdmins: removes devices that are gone (404/410) and never throws', a
       await push.notifyAdmins(() => {
         throw new Error('bad order')
       }),
-      { sent: 0, failed: 0 },
+      { sent: 0, failed: 0, discord: false },
     )
   } finally {
     console.error = quiet

@@ -26,7 +26,8 @@ What you get (tapping a notification opens that order or inquiry in the side pan
 
 - **New cake order**: "Needs approval", e.g. `🎂 8" vanilla/strawberry · Sat 2 PM · Jane D`. **URGENT** when pickup is today or tomorrow.
 - **New custom cake inquiry**: e.g. `🎂 Birthday · Sun, Nov 8 · 20 servings · Linda P`.
-- **Reminders** (each sent once): an urgent order still waiting halfway to its answer time, and again 15 minutes before it is cancelled; any other held order 24 hours before its card hold ends; an order "Checking with kitchen" every 3 hours (9 AM–8 PM).
+- **Custom cake paid**: when a customer pays a pay link (full price or deposit).
+- **Reminders** (each sent once): an urgent order still waiting halfway to its answer time, and again 15 minutes before it is cancelled; any other held order 24 hours before its card hold ends; an order "Checking with kitchen" every 3 hours (9 AM–8 PM); **1 hour before pickup or delivery** of every paid order (or paid deposit). The reminder job runs every 15 minutes, so this one arrives 45–60 minutes before.
 - Test orders and inquiries start with **TEST**.
 
 Notifications are extra: the emails still go out as before, and a notification problem never stops a customer's order or inquiry. The device list under Notifications shows every phone or computer that turned them on; **Remove** stops them on that device. Devices that are reset or uninstall the app drop off the list on their own. If notifications were blocked, turn them on in iPhone **Settings → Notifications → Sunville Admin**.
@@ -56,6 +57,29 @@ Notifications are extra: the emails still go out as before, and a notification p
    To stop it: `select cron.unschedule('sunville-reminders');`. If `CRON_SECRET` changes, unschedule and schedule again with the new value. The job also settles held orders whose answer time passed (as opening Cake orders does).
 
 Changing the VAPID keys turns notifications off on every device; turn them on again in Settings.
+
+### Discord notifications
+
+Every notification above (new orders, inquiries, paid pay links, reminders, 1 hour before pickup) is also posted to a Discord channel, with the full details: customer, phone, pickup time, cake, writing, notes, address and total. The title links to the order or inquiry in admin. **Send test notification** in Settings posts to Discord too ("Discord got it too.").
+
+One-time setup (owner):
+
+1. In Discord, make a server (or use yours) and a channel such as `#orders`. Channel → **Edit Channel → Integrations → Webhooks → New Webhook**, name it Sunville Bakery, **Copy Webhook URL**. Treat it like a password: anyone with it can post to the channel.
+2. In Vercel → Settings → Environment Variables (Production), add `DISCORD_WEBHOOK_URL` (type Secret) with that URL. Optional: `DISCORD_MENTION` = `@everyone` so every message pings phones. Redeploy.
+3. On each phone with Discord: long-press the channel → **Notification Settings → All Messages**, and allow Discord notifications in the phone's settings.
+4. In admin → Settings → Notifications, press **Send test notification** and check the channel.
+
+To stop, delete the webhook in Discord or remove `DISCORD_WEBHOOK_URL` in Vercel. A Discord problem never stops an order or inquiry.
+
+#### Customer email replies → Discord
+
+Customers reply to the bakery's Gmail directly, so the website never sees those emails. A small Google Apps Script in the bakery Gmail account posts them instead (sender, subject, the new part of the reply, and a link to the Gmail thread). It watches threads with `[Inquiry]` or `[Order]` subjects, "cake inquiry", "cake order" or "custom cake", and skips the bakery's own emails.
+
+1. Signed in as the bakery Gmail, open <https://script.google.com> → **New project**, name it "Replies to Discord".
+2. Replace the code with `scripts/gmail-replies-to-discord.gs` from this repo and put the webhook URL in `WEBHOOK_URL` (and `@everyone` in `MENTION` if wanted). Save.
+3. Pick `setUp` in the function list and press **Run**. Allow access to Gmail when Google asks (it shows a warning because the script is your own and not published; choose Advanced → Go to project). From then on it checks every 5 minutes.
+
+To stop it: in the script, **Triggers** (clock icon) → delete the trigger.
 
 ## Menu
 

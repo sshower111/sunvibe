@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-11-04
+
+- **Discord notifications**: every admin notification now also goes to a Discord channel through a webhook (`DISCORD_WEBHOOK_URL`, optional `DISCORD_MENTION` such as `@everyone`), as a card with the customer, phone, pickup or delivery time, cake, writing, notes, address, total and status, linked to the order or inquiry in admin: new orders (⏳ needs approval / ✅ paid, 🚨 URGENT for today and tomorrow), 💬 custom cake inquiries, reminders, and the admin test button. New: **💰 pay link paid** (custom cakes and deposits had no notification before) and **⏰ 1 hour before pickup or delivery** for paid orders (sent once, from the 15-minute reminder job, also as an app notification). Customer email replies go to Discord through a Google Apps Script in the bakery Gmail (`scripts/gmail-replies-to-discord.gs`), since those emails never reach the website. (`lib/discord.ts`, `lib/discord-messages.ts`, `lib/push.ts`, `lib/push-messages.ts`, `lib/custom-cake-orders.ts`, `app/api/cron/reminders/route.ts`, `components/admin-notifications.tsx`, `tests/unit/push.test.cjs`, `docs/ADMIN_GUIDE.md`, `.env.example`)
+
 ## 2026-11-02
 
 - **Custom cakes on phones: shorter size list**: instead of all 17 sizes, phones and tablets show the best fit for the guest count (selected), the two closest alternatives and **Not sure**, as tiles with servings and price. **See all sizes** opens the rest in Round / Sheet / Tiered tabs (starting on the selected size's shape). Computers keep the size guide beside the form. (`components/custom-cake-inquiry.tsx`, `docs/CUSTOM-CAKE-INQUIRIES.md`)

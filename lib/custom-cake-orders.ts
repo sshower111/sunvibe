@@ -18,6 +18,8 @@ import {
 import { getCakeInquiry, updateCakeInquiry } from './cake-inquiries-store'
 import { sendCustomPaidEmails, sendPaymentRequestEmail } from './cake-order-email'
 import { createPayment, squareEnvironment } from './square'
+import { notifyAdmins } from './push'
+import { paidLinkPush } from './push-messages'
 
 // Custom cake orders: a confirmed custom cake inquiry becomes a cake order with a pay link (/pay/<order id>).
 // The customer pays the full price or a deposit; the order then shows in admin → Cake orders like any other.
@@ -111,6 +113,7 @@ export async function payCustomOrder(id: string, cardToken: string | undefined, 
   const paid = { ...order, status, paymentId: payment.id } as const
   if (order.inquiryId) await updateCakeInquiry(order.inquiryId, { status: 'confirmed_paid' }).catch(() => {})
   await sendCustomPaidEmails(paid)
+  await notifyAdmins(() => paidLinkPush(paid, now))
   return { ref: orderRef(paid), receiptUrl: payment.receipt_url }
 }
 

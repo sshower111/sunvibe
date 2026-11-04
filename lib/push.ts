@@ -2,10 +2,13 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import webpush from 'web-push'
 import { verifiedDatabase } from './database'
+import { postToDiscord } from './discord'
+import { plainDiscord, type DiscordMessage } from './discord-messages'
 
 // Web Push to the admin app (iPhone Home Screen app or a desktop browser). Keys come from Vercel environment
 // variables, never the repo: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT (mailto: address).
 // Generate them once with `npx web-push generate-vapid-keys` (docs/ADMIN_GUIDE.md).
+// Every notification also goes to the bakery's Discord channel when DISCORD_WEBHOOK_URL is set (lib/discord.ts).
 
 export type PushMessage = {
   title: string
@@ -14,6 +17,8 @@ export type PushMessage = {
   url: string
   /** Notifications with the same tag replace each other instead of piling up. */
   tag?: string
+  /** Fuller Discord version; without one, Discord gets the title and body. */
+  discord?: DiscordMessage
 }
 export type PushDevice = { id: string; label: string; endpoint: string; createdAt: string; lastOkAt?: string }
 
@@ -60,7 +65,9 @@ export async function removeDevice(id: string) {
  * errors are logged. Devices the push service says are gone (404/410) are removed.
  */
 export async function pushToAdmins(message: PushMessage) {
-  const result = { sent: 0, failed: 0 }
+  const result = { sent: 0, failed: 0, discord: false }
+  const { discord, ...push } = message
+  const toDiscord = postToDiscord(discord ?? plainDiscord(message.title, message.body, message.url))
   try {
     if (!configured()) return result
     const sql = await contentDatabase()
@@ -70,7 +77,7 @@ export async function pushToAdmins(message: PushMessage) {
         try {
           await webpush.sendNotification(
             { endpoint: r.endpoint, keys: { p256dh: r.p256dh, auth: r.auth } },
-            JSON.stringify(message),
+            JSON.stringify(push),
             { TTL: 24 * 60 * 60, urgency: 'high', timeout: 10_000 },
           )
           result.sent++
@@ -86,6 +93,7 @@ export async function pushToAdmins(message: PushMessage) {
   } catch (error) {
     console.error('Push notifications unavailable', (error as Error).message)
   }
+  result.discord = await toDiscord
   return result
 }
 
@@ -95,7 +103,7 @@ export async function notifyAdmins(build: () => PushMessage) {
     return await pushToAdmins(build())
   } catch (error) {
     console.error('Push notification not sent', (error as Error).message)
-    return { sent: 0, failed: 0 }
+    return { sent: 0, failed: 0, discord: false }
   }
 }
 

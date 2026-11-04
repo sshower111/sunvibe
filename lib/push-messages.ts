@@ -1,12 +1,14 @@
-import { formatPickupDate, LAS_VEGAS, type StoredCakeOrder } from './cake-order'
+import { formatPickupDate, LAS_VEGAS, vegasInstant, isDelivery, type StoredCakeOrder } from './cake-order'
 import { isUrgent } from './admin-order-board'
 import { addDays, storeDate } from './occasion-dates'
 import type { StoredCakeInquiry } from './cake-inquiry'
+import { DISCORD_COLORS, inquiryDiscord, orderDiscord, type DiscordMessage } from './discord-messages'
 
 // What the admin app's notifications say. Short enough for a phone lock screen:
 // title "URGENT · Needs approval", body "🎂 8" vanilla/strawberry · Sat 2 PM · Jane D".
+// Each one also carries the fuller Discord message (lib/discord-messages.ts) sent to the bakery's channel.
 
-export type PushText = { title: string; body: string; url: string; tag: string }
+export type PushText = { title: string; body: string; url: string; tag: string; discord?: DiscordMessage }
 
 const SHORT_SIZES: Record<string, string> = {
   '6-inch': '6"',
@@ -45,11 +47,29 @@ export const orderUrl = (o: Pick<StoredCakeOrder, 'id'>) => `/admin/orders/${o.i
 /** New online cake order: "Needs approval" (every online order is held); same-day and next-day ones are URGENT. */
 export function newOrderPush(o: StoredCakeOrder, now = new Date()): PushText {
   const held = o.status === 'awaiting_approval'
+  const urgent = held && isUrgent(o, now)
+  const headline = held ? 'Needs approval' : 'New paid cake order'
   return {
-    title: prefix(o.test, held && isUrgent(o, now)) + (held ? 'Needs approval' : 'New paid cake order'),
+    title: prefix(o.test, urgent) + headline,
     body: cakeLine(o, now),
     url: orderUrl(o),
     tag: 'order-' + o.id,
+    discord: held
+      ? orderDiscord(o, headline, '⏳', DISCORD_COLORS.approval, urgent)
+      : orderDiscord(o, headline, '✅', DISCORD_COLORS.paid),
+  }
+}
+
+/** Customer paid through a pay link (custom cakes, and online orders approved after their card hold ended). */
+export function paidLinkPush(o: StoredCakeOrder, now = new Date()): PushText {
+  const headline =
+    o.status === 'deposit_paid' ? 'Deposit paid' : o.kind === 'custom' ? 'Custom cake paid' : 'Cake order paid'
+  return {
+    title: prefix(o.test, false) + headline,
+    body: cakeLine(o, now),
+    url: orderUrl(o),
+    tag: 'order-' + o.id,
+    discord: orderDiscord(o, headline, '💰', DISCORD_COLORS.paid),
   }
 }
 
@@ -62,6 +82,7 @@ export function newInquiryPush(i: StoredCakeInquiry, headline?: string): PushTex
     body: headline ? `${details}\n${headline.slice(0, 120)}` : details,
     url: `/admin/inquiries/${i.id}`,
     tag: 'inquiry-' + i.id,
+    discord: inquiryDiscord(i, headline),
   }
 }
 
@@ -77,11 +98,31 @@ export type Reminder = { orderId: string; kind: string; push: PushText }
  * - Urgent order still waiting: halfway to its answer deadline, and 15 minutes before it is cancelled.
  * - Other held orders: 24 hours before the card hold ends.
  * - Checking with kitchen: every 3 hours after asking, between 9 AM and 8 PM Las Vegas time.
+ * - Paid orders (and paid deposits): 1 hour before pickup or delivery. The job runs every 15 minutes,
+ *   so it arrives 45–60 minutes before.
  */
 export function dueReminders(orders: StoredCakeOrder[], now = new Date()): Reminder[] {
   const due: Reminder[] = []
   const t = now.getTime()
   for (const o of orders) {
+    if (o.status === 'paid' || o.status === 'deposit_paid') {
+      const left = vegasInstant(o.pickupDate, o.pickupTime).getTime() - t
+      if (left > 0 && left <= HOUR) {
+        const headline = (isDelivery(o) ? 'Delivery' : 'Pickup') + ' in 1 hour'
+        due.push({
+          orderId: o.id,
+          kind: 'pickup-1h',
+          push: {
+            title: prefix(o.test, false) + headline,
+            body: cakeLine(o, now),
+            url: orderUrl(o),
+            tag: 'order-' + o.id,
+            discord: orderDiscord(o, headline, '⏰', DISCORD_COLORS.pickup),
+          },
+        })
+      }
+      continue
+    }
     const waiting = o.status === 'awaiting_approval' || o.status === 'checking_kitchen'
     if (!waiting) continue
     const add = (kind: string, title: string) =>
@@ -93,6 +134,7 @@ export function dueReminders(orders: StoredCakeOrder[], now = new Date()): Remin
           body: cakeLine(o, now),
           url: orderUrl(o),
           tag: 'order-' + o.id,
+          discord: orderDiscord(o, title, '🔔', DISCORD_COLORS.reminder, isUrgent(o, now)),
         },
       })
     const deadline = o.approveBy ? Date.parse(o.approveBy) : NaN

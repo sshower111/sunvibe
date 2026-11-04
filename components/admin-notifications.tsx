@@ -58,7 +58,11 @@ export function AdminNotifications() {
   const call = useCallback(
     async (body: Record<string, unknown>) => {
       try {
-        return (await adminPost('/api/admin/push', body)) as Status & { sent?: number; failed?: number }
+        return (await adminPost('/api/admin/push', body)) as Status & {
+          sent?: number
+          failed?: number
+          discord?: boolean
+        }
       } catch (error) {
         if (error instanceof SignedOutError) signedOut()
         throw error
@@ -124,7 +128,8 @@ export function AdminNotifications() {
   const sendTest = () =>
     run(async () => {
       const r = await call({ action: 'test' })
-      return r.sent ? `Test sent to ${r.sent} device${r.sent === 1 ? '' : 's'}.` : 'No device received it.'
+      const devices = r.sent ? `Test sent to ${r.sent} device${r.sent === 1 ? '' : 's'}.` : 'No device received it.'
+      return devices + (r.discord ? ' Discord got it too.' : '')
     })
 
   const remove = (device: Device) =>

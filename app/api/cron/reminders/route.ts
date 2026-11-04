@@ -6,7 +6,7 @@ import { dueReminders } from '@/lib/push-messages'
 
 export const runtime = 'nodejs'
 
-// Reminder pushes (lib/push-messages.ts dueReminders). Called every 15 minutes by a Supabase cron job with
+// Reminder pushes and Discord messages (lib/push-messages.ts dueReminders), including 1 hour before pickup. Called every 15 minutes by a Supabase cron job with
 // "Authorization: Bearer <CRON_SECRET>" (setup: docs/ADMIN_GUIDE.md). Each reminder is sent once.
 function authorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET
@@ -21,9 +21,14 @@ async function run(request: NextRequest) {
     // Also settles held orders whose answer time passed (cancels the hold and tells the customer).
     const orders = await listCakeOrdersSettled()
     let sent = 0
+    let discord = 0
     for (const reminder of dueReminders(orders))
-      if (await claimReminder(reminder.orderId, reminder.kind)) sent += (await pushToAdmins(reminder.push)).sent
-    return NextResponse.json({ ok: true, sent })
+      if (await claimReminder(reminder.orderId, reminder.kind)) {
+        const result = await pushToAdmins(reminder.push)
+        sent += result.sent
+        if (result.discord) discord++
+      }
+    return NextResponse.json({ ok: true, sent, discord })
   } catch (error) {
     console.error('Reminder job failed', (error as Error).message)
     return NextResponse.json({ error: 'Retry later' }, { status: 500 })
