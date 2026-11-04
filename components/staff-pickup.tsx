@@ -4,14 +4,15 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { isDelivery, orderRef, sizeLabel, zhPickup, type StoredCakeOrder } from '@/lib/cake-order'
 import { zhOption } from '@/lib/email-zh'
-import { Button } from './ui/button'
-import { StaffSignIn, useStaffSession } from './staff-sign-in'
+import { CircleAlert, CircleCheck, Phone } from 'lucide-react'
+import { StaffSignIn, card, primaryButton, secondaryButton, useStaffSession } from './staff-sign-in'
 
 // The pickup screen, in Chinese for the bakery staff: opened by scanning the QR code in the customer's
 // confirmation email (lib/pickup-qr.ts). The order at a glance and one button to confirm the pickup or delivery.
 // Staff phones and admins can use it (app/api/staff/pickup/route.ts); it shows nothing else.
 
 type Done = { at: string; action: string }
+const nextButton = secondaryButton + ' h-14 w-full text-lg'
 const money = (n: number) => '$' + (Number.isInteger(n) ? n : n.toFixed(2))
 const zhTime = (iso: string) =>
   new Date(iso).toLocaleString('zh-Hant', {
@@ -35,8 +36,8 @@ const NOT_READY: Partial<Record<StoredCakeOrder['status'], string>> = {
 
 export function Page({ children }: { children: React.ReactNode }) {
   return (
-    <main lang="zh-Hant" className="min-h-dvh bg-white">
-      <div className="mx-auto max-w-md px-5 pb-48 pt-[max(1.5rem,env(safe-area-inset-top))]">{children}</div>
+    <main lang="zh-Hant" data-staff-ui className="min-h-dvh">
+      <div className="mx-auto max-w-md px-4 pb-52 pt-[max(1.5rem,env(safe-area-inset-top))]">{children}</div>
     </main>
   )
 }
@@ -95,17 +96,18 @@ export function PickupOrder({
 
   if (!order)
     return error ? (
-      <div className="space-y-4 pt-10 text-center">
-        <p role="alert" className="text-lg text-danger">
+      <div className="admin-pop-in space-y-5 pt-16 text-center">
+        <CircleAlert aria-hidden="true" className="mx-auto size-12 text-danger" strokeWidth={1.75} />
+        <p role="alert" className="text-lg font-medium">
           {error}
         </p>
-        <Button variant="outline" onClick={() => void load()}>
+        <button type="button" onClick={() => void load()} className={secondaryButton}>
           重試
-        </Button>
+        </button>
         {onNext && (
-          <Button className="w-full" onClick={onNext}>
+          <button type="button" className={primaryButton} onClick={onNext}>
             掃描下一個
-          </Button>
+          </button>
         )}
       </div>
     ) : (
@@ -121,6 +123,8 @@ export function PickupOrder({
     if (!window.confirm(`確認已${verb}？`)) return
     setBusy(true)
     request('confirm')
+      // A short tick on the same moment the screen turns green (Android; iPhones ignore it).
+      .then(() => navigator.vibrate?.(12))
       .catch(e => setError((e as Error).message || '未能更新，請重試。'))
       .finally(() => setBusy(false))
   }
@@ -132,89 +136,107 @@ export function PickupOrder({
 
   return (
     <>
-      <header className="space-y-1">
-        <p className="text-muted-foreground">
+      <header className="admin-pop-in space-y-1.5 px-1">
+        <p className="text-[0.9375rem] font-medium text-muted-foreground">
           {order.test && '測試 · '}
           {delivery ? '送貨' : '取貨'} · {orderRef(order)}
         </p>
-        <h1 className="font-sans text-3xl font-semibold text-foreground">{order.name}</h1>
-        <p className="text-lg">{zhPickup(order.pickupDate, order.pickupTime)}</p>
-        <a href={'tel:' + order.phone.replace(/[^+0-9]/g, '')} className="inline-block text-lg text-primary">
+        <h1 className="admin-large-title break-words">{order.name}</h1>
+        <p className="text-lg font-medium">{zhPickup(order.pickupDate, order.pickupTime)}</p>
+        <a
+          href={'tel:' + order.phone.replace(/[^+0-9]/g, '')}
+          className="admin-pressable mt-1 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--admin-tint)] px-4 text-[1.0625rem] font-semibold text-primary"
+        >
+          <Phone aria-hidden="true" className="size-[1.125rem]" />
           {order.phone}
         </a>
       </header>
 
-      <dl className="mt-6 grid grid-cols-3 gap-3 border-y py-5 text-lg">
+      <dl className={card + ' mt-6 grid grid-cols-3 divide-x text-lg'}>
         {[
           ['尺寸', zhOption(sizeLabel(order.size))],
           ['口味', zhOption(order.flavor)],
           ['餡料', zhOption(order.filling)],
         ].map(([label, value]) => (
-          <div key={label}>
-            <dt className="text-sm text-muted-foreground">{label}</dt>
-            <dd className="font-medium">{value}</dd>
+          <div key={label} className="min-w-0 px-4 py-3.5">
+            <dt className="text-[0.8125rem] font-medium text-muted-foreground">{label}</dt>
+            <dd className="break-words font-semibold">{value}</dd>
           </div>
         ))}
       </dl>
 
       {details.length > 0 && (
-        <dl className="space-y-4 border-b py-5 text-lg">
+        <dl className={card + ' mt-4 divide-y text-lg'}>
           {details.map(([label, value]) => (
-            <div key={label}>
-              <dt className="text-sm text-muted-foreground">{label}</dt>
-              <dd className="whitespace-pre-wrap break-words font-medium">{value}</dd>
+            <div key={label} className="px-4 py-3.5">
+              <dt className="text-[0.8125rem] font-medium text-muted-foreground">{label}</dt>
+              <dd className="whitespace-pre-wrap break-words font-semibold">{value}</dd>
             </div>
           ))}
         </dl>
       )}
 
       {!done && !ready && (
-        <p className="py-5 text-lg font-semibold text-danger">{NOT_READY[order.status] ?? '現在不能取貨'}</p>
+        <p className="mt-4 flex items-center gap-3 rounded-2xl bg-red-100/70 px-4 py-4 text-lg font-semibold text-red-800">
+          <CircleAlert aria-hidden="true" className="size-6 shrink-0" />
+          {NOT_READY[order.status] ?? '現在不能取貨'}
+        </p>
       )}
-      {ready && balance === 0 && <p className="py-5 text-lg text-muted-foreground">已付全款</p>}
+      {ready && balance === 0 && (
+        <p className="mt-4 flex items-center gap-2 px-1 text-[1.0625rem] font-medium text-muted-foreground">
+          <CircleCheck aria-hidden="true" className="size-5 text-green-700" />
+          已付全款
+        </p>
+      )}
 
       {admin && (
-        <Link href={`/admin/orders?open=${order.id}`} className="text-sm text-muted-foreground underline">
+        <Link
+          href={`/admin/orders?open=${order.id}`}
+          className="mt-6 inline-block px-1 text-[0.9375rem] font-medium text-primary"
+        >
           Open in admin
         </Link>
       )}
 
       {onNext && !ready && !done && (
-        <Button size="lg" variant="outline" className="h-14 w-full text-lg" onClick={onNext}>
+        <button type="button" className={nextButton + ' mt-6'} onClick={onNext}>
           掃描下一個
-        </Button>
+        </button>
       )}
 
       {(ready || done) && (
-        <div className="fixed inset-x-0 bottom-0 border-t bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
+        <div className="admin-material admin-edge-top fixed inset-x-0 bottom-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
           <div className="mx-auto max-w-md">
-            <p role="alert" className="mb-2 text-center text-danger empty:hidden">
+            <p role="alert" className="mb-2 text-center font-medium text-danger empty:hidden">
               {error}
             </p>
             {!done && balance > 0 && (
-              <p className="mb-3 flex items-baseline justify-between gap-3">
-                <span className="text-2xl font-semibold text-danger">收取餘款 {money(balance)}</span>
+              <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+                <span className="text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-danger">
+                  收取餘款 {money(balance)}
+                </span>
                 <span className="text-sm text-muted-foreground">
                   總價 {money(order.price)} · 訂金 {money(order.deposit!)}
                 </span>
-              </p>
+              </div>
             )}
             {done ? (
               <>
-                <p className="flex h-16 items-center justify-center gap-2 rounded-xl bg-green-50 text-xl font-semibold text-green-800">
-                  ✓ 已{doneAt?.action === 'delivered' || (delivery && !doneAt) ? '送達' : '取貨'}
+                <p className="admin-pop-in flex h-16 items-center justify-center gap-2 rounded-2xl bg-green-100/80 text-xl font-semibold text-green-800">
+                  <CircleCheck aria-hidden="true" className="size-6" />已
+                  {doneAt?.action === 'delivered' || (delivery && !doneAt) ? '送達' : '取貨'}
                   {doneAt && <span className="text-[1rem] font-normal">{zhTime(doneAt.at)}</span>}
                 </p>
                 {onNext && (
-                  <Button size="lg" variant="outline" className="mt-3 h-14 w-full text-lg" onClick={onNext}>
+                  <button type="button" className={nextButton + ' mt-3'} onClick={onNext}>
                     掃描下一個
-                  </Button>
+                  </button>
                 )}
               </>
             ) : (
-              <Button size="lg" className="h-16 w-full text-xl" onClick={confirm} disabled={busy}>
+              <button type="button" className={primaryButton} onClick={confirm} disabled={busy}>
                 {busy ? '更新中…' : `確認已${verb}`}
-              </Button>
+              </button>
             )}
           </div>
         </div>

@@ -115,7 +115,7 @@ export function AdminOccasions() {
       <p role="status">{message}</p>
       <div className="grid gap-3 md:grid-cols-2">
         {campaigns.map(c => (
-          <article key={c.id} className="rounded-xl border bg-card p-4">
+          <article key={c.id} className="rounded-xl bg-white shadow-[var(--shadow-card)] p-4">
             <h3 className="heading-3">{c.name}</h3>
             <p className="my-2 text-sm">
               <span className="rounded bg-secondary px-2 py-1">
@@ -148,7 +148,7 @@ export function AdminOccasions() {
         New occasion
       </Button>
       {edit && (
-        <div className="rounded-xl border bg-card p-4 sm:p-6">
+        <div className="rounded-xl bg-white shadow-[var(--shadow-card)] p-4 sm:p-6">
           <h3 className="heading-3 mb-4">Edit occasion</h3>
           <fieldset disabled={busy} className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -252,7 +252,7 @@ export function AdminOccasions() {
             >
               Add item
             </Button>
-            <div className="sticky bottom-0 z-30 grid grid-cols-2 gap-3 rounded-lg border bg-background p-3 shadow-sm sm:flex sm:flex-wrap">
+            <div className="admin-material sticky bottom-0 z-30 grid grid-cols-2 gap-3 rounded-xl p-3 shadow-[0_4px_20px_rgb(0_0_0/0.08)] sm:flex sm:flex-wrap">
               <Button variant="outline" onClick={() => save(false)}>
                 Save draft
               </Button>

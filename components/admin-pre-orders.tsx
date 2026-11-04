@@ -41,7 +41,7 @@ export function AdminPreOrders() {
       {!orders.length && !error && <p>No reservation requests yet.</p>}
       <div className="grid gap-4 lg:grid-cols-2">
         {orders.map(order => (
-          <article key={order.id} className="min-w-0 rounded-xl border bg-card p-4">
+          <article key={order.id} className="min-w-0 rounded-xl bg-white shadow-[var(--shadow-card)] p-4">
             <h3 className="heading-3">{order.name}</h3>
             <dl className="my-3 space-y-2 break-words">
               <div>

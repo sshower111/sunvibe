@@ -12,10 +12,10 @@ export const metadata: Metadata = {
   icons: { apple: '/admin-icon-180.png' },
 }
 // viewport-fit=cover lets the bottom tab bar sit above the iPhone home indicator (safe-area insets).
-export const viewport: Viewport = { viewportFit: 'cover', themeColor: '#ffffff' }
+export const viewport: Viewport = { viewportFit: 'cover', themeColor: '#f2f2f7' }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // data-admin-ui switches every button on the admin pages to the flat text style (app/globals.css).
+  // data-admin-ui switches the admin pages to the Apple-style look: system font, grey grouped page, filled buttons (app/globals.css).
   return (
     <div data-admin-ui>
       <AdminShell>{children}</AdminShell>

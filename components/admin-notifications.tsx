@@ -147,7 +147,10 @@ export function AdminNotifications() {
   const thisDeviceOn = !!thisEndpoint && devices.some(d => d.endpoint === thisEndpoint)
 
   return (
-    <section aria-labelledby="notifications-heading" className="space-y-3 rounded-xl border bg-white p-4 sm:p-6">
+    <section
+      aria-labelledby="notifications-heading"
+      className="space-y-3 rounded-xl bg-white shadow-[var(--shadow-card)] p-4 sm:p-6"
+    >
       <h2 id="notifications-heading" className="heading-2">
         Notifications
       </h2>

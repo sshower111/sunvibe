@@ -83,7 +83,7 @@ export function AdminActionMenu({ label, items }: { label: string; items: MenuIt
   }
 
   const itemClass = (item: MenuItem) =>
-    'flex min-h-12 w-full items-center px-4 text-left text-sm outline-none hover:bg-secondary focus-visible:bg-secondary ' +
+    'flex min-h-11 w-full items-center px-4 text-left text-[0.9375rem] outline-none hover:bg-[var(--admin-fill)] focus-visible:bg-[var(--admin-fill)] active:bg-[var(--admin-fill-strong)] ' +
     (item.danger ? 'text-danger ' : '') +
     (item.phoneOnly ? 'sm:hidden' : '')
 
@@ -97,7 +97,7 @@ export function AdminActionMenu({ label, items }: { label: string; items: MenuIt
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen(o => !o)}
-        className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-secondary active:bg-muted"
+        className="admin-pressable inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--admin-fill)] text-primary hover:bg-[var(--admin-fill-strong)]"
       >
         <Ellipsis aria-hidden="true" className="size-5" />
       </button>
@@ -111,7 +111,7 @@ export function AdminActionMenu({ label, items }: { label: string; items: MenuIt
             aria-label={label}
             onKeyDown={onKeyDown}
             style={{ ...position, width: MENU_WIDTH }}
-            className="fixed z-[60] overflow-hidden rounded-lg border bg-white py-1 shadow-lg"
+            className="admin-material admin-pop-in fixed z-[60] divide-y overflow-hidden rounded-xl shadow-[0_10px_40px_rgb(0_0_0/0.18),0_0_0_0.5px_rgb(0_0_0/0.08)]"
           >
             {items.map(item =>
               item.href ? (

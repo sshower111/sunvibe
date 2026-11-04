@@ -16,7 +16,10 @@ export function AdminSettings() {
   return (
     <div className="space-y-4">
       <AdminNotifications />
-      <section aria-labelledby="settings-heading" className="space-y-4 rounded-xl border bg-white p-4 sm:p-6">
+      <section
+        aria-labelledby="settings-heading"
+        className="space-y-4 rounded-xl bg-white shadow-[var(--shadow-card)] p-4 sm:p-6"
+      >
         <h2 id="settings-heading" className="heading-2">
           Settings
         </h2>

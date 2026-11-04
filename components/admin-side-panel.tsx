@@ -72,9 +72,9 @@ export function AdminSidePanel({
       aria-modal="false"
       aria-labelledby="admin-panel-title"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-white outline-none animate-in slide-in-from-right-8 fade-in-0 duration-200 lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[min(30rem,calc(100vw-16rem))] lg:border-l lg:shadow-[-8px_0_24px_rgb(31_35_40/0.08)]"
+      className="admin-sheet fixed inset-0 z-50 flex flex-col bg-white outline-none lg:inset-y-2 lg:left-auto lg:right-2 lg:w-[min(30rem,calc(100vw-16rem))] lg:overflow-hidden lg:rounded-2xl lg:shadow-[0_20px_60px_rgb(0_0_0/0.16),0_0_0_0.5px_rgb(0_0_0/0.08)]"
     >
-      <header className="flex min-h-14 items-center gap-2 border-b pl-[max(1rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] lg:pt-0">
+      <header className="flex min-h-14 items-center gap-2 shadow-[0_0.5px_0_rgb(60_60_67/0.2)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] lg:pt-0">
         <h2 id="admin-panel-title" className="heading-3 min-w-0 flex-1 truncate">
           {title}
         </h2>
@@ -83,9 +83,9 @@ export function AdminSidePanel({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-secondary active:bg-muted"
+          className="admin-pressable inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--admin-fill)] text-muted-foreground hover:bg-[var(--admin-fill-strong)]"
         >
-          <X aria-hidden="true" className="size-5" />
+          <X aria-hidden="true" className="size-5" strokeWidth={2.5} />
         </button>
       </header>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-[max(1rem,env(safe-area-inset-left))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-sm">
@@ -98,9 +98,9 @@ export function AdminSidePanel({
 /** Label / value rows inside a panel. */
 export function PanelDetails({ rows }: { rows: [string, React.ReactNode][] }) {
   return (
-    <dl className="divide-y rounded-lg border">
+    <dl className="divide-y rounded-xl bg-[var(--admin-bg)]">
       {rows.map(([label, value]) => (
-        <div key={label} className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 px-3 py-2">
+        <div key={label} className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 px-4 py-2.5">
           <dt className="text-muted-foreground">{label}</dt>
           <dd className="min-w-0 whitespace-pre-wrap break-words">{value}</dd>
         </div>
@@ -110,8 +110,8 @@ export function PanelDetails({ rows }: { rows: [string, React.ReactNode][] }) {
 }
 
 /** Shared look for the compact admin tables: one bordered box, a grey header, thin lines between rows. */
-export const listBox = 'overflow-hidden rounded-lg border bg-white'
+export const listBox = 'overflow-hidden rounded-xl bg-white shadow-[var(--shadow-card)]'
 export const headCell = 'px-3 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap'
 export const rowClass = (selected: boolean) =>
   'cursor-pointer border-b last:border-0 transition-colors ' +
-  (selected ? 'bg-blue-50/70' : 'hover:bg-secondary active:bg-muted')
+  (selected ? 'bg-[var(--admin-tint)]' : 'hover:bg-secondary active:bg-[var(--admin-fill)]')

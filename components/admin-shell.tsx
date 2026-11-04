@@ -39,12 +39,10 @@ const BOTTOM_TABS: { id: AdminSection; label: string }[] = [
   { id: 'menu', label: 'Menu' },
   { id: 'more', label: 'More' },
 ]
-// Sidebar row (desktop). The open section gets a grey fill and a red bar on the left, like GitHub.
+// Sidebar row (desktop), like a Mac source list: the open section is filled with the tint colour.
 const sideItem = (active: boolean) =>
-  `relative flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${
-    active
-      ? 'bg-secondary font-semibold text-foreground before:absolute before:-left-2 before:inset-y-1.5 before:w-1 before:rounded-full before:bg-primary'
-      : 'text-muted-foreground hover:text-foreground'
+  `admin-pressable flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[0.9375rem] ${
+    active ? 'bg-[var(--admin-tint)] font-semibold text-primary' : 'text-foreground hover:bg-[var(--admin-fill)]'
   }`
 
 /** Opened from the Home Screen icon rather than in a browser tab. */
@@ -59,36 +57,49 @@ const AdminContext = createContext<{ signOut: () => void; signedOut: () => void 
 /** signOut: the Sign out button. signedOut: an admin request came back 401, so show the sign-in form. */
 export const useAdmin = () => useContext(AdminContext)
 
-// Phones: pull down at the top of a page to reload it, like a native app.
+// Phones: pull down at the top of a page to reload it, like a native app. The indicator follows the finger with
+// growing resistance (rubber band), ticks when the pull is far enough, and springs back on release.
 const PULL_TRIGGER = 64
+const PULL_MAX = 120
+const rubberBand = (raw: number) => PULL_MAX * (1 - 1 / ((raw * 0.55) / PULL_MAX + 1))
 function usePullToRefresh(onRefresh: () => void) {
   const [pull, setPull] = useState(0)
+  const [dragging, setDragging] = useState(false)
   const refresh = useRef(onRefresh)
   refresh.current = onRefresh
   useEffect(() => {
     let startY: number | null = null
     let distance = 0
+    let armed = false
     const start = (e: TouchEvent) => {
       const target = e.target as Element
       if (window.scrollY > 0 || e.touches.length !== 1 || target.closest('[role="dialog"],input,textarea,select'))
         return
       startY = e.touches[0].clientY
+      armed = false
     }
     const move = (e: TouchEvent) => {
       if (startY === null) return
       if (window.scrollY > 0) {
         startY = null
         setPull(0)
+        setDragging(false)
         return
       }
-      distance = Math.max(0, (e.touches[0].clientY - startY) * 0.5)
-      setPull(Math.min(distance, PULL_TRIGGER * 1.4))
+      distance = rubberBand(Math.max(0, e.touches[0].clientY - startY))
+      if (distance >= PULL_TRIGGER !== armed) {
+        armed = !armed
+        if (armed) navigator.vibrate?.(8)
+      }
+      setDragging(distance > 0)
+      setPull(distance)
     }
     const end = () => {
       if (startY !== null && distance >= PULL_TRIGGER) refresh.current()
       startY = null
       distance = 0
       setPull(0)
+      setDragging(false)
     }
     window.addEventListener('touchstart', start, { passive: true })
     window.addEventListener('touchmove', move, { passive: true })
@@ -101,7 +112,19 @@ function usePullToRefresh(onRefresh: () => void) {
       window.removeEventListener('touchcancel', end)
     }
   }, [])
-  return pull
+  return { pull, dragging }
+}
+
+/** True once the page has scrolled, so the top bar shows its hairline only when content is under it. */
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 2)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  return scrolled
 }
 
 // Admin auth uses an httpOnly session cookie set by /api/admin/verify.
@@ -141,7 +164,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }, [])
 
   // Reloads the open page's data by remounting it.
-  const pull = usePullToRefresh(() => {
+  const scrolled = useScrolled()
+  const { pull, dragging } = usePullToRefresh(() => {
     setPageKey(k => k + 1)
     setRefreshing(true)
     setTimeout(() => setRefreshing(false), 700)
@@ -170,7 +194,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   if (session === 'checking')
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-gray-50 p-4">
+      <main className="flex min-h-dvh items-center justify-center p-4">
         <p role="status" className="text-muted-foreground">
           Loading admin…
         </p>
@@ -179,14 +203,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   if (session === 'signed-out') {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-gray-50 p-4">
-        <form
-          onSubmit={handleLogin}
-          className="w-full max-w-sm space-y-4 rounded-xl border bg-white card-pad shadow-sm"
-        >
-          <h1 className="heading-2">Sunville admin</h1>
-          <div className="space-y-2">
-            <label htmlFor="admin-password" className="block text-sm font-medium">
+      <main className="flex min-h-dvh items-center justify-center p-4">
+        <form onSubmit={handleLogin} className="admin-pop-in w-full max-w-sm space-y-5">
+          <img
+            src="/logo-mark.png"
+            alt=""
+            width={64}
+            height={64}
+            className="mx-auto size-16 rounded-[18px] bg-white p-2 shadow-[var(--shadow-card)]"
+          />
+          <h1 className="admin-large-title text-center">Sunville admin</h1>
+          <div className="space-y-2 rounded-xl bg-white p-4 shadow-[var(--shadow-card)]">
+            <label htmlFor="admin-password" className="block text-sm font-medium text-muted-foreground">
               Password
             </label>
             <Input
@@ -205,7 +233,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {loginError}
             </p>
           )}
-          <Button type="submit" className="w-full" loading={loggingIn}>
+          <Button type="submit" className="h-12 w-full" loading={loggingIn}>
             {loggingIn ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
@@ -231,15 +259,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AdminContext.Provider value={{ signOut, signedOut }}>
-      <div className="min-h-dvh bg-gray-50 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        {/* Desktop: sidebar. */}
-        <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-white px-3 py-5 lg:flex">
-          <h1 className="px-3 pb-5 font-serif text-xl font-semibold text-primary">Sunville admin</h1>
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Manage</p>
+      <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
+        {/* Desktop: sidebar, a material of its own so it reads as structure beside the content. */}
+        <aside className="admin-material sticky top-0 hidden h-dvh flex-col px-3 py-5 shadow-[0.5px_0_0_rgb(60_60_67/0.2)] lg:flex">
+          <h1 className="px-3 pb-6 font-serif text-xl font-semibold text-primary">Sunville admin</h1>
           <nav aria-label="Admin sections" className="space-y-0.5">
             {ADMIN_SECTIONS.filter(s => s.id !== 'settings').map(s => sideLink(s.id, s.label))}
           </nav>
-          <div className="mt-auto space-y-0.5 border-t pt-3">
+          <div className="mt-auto space-y-0.5 pt-3">
             {sideLink('settings', 'Settings')}
             <a href="/" target="_blank" rel="noopener noreferrer" className={sideItem(false)}>
               <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
@@ -254,7 +281,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <div className="min-w-0">
           {/* Phones and tablets: slim top bar; the sections are in the bottom tab bar. */}
-          <header className="sticky top-0 z-40 border-b bg-white pt-[env(safe-area-inset-top)] lg:hidden">
+          <header
+            data-scrolled={scrolled || undefined}
+            className="admin-material admin-edge-bottom sticky top-0 z-40 pt-[env(safe-area-inset-top)] lg:hidden"
+          >
             <p className="py-2.5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] text-center font-serif text-lg font-semibold text-primary">
               Sunville admin
             </p>
@@ -267,10 +297,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             style={{
               top: 'calc(env(safe-area-inset-top) + 3.25rem)',
               opacity: refreshing ? 1 : Math.min(pull / PULL_TRIGGER, 1),
-              transform: `translateY(${refreshing ? 12 : pull / 2}px)`,
+              transform: `translateY(${refreshing ? 12 : pull / 2}px) scale(${refreshing ? 1 : 0.6 + Math.min(pull / PULL_TRIGGER, 1) * 0.4})`,
+              transition: dragging ? 'none' : 'transform 420ms var(--admin-spring), opacity 250ms ease',
             }}
           >
-            <span className="rounded-full border bg-white p-2 shadow-sm">
+            <span className="rounded-full bg-white p-2 shadow-[0_2px_10px_rgb(0_0_0/0.12)]">
               <RefreshCw
                 className={'size-5 text-primary ' + (refreshing ? 'animate-spin' : '')}
                 style={refreshing ? undefined : { transform: `rotate(${pull * 4}deg)` }}
@@ -291,7 +322,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           {/* Phones and tablets: bottom tab bar. */}
           <nav
             aria-label="Admin sections"
-            className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+            className="admin-material admin-edge-top fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 pb-[env(safe-area-inset-bottom)] lg:hidden"
           >
             {BOTTOM_TABS.map(tab => {
               const Icon = ICONS[tab.id]
@@ -302,7 +333,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   href={adminPath(tab.id)}
                   aria-current={active ? 'page' : undefined}
                   className={
-                    'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.7rem] font-medium ' +
+                    'admin-pressable flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium tracking-[0.01em] ' +
                     (active ? 'text-primary' : 'text-muted-foreground')
                   }
                 >

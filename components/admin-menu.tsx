@@ -124,7 +124,7 @@ export function AdminMenu() {
           <span className="sr-only">Loading menu…</span>
           <ul className="grid gap-3 md:grid-cols-2">
             {Array.from({ length: 6 }, (_, i) => (
-              <li key={i} className="space-y-3 rounded-xl border bg-white p-4">
+              <li key={i} className="space-y-3 rounded-xl bg-white shadow-[var(--shadow-card)] p-4">
                 <Skeleton className="h-5 w-2/3" />
                 <Skeleton className="h-4 w-1/3" />
                 <Skeleton className="h-10 w-full" />
@@ -133,13 +133,13 @@ export function AdminMenu() {
           </ul>
         </div>
       ) : shownProducts.length === 0 ? (
-        <p className="rounded-xl border bg-white p-6 text-center text-muted-foreground">
+        <p className="rounded-xl bg-white shadow-[var(--shadow-card)] p-6 text-center text-muted-foreground">
           {products.length ? 'No items match.' : 'No menu items yet.'}
         </p>
       ) : (
         <ul className="grid gap-2 md:grid-cols-2">
           {shownProducts.map(product => (
-            <li key={product.id} className="space-y-1.5 rounded-xl border bg-white p-3 text-sm">
+            <li key={product.id} className="space-y-1.5 rounded-xl bg-white shadow-[var(--shadow-card)] p-3 text-sm">
               <div className="flex items-start gap-3">
                 <MenuPhotoThumb url={product.image} />
                 <div className="min-w-0 flex-1">

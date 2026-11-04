@@ -84,6 +84,16 @@ Cards and popovers are white. Dark mode is not used.
 - `components/navigation.tsx`: cream header (`bg-base`) with a 1px sand rule, `shadow-pop` once the page has scrolled. Links: Home, Menu, Custom Cakes, Gallery, Contact (plus Pre-order during a festival campaign). Desktop: the current page (and its sub-pages) is terracotta with a 3px terracotta underline; other links turn terracotta on hover. A terracotta phone button (`rounded-lg`, white text, fades slightly on hover) on screens 1024px and wider.
 - Phone menu: full-width list below the header (56px rows in Playfair Display, chevrons, current page terracotta with a short terracotta bar before it), then Call and Directions buttons (`rounded-lg`) and the hours from `lib/site-info.ts`. The page behind is dimmed (`bg-ink/30`) and locked from scrolling; outside tap, Escape, a link or widening to 1024px (where the desktop links appear) closes it.
 
+## Admin and staff screens
+
+The admin pages (`data-admin-ui`) and the staff pickup / sign-in screens (`data-staff-ui`) use an Apple-style look, separate from the public site. Everything is in the "Admin pages and the staff pickup screen" block of `app/globals.css`; the public site is unchanged.
+
+- **Type**: the device's system font (San Francisco on iPhone and Mac, PingFang for Chinese). Page titles are large titles (32px bold, tight leading, tracking -0.022em); small headings sit near 0 tracking. The "Sunville admin" wordmark keeps the brand serif.
+- **Color**: grey grouped page (`--admin-bg` #f2f2f7), white cards (`rounded-xl`, soft `shadow-card`, no border), hairline separators, Sunville red as the single tint (main buttons, active tab, selected sidebar row, phone link). Grey fills (`--admin-fill`) for secondary buttons, segmented control and selected rows. Status badges and notices are tinted pills without borders.
+- **Materials**: the phone top bar, bottom tab bar, desktop sidebar, ⋯ menu and the pickup screen's bottom bar are translucent (`admin-material`: blur + saturation) with content scrolling under them. The top bar's hairline shows only once the page has scrolled (`admin-edge-bottom[data-scrolled]`).
+- **Motion**: buttons and tappable rows shrink to 97% the moment they are pressed (`admin-pressable`, 100ms). The side panel slides in on an iOS-style curve (`admin-sheet`); on desktop it floats as a rounded sheet. Sign-in screens, menus, notices and the pickup "done" state arrive with a short scale + blur (`admin-pop-in`). Pull-to-refresh follows the finger with rubber-band resistance, ticks (Android vibration) when far enough, and springs back.
+- **Accessibility**: reduced motion swaps slides and pops for a fade and drops the press shrink; reduced transparency makes the bars solid; more contrast darkens separators and outlines buttons.
+
 ## Rules
 
 - No raw colors (`bg-white`, `text-red-600`, `#hex`) in components; use the tokens. Older pages still have some, and later steps replace them.

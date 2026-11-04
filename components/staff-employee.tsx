@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
-import { Button } from './ui/button'
-import { StaffSignIn, useStaffSession } from './staff-sign-in'
+import { StaffSignIn, secondaryButton, useStaffSession } from './staff-sign-in'
 import { Page, PickupOrder } from './staff-pickup'
 
 // /employee, the "Sunville QR" Home Screen app: sign in once, then it opens straight to a camera scanner. Scanning a
@@ -135,9 +134,9 @@ function Scanner({ onScan }: { onScan: (orderId: string) => void }) {
           <p className="text-lg text-danger">
             {state === 'denied' ? '未能使用相機。請在設定中允許使用相機，然後重試。' : '這部手機未能開啟相機。'}
           </p>
-          <Button variant="outline" onClick={() => setAttempt(n => n + 1)}>
+          <button type="button" className={secondaryButton} onClick={() => setAttempt(n => n + 1)}>
             重試
-          </Button>
+          </button>
         </div>
       )}
     </section>

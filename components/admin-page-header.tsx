@@ -16,7 +16,7 @@ export function AdminPageHeader({
   menu?: MenuItem[]
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-end justify-between gap-3 pt-1">
       <h2 className="heading-2">{title}</h2>
       <div className="flex items-center gap-2">
         <button
@@ -24,7 +24,7 @@ export function AdminPageHeader({
           aria-label={`Refresh ${title.toLowerCase()}`}
           onClick={onRefresh}
           disabled={busy}
-          className="inline-flex size-10 items-center justify-center rounded-full text-foreground hover:bg-secondary active:bg-muted disabled:opacity-60"
+          className="admin-pressable inline-flex size-10 items-center justify-center rounded-full bg-[var(--admin-fill)] text-primary hover:bg-[var(--admin-fill-strong)] disabled:opacity-60"
         >
           <RefreshCw aria-hidden="true" className={'size-5 ' + (busy ? 'animate-spin' : '')} />
         </button>

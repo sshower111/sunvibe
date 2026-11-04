@@ -87,7 +87,7 @@ export function AdminGallery() {
       <h2 id="gallery-admin-heading" className="heading-2">
         Gallery <span className="text-base font-normal text-muted-foreground">({images.length} photos)</span>
       </h2>
-      <div className="space-y-4 rounded-xl border bg-white p-4">
+      <div className="space-y-4 rounded-xl bg-white shadow-[var(--shadow-card)] p-4">
         <GalleryPhotoUpload
           onSaved={() => {
             void fetchGalleryImages()
@@ -128,7 +128,7 @@ export function AdminGallery() {
       ) : (
         <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {images.map(image => (
-            <li key={image} className="overflow-hidden rounded-xl border bg-white">
+            <li key={image} className="overflow-hidden rounded-xl bg-white shadow-[var(--shadow-card)]">
               <img src={image} alt="" loading="lazy" decoding="async" className="aspect-square w-full object-cover" />
               <div className="p-2">
                 {confirmRemove === image ? (
