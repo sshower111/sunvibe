@@ -33,7 +33,7 @@ const NOT_READY: Partial<Record<StoredCakeOrder['status'], string>> = {
   failed: '付款失敗',
 }
 
-function Page({ children }: { children: React.ReactNode }) {
+export function Page({ children }: { children: React.ReactNode }) {
   return (
     <main lang="zh-Hant" className="min-h-dvh bg-white">
       <div className="mx-auto max-w-md px-5 pb-48 pt-[max(1.5rem,env(safe-area-inset-top))]">{children}</div>
@@ -52,7 +52,18 @@ export function StaffPickup({ id }: { id: string }) {
   )
 }
 
-function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; onSignedOut: () => void }) {
+/** onNext: in the employee app, goes back to the scanner (a "掃描下一個" button). */
+export function PickupOrder({
+  id,
+  admin,
+  onSignedOut,
+  onNext,
+}: {
+  id: string
+  admin: boolean
+  onSignedOut: () => void
+  onNext?: () => void
+}) {
   const [order, setOrder] = useState<StoredCakeOrder | null>(null)
   const [doneAt, setDoneAt] = useState<Done | null>(null)
   const [error, setError] = useState('')
@@ -91,6 +102,11 @@ function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; o
         <Button variant="outline" onClick={() => void load()}>
           重試
         </Button>
+        {onNext && (
+          <Button className="w-full" onClick={onNext}>
+            掃描下一個
+          </Button>
+        )}
       </div>
     ) : (
       <p className="pt-10 text-center text-muted-foreground">載入中…</p>
@@ -163,6 +179,12 @@ function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; o
         </Link>
       )}
 
+      {onNext && !ready && !done && (
+        <Button size="lg" variant="outline" className="h-14 w-full text-lg" onClick={onNext}>
+          掃描下一個
+        </Button>
+      )}
+
       {(ready || done) && (
         <div className="fixed inset-x-0 bottom-0 border-t bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
           <div className="mx-auto max-w-md">
@@ -178,10 +200,17 @@ function PickupOrder({ id, admin, onSignedOut }: { id: string; admin: boolean; o
               </p>
             )}
             {done ? (
-              <p className="flex h-16 items-center justify-center gap-2 rounded-xl bg-green-50 text-xl font-semibold text-green-800">
-                ✓ 已{doneAt?.action === 'delivered' || (delivery && !doneAt) ? '送達' : '取貨'}
-                {doneAt && <span className="text-[1rem] font-normal">{zhTime(doneAt.at)}</span>}
-              </p>
+              <>
+                <p className="flex h-16 items-center justify-center gap-2 rounded-xl bg-green-50 text-xl font-semibold text-green-800">
+                  ✓ 已{doneAt?.action === 'delivered' || (delivery && !doneAt) ? '送達' : '取貨'}
+                  {doneAt && <span className="text-[1rem] font-normal">{zhTime(doneAt.at)}</span>}
+                </p>
+                {onNext && (
+                  <Button size="lg" variant="outline" className="mt-3 h-14 w-full text-lg" onClick={onNext}>
+                    掃描下一個
+                  </Button>
+                )}
+              </>
             ) : (
               <Button size="lg" className="h-16 w-full text-xl" onClick={confirm} disabled={busy}>
                 {busy ? '更新中…' : `確認已${verb}`}

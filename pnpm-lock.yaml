@@ -35,6 +35,9 @@ importers:
       heic-to:
         specifier: 1.5.2
         version: 1.5.2
+      jsqr:
+        specifier: 1.4.0
+        version: 1.4.0
       lucide-react:
         specifier: ^0.454.0
         version: 0.454.0(react@19.2.6)
@@ -819,6 +822,9 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jsqr@1.4.0:
+    resolution: {integrity: sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==}
 
   jwa@2.0.1:
     resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
@@ -1707,6 +1713,8 @@ snapshots:
   is-fullwidth-code-point@3.0.0: {}
 
   jiti@2.7.0: {}
+
+  jsqr@1.4.0: {}
 
   jwa@2.0.1:
     dependencies:

@@ -24,6 +24,11 @@ const nextConfig = {
             : []),
         ],
       },
+      // The employee app scans pickup QR codes with the camera (components/staff-employee.tsx).
+      {
+        source: '/employee',
+        headers: [{ key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' }],
+      },
       {
         source: '/api/:path*',
         headers: [
