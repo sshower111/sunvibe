@@ -6,7 +6,7 @@ import { Button } from './ui/button'
 import { StaffSignIn, useStaffSession } from './staff-sign-in'
 import { Page, PickupOrder } from './staff-pickup'
 
-// /employee, the "Sunville 取貨" Home Screen app: sign in once, then it opens straight to a camera scanner. Scanning a
+// /employee, the "Sunville QR" Home Screen app: sign in once, then it opens straight to a camera scanner. Scanning a
 // customer's pickup QR code (lib/pickup-qr.ts) shows the order right here, in the app, instead of in Safari, which
 // is where the iPhone Camera app would open it.
 
@@ -21,11 +21,6 @@ export function pickupIdFrom(text: string) {
     return null
   }
 }
-
-const standalone = () =>
-  typeof window !== 'undefined' &&
-  (window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true)
 
 export function StaffEmployee() {
   const { role, setRole } = useStaffSession()
@@ -53,8 +48,6 @@ function Scanner({ onScan }: { onScan: (orderId: string) => void }) {
   const [state, setState] = useState<'starting' | 'scanning' | 'denied' | 'unavailable'>('starting')
   const [notPickup, setNotPickup] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  const [hint, setHint] = useState(false)
-  useEffect(() => setHint(!standalone()), [])
 
   const found = useCallback((text: string) => {
     const id = pickupIdFrom(text)
@@ -122,8 +115,7 @@ function Scanner({ onScan }: { onScan: (orderId: string) => void }) {
   }, [notPickup])
 
   return (
-    <section className="space-y-4">
-      <h1 className="font-sans text-2xl font-semibold text-foreground">掃描取貨碼</h1>
+    <section className="space-y-4 pt-4">
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-black">
         <video ref={video} muted playsInline className="size-full object-cover" aria-label="相機" />
         {state === 'scanning' && (
@@ -131,9 +123,6 @@ function Scanner({ onScan }: { onScan: (orderId: string) => void }) {
             aria-hidden="true"
             className="pointer-events-none absolute inset-[18%] rounded-2xl border-4 border-white/90"
           />
-        )}
-        {state === 'starting' && (
-          <p className="absolute inset-0 flex items-center justify-center text-white/80">開啟相機中…</p>
         )}
       </div>
       {state === 'scanning' && (
@@ -150,11 +139,6 @@ function Scanner({ onScan }: { onScan: (orderId: string) => void }) {
             重試
           </Button>
         </div>
-      )}
-      {hint && (
-        <p className="text-center text-sm text-muted-foreground">
-          加到主畫面更方便：在 Safari 按「分享」→「加入主畫面」。
-        </p>
       )}
     </section>
   )

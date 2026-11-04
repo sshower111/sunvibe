@@ -1,11 +1,11 @@
-// Home Screen app for bakery workers ("Sunville 取貨"): opens straight to the pickup QR scanner (/employee).
+// Home Screen app for bakery workers ("Sunville QR"): opens straight to the pickup QR scanner (/employee).
 export const dynamic = 'force-static'
 
 export function GET() {
   return Response.json(
     {
-      name: 'Sunville 取貨',
-      short_name: 'Sunville 取貨',
+      name: 'Sunville QR',
+      short_name: 'Sunville QR',
       id: '/employee',
       start_url: '/employee',
       scope: '/employee',
