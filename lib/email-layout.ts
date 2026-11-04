@@ -48,6 +48,20 @@ export const SUBJECT_TAG = {
 const BRAND = '#9e2a2b'
 const MUTED = '#6b6b6b'
 
+/**
+ * The pictures under the logo, from undraw.co recolored to the bakery's red and cream (the .svg next to each .png is
+ * its source). Each fits a 240×200 box; the PNGs are drawn at twice that for sharp phone screens. [width, height].
+ */
+export const ILLUSTRATIONS = {
+  'inquiry-received': [223, 200],
+  'order-confirmed': [175, 200],
+  'cant-make-it': [178, 200],
+  refunded: [230, 200],
+  'pay-link': [216, 200],
+  'happy-customer': [97, 200],
+} as const
+export type Illustration = keyof typeof ILLUSTRATIONS
+
 export type BrandedEmail = {
   /** Site address the images are loaded from, e.g. https://sunvillebakerylv.com */
   siteUrl: string
@@ -66,8 +80,8 @@ export type BrandedEmail = {
   closing?: string[]
   /** Address and phone in the footer. */
   footer: string
-  /** Picture under the logo, a file in public/email/ (e.g. 'happy-customer.png'), shown 106×220. None when left out. */
-  illustration?: string
+  /** Picture under the logo (public/email/<name>.png). None when left out. */
+  illustration?: Illustration
   /** Highlighted line at the very top, e.g. "TEST". */
   note?: string
 }
@@ -104,7 +118,7 @@ export function emailBranded(e: BrandedEmail) {
     '</td></tr>' +
     '<tr><td style="padding:28px 28px 8px;text-align:center">' +
     (e.illustration
-      ? `<img src="${e.siteUrl}/email/${e.illustration}" width="106" height="220" alt="" style="display:block;margin:0 auto 8px;border:0;width:106px;height:220px">`
+      ? `<img src="${e.siteUrl}/email/${e.illustration}.png" width="${ILLUSTRATIONS[e.illustration][0]}" height="${ILLUSTRATIONS[e.illustration][1]}" alt="" style="display:block;margin:0 auto 8px;border:0;width:${ILLUSTRATIONS[e.illustration][0]}px;height:${ILLUSTRATIONS[e.illustration][1]}px">`
       : '') +
     `<h1 style="font-size:24px;line-height:1.3;margin:8px 0 12px;color:#222;text-align:center">${e.headline}</h1>` +
     e.intro.map(p => centered(p, `color:#444`)).join('') +

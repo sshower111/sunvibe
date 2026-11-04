@@ -187,6 +187,7 @@ function customerCopy(values: Record<string, string>, test?: boolean) {
     html: emailBranded({
       siteUrl: SITE_URL,
       headline: 'We got your cake inquiry!',
+      illustration: 'inquiry-received',
       intro: [escapeHtml(intro)],
       detailsTitle: escapeHtml(`Inquiry ${values.ref}`),
       rows: rows.map(([label, value]) => [label, escapeHtml(value)]),
