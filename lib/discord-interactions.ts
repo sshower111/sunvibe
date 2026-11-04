@@ -3,7 +3,7 @@ import { createPublicKey, verify } from 'node:crypto'
 import { approveOrder, askKitchen, declineOrder, getCakeOrderSettled } from './cake-order-actions'
 import { amountDueNow, cakeOrderStatusLabels, kitchenText, orderRef, type StoredCakeOrder } from './cake-order'
 import { getCakeOrder } from './cake-orders-store'
-import { discordApi } from './discord'
+import { discordApi, ensureThread } from './discord'
 import { confirmPrompt, parseButton, updatedOrderMessage } from './discord-messages'
 
 // Buttons on the Discord order messages (app/api/discord/interactions). Discord sends each press here, signed with
@@ -131,16 +131,8 @@ async function acknowledge(i: Interaction, orderId: string, who: string) {
       order = { ...order, ...(await askKitchen(orderId)) }
       note += ' · checking with kitchen'
     }
-    try {
-      await discordApi(`/channels/${channelId}/messages/${messageId}/threads`, 'POST', {
-        name: `${orderRef(order)} ${order.name} · kitchen`.slice(0, 100),
-        auto_archive_duration: 1440,
-      })
-    } catch (error) {
-      if ((error as { code?: number }).code !== 160004) throw error // 160004: the thread is already there
-    }
-    // A thread started from a message has the same ID as the message.
-    await discordApi(`/channels/${messageId}/messages`, 'POST', { content: kitchenText(order) })
+    const thread = await ensureThread(channelId, messageId, `${orderRef(order)} ${order.name}`)
+    await discordApi(`/channels/${thread}/messages`, 'POST', { content: kitchenText(order) })
     await editOriginal(i, updatedOrderMessage(order, [...notesOf(i.message), note], true))
   } catch (error) {
     console.error('Discord acknowledge failed', (error as Error).message)

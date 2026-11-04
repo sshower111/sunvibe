@@ -105,6 +105,10 @@ mocks['./discord'] = {
     if (method === 'GET') return { embeds: [{ description: '👍 Acknowledged by Keith' }], thread: { id: '555555' } }
     return {}
   },
+  ensureThread: async (channelId, messageId, name) => {
+    state.calls.push({ path: `/channels/${channelId}/messages/${messageId}/threads`, method: 'POST', body: { name } })
+    return messageId
+  },
 }
 const lib = load('lib/discord-interactions.ts')
 function setUp(start = order()) {
@@ -154,7 +158,7 @@ test('Acknowledge: checking with kitchen, kitchen thread with the Chinese text, 
   assert.equal(state.order.status, 'checking_kitchen')
   const [thread, text, edit] = state.calls
   assert.equal(thread.path, '/channels/999999/messages/777777/threads')
-  assert.equal(thread.body.name, '#1042 Jane Doe · kitchen')
+  assert.equal(thread.body.name, '#1042 Jane Doe')
   assert.equal(text.path, '/channels/777777/messages')
   assert.match(text.body.content, /^電話：7025550123/)
   assert.equal(edit.path, '/webhooks/app1/tok/messages/@original')
@@ -207,24 +211,57 @@ test('Decline: Yes releases the hold and emails', async () => {
   delete process.env.DISCORD_ADMIN_IDS
 })
 
-test('postToDiscord: posts as the bot with buttons when the bot is set up', async () => {
-  const discord = createLoader().load('lib/discord.ts')
+test('postToDiscord: bot with buttons, inquiries to their own channel, first message remembered', async () => {
+  const saved = []
+  const loader = createLoader()
+  loader.mocks['./database'] = {
+    verifiedDatabase:
+      async () =>
+      (strings, ...values) => {
+        saved.push(values)
+        return Promise.resolve([])
+      },
+  }
+  const discord = loader.load('lib/discord.ts')
   const realFetch = global.fetch
   const calls = []
-  Object.assign(process.env, { DISCORD_BOT_TOKEN: 'bot-token', DISCORD_CHANNEL_ID: '999999' })
+  Object.assign(process.env, {
+    DISCORD_BOT_TOKEN: 'bot-token',
+    DISCORD_CHANNEL_ID: '999999',
+    DISCORD_INQUIRY_CHANNEL_ID: '888888',
+  })
+  let next = 1
   global.fetch = async (url, init) => {
     calls.push({ url, init })
-    return { ok: true, text: async () => '{"id":"1"}' }
+    return { ok: true, text: async () => JSON.stringify({ id: String(next++) }) }
   }
   try {
-    const sent = await discord.postToDiscord(msg.orderDiscord(order(), 'Needs approval', '⏳', 1))
-    assert.equal(sent, true)
+    assert.equal(await discord.postToDiscord(msg.orderDiscord(order(), 'Needs approval', '⏳', 1)), true)
     assert.equal(calls[0].url, 'https://discord.com/api/v10/channels/999999/messages')
     assert.equal(calls[0].init.headers.Authorization, 'Bot bot-token')
     assert.deepEqual(ids(JSON.parse(calls[0].init.body).components), ['ack', 'approve', 'decline'])
+    assert.deepEqual(saved[0], ['order', ID, '999999', '1'])
+
+    const inquiry = msg.inquiryDiscord({
+      id: '00000000-0000-4000-8000-000000000009',
+      name: 'Linda Park',
+      eventType: 'Birthday',
+      eventDate: '2026-11-08',
+      servings: '20',
+      size: 'Not sure',
+      flavor: 'Vanilla',
+      filling: 'Custard',
+      photoCount: 0,
+    })
+    await discord.postToDiscord(inquiry)
+    assert.equal(calls[1].url, 'https://discord.com/api/v10/channels/888888/messages')
+    assert.deepEqual(saved[1], ['inquiry', '00000000-0000-4000-8000-000000000009', '888888', '2'])
+    // Without an inquiry channel, inquiries go to the orders channel.
+    delete process.env.DISCORD_INQUIRY_CHANNEL_ID
+    await discord.postToDiscord(inquiry)
+    assert.equal(calls[2].url, 'https://discord.com/api/v10/channels/999999/messages')
   } finally {
     global.fetch = realFetch
-    delete process.env.DISCORD_BOT_TOKEN
-    delete process.env.DISCORD_CHANNEL_ID
+    for (const k of ['DISCORD_BOT_TOKEN', 'DISCORD_CHANNEL_ID', 'DISCORD_INQUIRY_CHANNEL_ID']) delete process.env[k]
   }
 })

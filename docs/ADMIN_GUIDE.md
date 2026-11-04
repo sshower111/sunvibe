@@ -87,19 +87,21 @@ One-time setup (owner):
 2. **Installation** → Install Link: **None**. **Bot** → **Reset Token**, copy it (shown once; treat it like a password); turn off **Public Bot**. Leave the Privileged Gateway Intents off.
 3. **OAuth2 → URL Generator**: scope **bot**; permissions View Channels, Send Messages, Embed Links, Read Message History, Create Public Threads, Send Messages in Threads. Open the link and add the bot to the bakery server.
 4. In the Discord app: **User Settings → Advanced → Developer Mode** on. Right-click the channel → **Copy Channel ID**; right-click each person allowed to approve → **Copy User ID**.
-5. In Vercel (Production) add `DISCORD_BOT_TOKEN` (Secret), `DISCORD_APP_ID`, `DISCORD_PUBLIC_KEY`, `DISCORD_CHANNEL_ID` and `DISCORD_ADMIN_IDS` (user IDs, comma separated). Redeploy.
+5. In Vercel (Production) add `DISCORD_BOT_TOKEN` (Secret), `DISCORD_APP_ID`, `DISCORD_PUBLIC_KEY`, `DISCORD_CHANNEL_ID` (the orders channel), `DISCORD_INQUIRY_CHANNEL_ID` (the inquiries channel; without it inquiries go to the orders channel) and `DISCORD_ADMIN_IDS` (user IDs, comma separated). Redeploy.
+   In Supabase → SQL Editor, run `db/012-discord-messages.sql` once (it remembers each order's and inquiry's Discord message, for email replies).
 6. Back on **General Information**, set **Interactions Endpoint URL** to `https://sunvillebakerylv.com/api/discord/interactions` and **Save** (Discord checks it right away; it only saves once step 5 is deployed).
 7. In admin → Settings → Notifications press **Send test notification**, then make an admin **Test order** to try the buttons.
 
-`DISCORD_WEBHOOK_URL` can stay: the site uses the bot when `DISCORD_BOT_TOKEN` and `DISCORD_CHANNEL_ID` are set, and the Gmail replies script keeps using the webhook.
+`DISCORD_WEBHOOK_URL` can stay as a fallback: the site uses the bot whenever `DISCORD_BOT_TOKEN` and `DISCORD_CHANNEL_ID` are set. The Gmail replies script no longer uses a webhook, so an email-replies channel is not needed.
 
 #### Customer email replies → Discord
 
-Customers reply to the bakery's Gmail directly, so the website never sees those emails. A small Google Apps Script in the bakery Gmail account posts them instead (sender, subject, the new part of the reply, and a link to the Gmail thread). It watches threads with `[Inquiry]` or `[Order]` subjects, "cake inquiry", "cake order" or "custom cake", and skips the bakery's own emails.
+Customers reply to the bakery's Gmail directly, so the website never sees those emails on its own. A small Google Apps Script in the bakery Gmail account sends each new customer reply to the website (`/api/discord/email-reply`), which posts it **in the thread under that inquiry's Discord message** (or the order's, for order emails), pinging the people in `DISCORD_ADMIN_IDS` (or `DISCORD_MENTION`). The post shows the sender, the subject, the new part of the reply, and links to the Gmail thread. The script watches threads with `[Inquiry]` or `[Order]` subjects, "cake inquiry", "cake order" or "custom cake", and skips the bakery's own emails. Inquiries and orders posted before the bot was set up have no known message, so their replies are posted on their own in the inquiries (or orders) channel. If the website can't be reached, the script tries again 5 minutes later.
 
-1. Signed in as the bakery Gmail, open <https://script.google.com> → **New project**, name it "Replies to Discord".
-2. Replace the code with `scripts/gmail-replies-to-discord.gs` from this repo and put the webhook URL in `WEBHOOK_URL` (and `@everyone` in `MENTION` if wanted). Save.
-3. Pick `setUp` in the function list and press **Run**. Allow access to Gmail when Google asks (it shows a warning because the script is your own and not published; choose Advanced → Go to project). From then on it checks every 5 minutes.
+1. In Vercel (Production) add `EMAIL_REPLY_SECRET` (type Secret, 32+ random characters, e.g. `openssl rand -base64 32`). Redeploy.
+2. Signed in as the bakery Gmail, open <https://script.google.com> → **New project** (or the existing "Replies to Discord").
+3. Replace the code with `scripts/gmail-replies-to-discord.gs` from this repo and put the same secret in `SECRET`. Save.
+4. Pick `setUp` in the function list and press **Run**. Allow access to Gmail when Google asks (it shows a warning because the script is your own and not published; choose Advanced → Go to project). From then on it checks every 5 minutes.
 
 To stop it: in the script, **Triggers** (clock icon) → delete the trigger.
 

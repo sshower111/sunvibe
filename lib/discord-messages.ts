@@ -30,8 +30,20 @@ export type DiscordButton = {
   custom_id: string
 }
 export type DiscordRow = { type: 1; components: DiscordButton[] }
-/** components: buttons, only shown when the site posts as its Discord bot (webhooks can't have buttons). */
-export type DiscordMessage = { content: string; embed: DiscordEmbed; components?: DiscordRow[] }
+export type DiscordLink = { kind: 'order' | 'inquiry'; id: string }
+/**
+ * components: buttons, only shown when the site posts as its Discord bot (webhooks can't have buttons).
+ * channel: inquiries go to their own channel when DISCORD_INQUIRY_CHANNEL_ID is set.
+ * link: the order or inquiry it is about; the bot remembers its first message so customer email replies can be
+ * posted in that message's thread (lib/discord-replies.ts).
+ */
+export type DiscordMessage = {
+  content: string
+  embed: DiscordEmbed
+  components?: DiscordRow[]
+  channel?: 'orders' | 'inquiries'
+  link?: DiscordLink
+}
 
 export const DISCORD_COLORS = {
   approval: 0xf5a623,
@@ -91,6 +103,7 @@ export function orderDiscord(
       fields: orderFields(o),
     },
     components: orderButtons(o),
+    link: { kind: 'order', id: o.id },
   }
 }
 
@@ -218,6 +231,8 @@ export function inquiryDiscord(i: StoredCakeInquiry): DiscordMessage {
         ...field('📷 Photos', i.photoCount ? String(i.photoCount) : '', true),
       ],
     },
+    channel: 'inquiries',
+    link: { kind: 'inquiry', id: i.id },
   }
 }
 
@@ -227,4 +242,36 @@ export function plainDiscord(title: string, body: string, url: string, color: nu
     content: cut(`**${title}**`, 1900),
     embed: { title: cut(title, 256), url: absolute(url), description: cut(body, 4000), color },
   } satisfies DiscordMessage
+}
+
+/**
+ * Which inquiry or order a customer's email reply is about, from its subject. Inquiry emails say "inquiry" and end
+ * with the 4-character code (#1A2B); order emails carry the order number (#1042).
+ */
+export function replyTarget(
+  subject: string,
+): { kind: 'inquiry'; ref: string } | { kind: 'order'; orderNo: number } | null {
+  if (/inquiry/i.test(subject)) {
+    const ref = [...subject.matchAll(/#([0-9a-f]{4})(?![0-9a-z])/gi)].at(-1)?.[1]
+    return ref ? { kind: 'inquiry', ref: ref.toLowerCase() } : null
+  }
+  const orderNo = subject.match(/#(\d{4,9})(?!\d)/)?.[1]
+  return orderNo ? { kind: 'order', orderNo: Number(orderNo) } : null
+}
+
+export type EmailReply = { fromName: string; fromEmail: string; subject: string; text: string; gmailUrl?: string }
+
+/** A customer's email reply, posted in the thread under its inquiry or order (or on its own if that's not found). */
+export function emailReplyDiscord(r: EmailReply, mention: string): Omit<DiscordMessage, 'link'> {
+  const who = r.fromName || r.fromEmail
+  return {
+    content: cut(`${mention ? mention + ' ' : ''}📩 **${who}** replied by email`, 1900),
+    embed: {
+      title: cut(r.subject.replace(/^((re|fwd?|aw):\s*)+/i, '') || 'Email reply', 256),
+      url: r.gmailUrl && /^https:\/\/mail\.google\.com\//.test(r.gmailUrl) ? r.gmailUrl : undefined,
+      description: cut(r.text.trim() || '(no text)', 4000),
+      color: DISCORD_COLORS.inquiry,
+      fields: field('👤 From', r.fromEmail && r.fromName ? `${r.fromName} <${r.fromEmail}>` : who),
+    },
+  }
 }
