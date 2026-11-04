@@ -40,9 +40,10 @@ export const SUBJECT_TAG = {
   preorder: '[Pre-order] ',
 } as const
 
-// Customer emails with the bakery's look: logo and a headline, centered on a white card, the
+// Customer emails with the bakery's look: the logo on top, an illustration (public/email/happy-customer.png, from
+// undraw.co in the bakery's colors; the .svg next to it is the source) and a headline, centered on a white card, the
 // details in a table, the button last (so the details are read first) and the bakery's address at the bottom.
-// The logo comes from the live site (public/), since email can't show local files.
+// Images come from the live site (public/), as PNG: email can't show local files, and Gmail doesn't show SVG.
 
 const BRAND = '#9e2a2b'
 const MUTED = '#6b6b6b'
@@ -94,7 +95,9 @@ export function emailBranded(e: BrandedEmail) {
     '<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="width:100%;max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;border-collapse:separate">' +
     '<tr><td style="padding:28px 28px 8px;text-align:center">' +
     (e.note ? emailNote(e.note) : '') +
-    `<img src="${e.siteUrl}/logo-dark.png" width="200" height="48" alt="Sunville Bakery" style="display:block;margin:0 auto 8px;border:0;height:auto;max-width:200px">` +
+    `<img src="${e.siteUrl}/logo-dark.png" width="180" height="43" alt="Sunville Bakery" style="display:block;margin:0 auto;border:0;height:auto;max-width:180px">` +
+    '<div style="border-top:1px solid #eee;margin:20px -28px 20px"></div>' +
+    `<img src="${e.siteUrl}/email/happy-customer.png" width="106" height="220" alt="" style="display:block;margin:0 auto 8px;border:0;width:106px;height:220px">` +
     `<h1 style="font-size:24px;line-height:1.3;margin:8px 0 12px;color:#222;text-align:center">${e.headline}</h1>` +
     e.intro.map(p => centered(p, `color:#444`)).join('') +
     '</td></tr>' +
