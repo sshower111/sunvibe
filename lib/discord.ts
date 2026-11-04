@@ -47,11 +47,11 @@ export async function discordApi(path: string, method: string, body?: unknown, a
 export async function postToDiscord(message: DiscordMessage) {
   const webhook = process.env.DISCORD_WEBHOOK_URL
   if (!botReady() && !webhook) return false
-  const mention = process.env.DISCORD_MENTION?.trim()
+  const mention = message.quiet ? '' : process.env.DISCORD_MENTION?.trim()
   const payload = {
     content: mention ? `${mention} ${message.content}` : message.content,
     embeds: [message.embed],
-    allowed_mentions: { parse: ['everyone', 'roles', 'users'] },
+    allowed_mentions: { parse: message.quiet ? [] : ['everyone', 'roles', 'users'] },
   }
   try {
     if (botReady()) {
@@ -82,7 +82,7 @@ export async function postToDiscord(message: DiscordMessage) {
 
 // The first Discord message about each order and inquiry (db/012-discord-messages.sql), so later customer email
 // replies go in that message's thread.
-async function rememberMessage(link: DiscordLink, channelId: string, messageId: string) {
+export async function rememberMessage(link: DiscordLink, channelId: string, messageId: string) {
   const sql = await verifiedDatabase('content')
   await sql`INSERT INTO bakery_discord_messages(kind,ref_id,channel_id,message_id)
     VALUES(${link.kind},${link.id},${channelId},${messageId}) ON CONFLICT DO NOTHING`

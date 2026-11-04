@@ -43,6 +43,8 @@ export type DiscordMessage = {
   components?: DiscordRow[]
   channel?: 'orders' | 'inquiries'
   link?: DiscordLink
+  /** No ping: something the bakery just did itself (e.g. sent a pay link). */
+  quiet?: boolean
 }
 
 export const DISCORD_COLORS = {
@@ -67,7 +69,15 @@ function orderFields(o: StoredCakeOrder): DiscordField[] {
     o.deposit && o.status === 'deposit_paid'
       ? `${money(o.price)} (deposit ${money(o.deposit)} paid, ${money(o.price - o.deposit)} due)`
       : money(o.price)
+  // Online orders come from the cake order page; custom cakes from an inquiry (created in admin, paid by link).
+  const type =
+    o.kind === 'custom'
+      ? o.inquiryId
+        ? `🎨 Custom cake · from [inquiry ${inquiryRef(o.inquiryId)}](${absolute(`/admin/inquiries/${o.inquiryId}`)})`
+        : '🎨 Custom cake'
+      : '🛒 Online order'
   return [
+    ...field('🧾 Order', type),
     ...field('👤 Customer', o.name, true),
     ...field('📞 Phone', o.phone, true),
     ...field(
@@ -84,7 +94,7 @@ function orderFields(o: StoredCakeOrder): DiscordField[] {
   ]
 }
 
-/** headline: "Needs approval", "New paid cake order", "Pickup in 1 hour", ... */
+/** headline: "Needs approval", "New paid cake order", "Pickup today at 2:00 PM", ... */
 export function orderDiscord(
   o: StoredCakeOrder,
   headline: string,
@@ -206,6 +216,16 @@ export function updatedOrderMessage(o: StoredCakeOrder, notes: string[], acknowl
     components: orderButtons(o, acknowledged),
   }
 }
+
+/** The card for an order made from an inquiry, posted (without a ping) when its pay link is emailed. */
+export const awaitingPaymentDiscord = (o: StoredCakeOrder): DiscordMessage => ({
+  ...orderDiscord(o, 'Awaiting payment', '📨', DISCORD_COLORS.inquiry),
+  quiet: true,
+})
+
+/** The line added to an inquiry's card once it became an order, linking to the order's card. */
+export const becameOrderNote = (o: Pick<StoredCakeOrder, 'id' | 'orderNo'>, link: string) =>
+  `✅ Became order ${orderRef(o)} → [open the order](${link})`
 
 export function inquiryDiscord(i: StoredCakeInquiry): DiscordMessage {
   const test = i.test ? '[TEST] ' : ''

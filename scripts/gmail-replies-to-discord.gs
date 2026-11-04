@@ -34,8 +34,14 @@ function isOurSubject(subject) {
   if (/inquiry/i.test(subject)) return /#[0-9a-f]{4}(?![0-9a-z])/i.test(subject)
   return /cake order|custom cake|\[order\]/i.test(subject) && /#\d{4,9}(?!\d)/.test(subject)
 }
+/** Only real customer emails: not drafts, not the bakery's own emails (the website skips those too). */
 function isCustomerReply(m, thread) {
-  return !/orders@sunvillebakerylv\.com/i.test(m.getFrom()) && isOurSubject(thread.getFirstMessageSubject())
+  return (
+    !m.isDraft() &&
+    !m.isInTrash() &&
+    !/@sunvillebakerylv\.com|sunvillebakerylv@gmail\.com/i.test(m.getFrom()) &&
+    isOurSubject(thread.getFirstMessageSubject())
+  )
 }
 
 /** Run by hand to see what the script finds (last 2 days), without sending anything. */

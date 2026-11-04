@@ -1,4 +1,11 @@
-import { formatPickupDate, LAS_VEGAS, vegasInstant, isDelivery, type StoredCakeOrder } from './cake-order'
+import {
+  formatPickupDate,
+  formatPickupTime,
+  LAS_VEGAS,
+  vegasInstant,
+  isDelivery,
+  type StoredCakeOrder,
+} from './cake-order'
 import { isUrgent } from './admin-order-board'
 import { addDays, storeDate } from './occasion-dates'
 import type { StoredCakeInquiry } from './cake-inquiry'
@@ -92,34 +99,55 @@ const vegasHour = (now: Date) =>
 
 export type Reminder = { orderId: string; kind: string; push: PushText }
 
+const vegasAt = (date: string, time: string) => vegasInstant(date, time).getTime()
+
+/** Pickup (or delivery) reminders for a paid order that are due now; see dueReminders. */
+function pickupReminders(o: StoredCakeOrder, now: Date): Reminder[] {
+  const t = now.getTime()
+  const placed = Date.parse(o.createdAt)
+  const pickup = vegasAt(o.pickupDate, o.pickupTime)
+  const twoDays = vegasAt(addDays(o.pickupDate, -2), '09:00')
+  const dayBefore = vegasAt(addDays(o.pickupDate, -1), '09:00')
+  const threeHours = Math.max(pickup - 3 * HOUR, vegasAt(o.pickupDate, '08:00'))
+  const what = isDelivery(o) ? 'Delivery' : 'Pickup'
+  const due: Reminder[] = []
+  const add = (kind: string, headline: string, emoji: string) =>
+    due.push({
+      orderId: o.id,
+      kind,
+      push: {
+        title: prefix(o.test, false) + headline,
+        body: cakeLine(o, now),
+        url: orderUrl(o),
+        tag: 'order-' + o.id,
+        discord: { ...orderDiscord(o, headline, emoji, DISCORD_COLORS.pickup), components: [] },
+      },
+    })
+  if (placed < twoDays) {
+    if (t >= twoDays && t < dayBefore) add('pickup-2d', `${what} in 2 days · ${formatPickupDate(o.pickupDate)}`, '📅')
+  } else if (placed < dayBefore && t >= dayBefore && t < vegasAt(o.pickupDate, '00:00'))
+    add('pickup-1d', `${what} tomorrow · ${formatPickupTime(o.pickupTime)}`, '📅')
+  if (placed < threeHours && t >= threeHours && t < pickup)
+    add('pickup-3h', `${what} today at ${formatPickupTime(o.pickupTime)}`, '⏰')
+  return due
+}
+
 /**
  * Reminder pushes due now. Each has a `kind` so it is sent only once per order (lib/push.ts claimReminder).
  * - Urgent order still waiting: halfway to its answer deadline, and 15 minutes before it is cancelled.
  * - Other held orders: 24 hours before the card hold ends.
  * - Checking with kitchen: every 3 hours after asking, between 9 AM and 8 PM Las Vegas time.
- * - Paid orders (and paid deposits): 1 hour before pickup or delivery. The job runs every 15 minutes,
- *   so it arrives 45–60 minutes before.
+ * - Paid orders (and paid deposits), by the calendar rather than exact hours so nothing comes at odd times:
+ *   ordered 2+ days ahead → 9 AM two days before; ordered later than that but before 9 AM the day before → 9 AM the
+ *   day before; every order → 3 hours before pickup or delivery, but not before 8 AM (then at 8 AM). Same-day orders
+ *   placed within that window get no extra reminder (the new order notification just went out).
  */
 export function dueReminders(orders: StoredCakeOrder[], now = new Date()): Reminder[] {
   const due: Reminder[] = []
   const t = now.getTime()
   for (const o of orders) {
     if (o.status === 'paid' || o.status === 'deposit_paid') {
-      const left = vegasInstant(o.pickupDate, o.pickupTime).getTime() - t
-      if (left > 0 && left <= HOUR) {
-        const headline = (isDelivery(o) ? 'Delivery' : 'Pickup') + ' in 1 hour'
-        due.push({
-          orderId: o.id,
-          kind: 'pickup-1h',
-          push: {
-            title: prefix(o.test, false) + headline,
-            body: cakeLine(o, now),
-            url: orderUrl(o),
-            tag: 'order-' + o.id,
-            discord: { ...orderDiscord(o, headline, '⏰', DISCORD_COLORS.pickup), components: [] },
-          },
-        })
-      }
+      due.push(...pickupReminders(o, now))
       continue
     }
     const waiting = o.status === 'awaiting_approval' || o.status === 'checking_kitchen'

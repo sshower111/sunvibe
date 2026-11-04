@@ -4,6 +4,7 @@ import { approveOrder, askKitchen, declineOrder, getCakeOrderSettled } from './c
 import { amountDueNow, cakeOrderStatusLabels, kitchenText, orderRef, type StoredCakeOrder } from './cake-order'
 import { getCakeOrder } from './cake-orders-store'
 import { discordApi, ensureThread } from './discord'
+import { refreshOrderCard } from './discord-orders'
 import { confirmPrompt, parseButton, updatedOrderMessage } from './discord-messages'
 
 // Buttons on the Discord order messages (app/api/discord/interactions). Discord sends each press here, signed with
@@ -106,19 +107,8 @@ const tellPresser = (i: Interaction, content: string) =>
   discordApi(`/webhooks/${i.application_id}/${i.token}`, 'POST', { content, flags: EPHEMERAL }, 'none')
 
 /** Redraws the order message in the channel with the order's current status, adding `note` to its history. */
-async function refreshOrderMessage(channelId: string, messageId: string, orderId: string, note?: string) {
-  const [message, order] = await Promise.all([
-    discordApi(`/channels/${channelId}/messages/${messageId}`, 'GET'),
-    getCakeOrder(orderId),
-  ])
-  if (!order) return
-  const notes = [...notesOf(message), ...(note ? [note] : [])]
-  await discordApi(
-    `/channels/${channelId}/messages/${messageId}`,
-    'PATCH',
-    updatedOrderMessage(order, notes, !!message?.thread),
-  )
-}
+const refreshOrderMessage = (channelId: string, messageId: string, orderId: string, note?: string) =>
+  refreshOrderCard(orderId, note, { channelId, messageId })
 
 async function acknowledge(i: Interaction, orderId: string, who: string) {
   const channelId = channelOf(i)

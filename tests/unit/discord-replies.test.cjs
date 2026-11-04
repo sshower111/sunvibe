@@ -50,30 +50,53 @@ test('reply message: pings, subject without Re:, only the new text, Gmail link o
   assert.equal(other.content, '📩 **a@b.c** replied by email')
 })
 
-test('posted in the inquiry thread, or on its own when the message is unknown', async () => {
+test('every reply goes in a thread: known card, or the card posted once for older inquiries', async () => {
   const loader = createLoader()
   const calls = []
   const queries = []
-  let rows = [{ channel_id: '888888', message_id: '4444' }]
+  let remembered = [{ channel_id: '888888', message_id: '4444' }]
+  let inquiryRows = []
   loader.mocks['./database'] = {
     verifiedDatabase:
       async () =>
       (strings, ...values) => {
-        queries.push(values)
-        return Promise.resolve(rows)
+        const text = strings.join('?')
+        queries.push({ text, values })
+        if (text.includes('FROM bakery_discord_messages')) return Promise.resolve(remembered)
+        if (text.includes('FROM bakery_cake_inquiries')) return Promise.resolve(inquiryRows)
+        return Promise.resolve([])
       },
   }
+  loader.mocks['./cake-inquiries-store'] = {
+    getCakeInquiry: async id => ({
+      id,
+      name: 'Steve Remmel',
+      phone: '7025550100',
+      email: 'steve@example.com',
+      eventType: 'Birthday',
+      eventDate: '2026-11-07',
+      servings: '20',
+      size: '8-inch',
+      flavor: 'Chocolate',
+      filling: 'Strawberry',
+      photoCount: 0,
+      status: 'waiting_customer',
+    }),
+  }
+  loader.mocks['./cake-orders-store'] = { getCakeOrder: async () => null }
+  const saved = []
   loader.mocks['./discord'] = {
     botReady: () => true,
     channelFor: c => (c === 'inquiries' ? '888888' : '999999'),
     discordMention: () => '<@111>',
+    rememberMessage: async (link, channelId, messageId) => saved.push({ ...link, channelId, messageId }),
     ensureThread: async (channelId, messageId, name) => {
       calls.push({ thread: name, channelId, messageId })
       return messageId
     },
     discordApi: async (path, method, body) => {
       calls.push({ path, body })
-      return {}
+      return { id: '6006' }
     },
   }
   const replies = loader.load('lib/discord-replies.ts')
@@ -83,20 +106,48 @@ test('posted in the inquiry thread, or on its own when the message is unknown', 
     subject: 'Re: [Inquiry] Custom cake #1A2B',
     text: 'Pink please!',
   }
+
+  // 1. The inquiry's card is known: thread under it, pinging the bakery.
   assert.equal(await replies.postEmailReply(reply), 'thread')
-  assert.deepEqual(queries[0], ['1a2b%'])
+  assert.deepEqual(queries[0].values, ['1a2b%'])
   assert.deepEqual(calls[0], { thread: '#1A2B Linda Park', channelId: '888888', messageId: '4444' })
   assert.equal(calls[1].path, '/channels/4444/messages')
   assert.equal(calls[1].body.content, '<@111> 📩 **Linda Park** replied by email')
+  assert.deepEqual(calls[1].body.allowed_mentions.parse, ['everyone', 'roles', 'users'])
 
-  // An order sent before the bot was set up: posted in the orders channel.
-  rows = []
+  // 2. The bakery's own email in the conversation: skipped, nothing posted.
+  calls.length = 0
+  const own = { ...reply, fromName: 'Sunville Bakery', fromEmail: 'SunvilleBakeryLV@gmail.com' }
+  assert.equal(await replies.postEmailReply(own), 'ignored')
+  assert.deepEqual(calls, [])
+
+  // 3. An inquiry from before the bot: its card is posted once (no ping), remembered, and the thread starts there,
+  //    named after the customer.
+  remembered = []
+  inquiryRows = [{ id: 'a3fc0000-1111-4111-8111-111111111111' }]
+  calls.length = 0
+  const older = {
+    ...reply,
+    fromName: 'Steve Remmel',
+    fromEmail: 'steve@example.com',
+    subject: 'Re: [Inquiry] Custom cake: Steve Remmel · #A3FC',
+  }
+  assert.equal(await replies.postEmailReply(older), 'thread')
+  assert.equal(calls[0].path, '/channels/888888/messages')
+  assert.equal(calls[0].body.embeds[0].title, '💬 Custom cake inquiry · #A3FC')
+  assert.deepEqual(calls[0].body.allowed_mentions.parse, [])
+  assert.deepEqual(saved, [
+    { kind: 'inquiry', id: 'a3fc0000-1111-4111-8111-111111111111', channelId: '888888', messageId: '6006' },
+  ])
+  assert.deepEqual(calls[1], { thread: '#A3FC Steve Remmel', channelId: '888888', messageId: '6006' })
+  assert.equal(calls[2].path, '/channels/6006/messages')
+
+  // 4. Not in the database at all (e.g. a deleted test order): posted on its own in its channel.
   calls.length = 0
   assert.equal(await replies.postEmailReply({ ...reply, subject: 'Re: Your cake order #1042 is confirmed' }), 'channel')
-  assert.deepEqual(queries.at(-1), [1042])
   assert.equal(calls[0].path, '/channels/999999/messages')
 
-  // Other mail the Gmail search let through (no inquiry code or order number): nothing is posted.
+  // 5. Other mail the Gmail search let through (no inquiry code or order number): nothing is posted.
   calls.length = 0
   for (const subject of [
     'Did your recent Amazon order meet your expectations? Review it on Amazon',

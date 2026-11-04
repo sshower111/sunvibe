@@ -19,6 +19,7 @@ import { getCakeInquiry, updateCakeInquiry } from './cake-inquiries-store'
 import { sendCustomPaidEmails, sendPaymentRequestEmail } from './cake-order-email'
 import { createPayment, squareEnvironment } from './square'
 import { notifyAdmins } from './push'
+import { inquiryBecameOrder } from './discord-orders'
 import { paidLinkPush } from './push-messages'
 
 // Custom cake orders: a confirmed custom cake inquiry becomes a cake order with a pay link (/pay/<order id>).
@@ -56,6 +57,8 @@ export async function createOrderFromInquiry(input: CustomOrderInput, now = new 
   const saved = { ...order, orderNo }
   await updateCakeInquiry(inquiryId, { status: 'waiting_customer' })
   const emailed = await sendPaymentRequestEmail(saved)
+  // Discord: the order's card (no ping) and a line on the inquiry's card linking to it.
+  await inquiryBecameOrder(saved)
   return { ref: orderRef(saved), emailed, sentTo: saved.test ? 'the bakery inbox (test)' : saved.email }
 }
 

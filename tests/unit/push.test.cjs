@@ -100,22 +100,52 @@ test('reminders: still checking with kitchen every 3 hours, 9 AM to 8 PM only', 
   assert.deepEqual(kinds(minutes(12 * 60 + 5)), []) // 10:05 PM: quiet hours
 })
 
-test('reminders: 1 hour before pickup or delivery for paid orders, once the hour starts', () => {
-  // Pickup today at 11:30 AM; now is 10:00 AM.
-  const paid = order({ status: 'paid', pickupDate: '2026-10-31', pickupTime: '11:30' })
-  const kinds = (o, at) => msg.dueReminders([o], at).map(r => r.kind)
-  assert.deepEqual(kinds(paid, minutes(20)), [])
-  assert.deepEqual(kinds(paid, minutes(30)), ['pickup-1h'])
-  assert.deepEqual(kinds(paid, minutes(75)), ['pickup-1h'])
-  assert.deepEqual(kinds(paid, minutes(91)), [])
-  assert.deepEqual(kinds({ ...paid, status: 'deposit_paid' }, minutes(45)), ['pickup-1h'])
-  assert.deepEqual(kinds({ ...paid, status: 'picked_up' }, minutes(45)), [])
-  assert.deepEqual(kinds({ ...paid, status: 'awaiting_payment' }, minutes(45)), [])
-  const reminder = msg.dueReminders([paid], minutes(45))[0].push
-  assert.equal(reminder.title, 'Pickup in 1 hour')
-  assert.match(reminder.discord.content, /⏰ Pickup in 1 hour · #1042/)
-  const delivery = { ...paid, kind: 'custom', fulfillment: 'Delivery', deliveryAddress: '1 Main St' }
-  assert.equal(msg.dueReminders([delivery], minutes(45))[0].push.title, 'Delivery in 1 hour')
+test('pickup reminders: 9 AM two days before (or the day before for later orders), and 3 hours before', () => {
+  const { vegasInstant } = load('lib/cake-order.ts')
+  const at = (date, time) => vegasInstant(date, time) // Las Vegas time
+  const kinds = (o, when) => msg.dueReminders([o], when).map(r => r.kind)
+  // Ordered Sat Oct 31, 10 AM.
+  const ahead = order({ status: 'paid', pickupDate: '2026-11-04', pickupTime: '14:00' })
+  assert.deepEqual(kinds(ahead, at('2026-11-02', '08:45')), [])
+  assert.deepEqual(kinds(ahead, at('2026-11-02', '09:00')), ['pickup-2d'])
+  assert.deepEqual(kinds(ahead, at('2026-11-03', '09:30')), []) // no "tomorrow" when 2 days was sent
+  assert.deepEqual(kinds(ahead, at('2026-11-04', '10:45')), [])
+  assert.deepEqual(kinds(ahead, at('2026-11-04', '11:00')), ['pickup-3h'])
+  assert.deepEqual(kinds(ahead, at('2026-11-04', '14:00')), [])
+  const two = msg.dueReminders([ahead], at('2026-11-02', '09:00'))[0].push
+  assert.equal(two.title, 'Pickup in 2 days · Wed, Nov 4')
+  assert.match(two.discord.content, /📅 Pickup in 2 days · Wed, Nov 4 · #1042/)
+  assert.equal(msg.dueReminders([ahead], at('2026-11-04', '11:00'))[0].push.title, 'Pickup today at 2:00 PM')
+
+  // Ordered less than 2 days ahead: 9 AM the day before instead.
+  const soon = order({ status: 'deposit_paid', pickupDate: '2026-11-02', pickupTime: '14:00' })
+  assert.deepEqual(kinds(soon, at('2026-11-01', '08:45')), [])
+  assert.deepEqual(kinds(soon, at('2026-11-01', '09:00')), ['pickup-1d'])
+  assert.equal(msg.dueReminders([soon], at('2026-11-01', '09:00'))[0].push.title, 'Pickup tomorrow · 2:00 PM')
+  assert.deepEqual(kinds(soon, at('2026-11-02', '11:00')), ['pickup-3h'])
+
+  // Morning pickups: never before 8 AM.
+  const early = order({ status: 'paid', pickupDate: '2026-11-04', pickupTime: '09:30' })
+  assert.deepEqual(kinds(early, at('2026-11-04', '06:30')), [])
+  assert.deepEqual(kinds(early, at('2026-11-04', '08:00')), ['pickup-3h'])
+
+  // Same day, ordered within 3 hours: the new order notification is enough.
+  assert.deepEqual(
+    kinds(order({ status: 'paid', pickupDate: '2026-10-31', pickupTime: '12:00' }), at('2026-10-31', '10:15')),
+    [],
+  )
+  // Delivery wording; nothing for orders that aren't paid or are already picked up.
+  const delivery = order({
+    status: 'paid',
+    pickupDate: '2026-11-04',
+    pickupTime: '14:00',
+    kind: 'custom',
+    fulfillment: 'Delivery',
+    deliveryAddress: '1 Main St',
+  })
+  assert.equal(msg.dueReminders([delivery], at('2026-11-04', '11:00'))[0].push.title, 'Delivery today at 2:00 PM')
+  assert.deepEqual(kinds({ ...ahead, status: 'picked_up' }, at('2026-11-04', '11:00')), [])
+  assert.deepEqual(kinds({ ...ahead, status: 'awaiting_payment' }, at('2026-11-04', '11:00')), [])
 })
 
 test('Discord messages: order card with the details, inquiry card, paid pay link', () => {

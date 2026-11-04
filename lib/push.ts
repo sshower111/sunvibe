@@ -2,7 +2,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import webpush from 'web-push'
 import { verifiedDatabase } from './database'
-import { postToDiscord } from './discord'
+import { postNotification } from './discord-orders'
 import { plainDiscord, type DiscordMessage } from './discord-messages'
 
 // Web Push to the admin app (iPhone Home Screen app or a desktop browser). Keys come from Vercel environment
@@ -67,7 +67,7 @@ export async function removeDevice(id: string) {
 export async function pushToAdmins(message: PushMessage) {
   const result = { sent: 0, failed: 0, discord: false }
   const { discord, ...push } = message
-  const toDiscord = postToDiscord(discord ?? plainDiscord(message.title, message.body, message.url))
+  const toDiscord = postNotification(discord ?? plainDiscord(message.title, message.body, message.url))
   try {
     if (!configured()) return result
     const sql = await contentDatabase()

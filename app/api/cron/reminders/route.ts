@@ -6,7 +6,7 @@ import { dueReminders } from '@/lib/push-messages'
 
 export const runtime = 'nodejs'
 
-// Reminder pushes and Discord messages (lib/push-messages.ts dueReminders), including 1 hour before pickup. Called every 15 minutes by a Supabase cron job with
+// Reminder pushes and Discord messages (lib/push-messages.ts dueReminders), including the pickup reminders (2 days or 1 day before, and 3 hours before). Called every 15 minutes by a Supabase cron job with
 // "Authorization: Bearer <CRON_SECRET>" (setup: docs/ADMIN_GUIDE.md). Each reminder is sent once.
 function authorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET

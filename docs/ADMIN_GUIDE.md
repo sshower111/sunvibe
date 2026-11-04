@@ -27,7 +27,7 @@ What you get (tapping a notification opens that order or inquiry in the side pan
 - **New cake order**: "Needs approval", e.g. `🎂 8" vanilla/strawberry · Sat 2 PM · Jane D`. **URGENT** when pickup is today or tomorrow.
 - **New custom cake inquiry**: e.g. `🎂 Birthday · Sun, Nov 8 · 20 servings · Linda P`.
 - **Custom cake paid**: when a customer pays a pay link (full price or deposit).
-- **Reminders** (each sent once): an urgent order still waiting halfway to its answer time, and again 15 minutes before it is cancelled; any other held order 24 hours before its card hold ends; an order "Checking with kitchen" every 3 hours (9 AM–8 PM); **1 hour before pickup or delivery** of every paid order (or paid deposit). The reminder job runs every 15 minutes, so this one arrives 45–60 minutes before.
+- **Reminders** (each sent once): an urgent order still waiting halfway to its answer time, and again 15 minutes before it is cancelled; any other held order 24 hours before its card hold ends; an order "Checking with kitchen" every 3 hours (9 AM–8 PM). For every paid order (or paid deposit), by the calendar: **9 AM two days before** pickup or delivery when it was ordered 2 or more days ahead, otherwise **9 AM the day before**; and **3 hours before**, but never before 8 AM (8 AM instead). Same-day orders placed within 3 hours get no extra reminder.
 - Test orders and inquiries start with **TEST**.
 
 Notifications are extra: the emails still go out as before, and a notification problem never stops a customer's order or inquiry. The device list under Notifications shows every phone or computer that turned them on; **Remove** stops them on that device. Devices that are reset or uninstall the app drop off the list on their own. If notifications were blocked, turn them on in iPhone **Settings → Notifications → Sunville Admin**.
@@ -60,7 +60,7 @@ Changing the VAPID keys turns notifications off on every device; turn them on ag
 
 ### Discord notifications
 
-Every notification above (new orders, inquiries, paid pay links, reminders, 1 hour before pickup) is also posted to a Discord channel, with the full details: customer, phone, pickup time, cake, writing, notes, address and total. The title links to the order or inquiry in admin. **Send test notification** in Settings posts to Discord too ("Discord got it too.").
+Every notification above (new orders, inquiries, paid pay links, reminders before pickup) is also posted to a Discord channel, with the full details: customer, phone, pickup time, cake, writing, notes, address and total. The title links to the order or inquiry in admin. **Send test notification** in Settings posts to Discord too ("Discord got it too.").
 
 One-time setup (owner):
 
@@ -70,6 +70,12 @@ One-time setup (owner):
 4. In admin → Settings → Notifications, press **Send test notification** and check the channel.
 
 To stop, delete the webhook in Discord or remove `DISCORD_WEBHOOK_URL` in Vercel. A Discord problem never stops an order or inquiry.
+
+#### One card per order
+
+Each order has one card in the orders channel. Its first line says what kind it is: **🛒 Online order** (from the cake order page) or **🎨 Custom cake · from inquiry #3F42** (made from an inquiry; the link opens the inquiry in admin). The first notification about it is the card; everything after (paid, approved, reminders, customer email replies, the kitchen text) goes in the card's thread, and the card itself always shows the current status, its buttons and a short history ("✅ Approved by Keith", "🎉 Picked up"). What you do in the admin app (approve, decline, ask kitchen, paid in store, picked up, refund, resend pay link) updates the card too, without a ping.
+
+Orders made from a custom cake inquiry: when you create the order in admin and the pay link is emailed, its card appears as **📨 Awaiting payment** without a ping (there is nothing to approve: it waits for payment). The inquiry's card turns green with **✅ Became order #1050 → open the order**, and the inquiry needs nothing more; replies to its old emails still go in its thread. When the customer pays, **💰 Custom cake paid** (or Deposit paid) goes in the order's thread with a ping and the card gets **👍 Acknowledge** for the kitchen text.
 
 #### Buttons on order messages (Discord bot)
 
@@ -96,7 +102,7 @@ One-time setup (owner):
 
 #### Customer email replies → Discord
 
-Customers reply to the bakery's Gmail directly, so the website never sees those emails on its own. A small Google Apps Script in the bakery Gmail account sends each new customer reply to the website (`/api/discord/email-reply`), which posts it **in the thread under that inquiry's Discord message** (or the order's, for order emails), pinging the people in `DISCORD_ADMIN_IDS` (or `DISCORD_MENTION`). The post shows the sender, the subject, the new part of the reply, and links to the Gmail thread. The script watches threads with `[Inquiry]` or `[Order]` subjects, "cake inquiry", "cake order" or "custom cake", and skips the bakery's own emails. Inquiries and orders posted before the bot was set up have no known message, so their replies are posted on their own in the inquiries (or orders) channel. If the website can't be reached, the script tries again 5 minutes later.
+Customers reply to the bakery's Gmail directly, so the website never sees those emails on its own. A small Google Apps Script in the bakery Gmail account sends each new customer reply to the website (`/api/discord/email-reply`), which posts it **in the thread under that inquiry's Discord message** (or the order's, for order emails), pinging the people in `DISCORD_ADMIN_IDS` (or `DISCORD_MENTION`). The post shows the sender, the subject, the new part of the reply, and links to the Gmail thread. The script watches threads with `[Inquiry]` or `[Order]` subjects, "cake inquiry", "cake order" or "custom cake", and skips drafts and the bakery's own emails. Only customer replies are posted, each one with a ping; the bakery's own emails are skipped. For inquiries and orders from before the bot, the first email brings their card into the channel once (no ping) and the thread starts there. If the website can't be reached, the script tries again 5 minutes later.
 
 1. In Vercel (Production) add `EMAIL_REPLY_SECRET` (type Secret, 32+ random characters, e.g. `openssl rand -base64 32`). Redeploy.
 2. Signed in as the bakery Gmail, open <https://script.google.com> → **New project** (or the existing "Replies to Discord").

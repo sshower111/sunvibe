@@ -13,6 +13,7 @@ import {
 } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
+import { refreshOrderCardQuietly } from '@/lib/discord-orders'
 
 const actionSchema = z.object({
   action: z.enum([
@@ -36,6 +37,17 @@ const actionSchema = z.object({
 /** The kitchen's mobile number for the Send to Kitchen / Ask Kitchen texts (Vercel env KITCHEN_PHONE). */
 const kitchenPhone = () => process.env.KITCHEN_PHONE?.trim() ?? ''
 const noStore = { headers: { 'Cache-Control': 'no-store' } }
+/** The line each admin action adds to the order's Discord card. */
+const ADMIN_NOTES: Partial<Record<string, string>> = {
+  decline: '❌ Declined in admin',
+  refund: '↩️ Refunded in admin',
+  ask_kitchen: '👩‍🍳 Checking with kitchen (admin)',
+  paid_offline: '💵 Paid in store or by phone',
+  resend_link: '📨 Pay link sent again',
+  kitchen_sent: '📲 Texted to the kitchen',
+  picked_up: '🎉 Picked up',
+  not_picked_up: '↩️ Marked not picked up',
+}
 
 export async function POST(req: NextRequest) {
   let body
@@ -63,7 +75,14 @@ export async function POST(req: NextRequest) {
       if (!order) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
       return NextResponse.json({ order, events: await listOrderEvents(id), kitchenPhone: kitchenPhone() }, noStore)
     }
-    if (action === 'approve') return NextResponse.json({ success: true, ...(await approveOrder(id)) })
+    if (action === 'approve') {
+      const result = await approveOrder(id)
+      await refreshOrderCardQuietly(
+        id,
+        result.status === 'paid' ? '✅ Approved in admin' : '✅ Approved in admin · pay link emailed',
+      )
+      return NextResponse.json({ success: true, ...result })
+    }
     if (action === 'decline') await declineOrder(id, parsed.data.notify ?? true)
     else if (action === 'refund') await refundOrder(id, parsed.data.notify ?? true)
     else if (action === 'ask_kitchen') await askKitchen(id)
@@ -89,6 +108,8 @@ export async function POST(req: NextRequest) {
       if (!(await moveCakeOrder(id, 'picked_up', order?.deposit ? 'deposit_paid' : 'paid', 'not_picked_up')))
         throw new Error('This order changed. Refresh the list.')
     }
+    // Discord: the order's card shows the new status and what was done.
+    if (action !== 'delete') await refreshOrderCardQuietly(id, ADMIN_NOTES[action])
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : 'Cake orders unavailable. Please retry.'
