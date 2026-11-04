@@ -1,7 +1,8 @@
 // Shared look for every site email: larger text, a two-column table of details, and a gray label column,
 // so a whole order can be read at a glance. All strings passed in must already be HTML-escaped.
 
-const FONT = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+// Helvetica on Apple devices, Arial elsewhere: the plain, familiar look of Google and Yelp emails.
+const FONT = "'Helvetica Neue',Helvetica,Arial,sans-serif"
 
 /** Outer wrapper: readable font size and line height, narrow column. */
 export const emailPage = (body: string) =>
