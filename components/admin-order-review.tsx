@@ -26,7 +26,7 @@ import { Button } from './ui/button'
 
 // One cake order in the side panel: its details, the answer deadline and the next step:
 // Approve & charge / Ask kitchen / Decline while the card is held, then Send to kitchen once paid.
-// Less-used actions (copy, call, email, paid in store, undo, delete test) are in the "⋯" menu.
+// Less-used actions (copy, call, email, paid in store, undo, delete) are in the "⋯" menu.
 
 type OrderEvent = { at: string; action: string; from?: string; to?: string; detail: string }
 type Loaded = { order: StoredCakeOrder; events: OrderEvent[]; kitchenPhone: string }
@@ -247,12 +247,20 @@ export function AdminOrderPanel({
         }
       case 'delete':
         return {
-          label: 'Delete test order',
+          label: order.test ? 'Delete test order' : 'Delete order',
           danger: true,
           onSelect: () => {
-            if (!window.confirm('Delete this test order?')) return
+            const paid = ['paid', 'deposit_paid', 'picked_up'].includes(order.status)
+            const question = order.test
+              ? 'Delete this test order and its Discord card?'
+              : `Delete order ${orderRef(order)} for ${order.name}? It is removed from admin for good, with its history and its Discord card.` +
+                (paid ? ' Nothing is refunded: refund it first if the customer should get their money back.' : '') +
+                ' The customer is not emailed.'
+            if (!window.confirm(question)) return
             void run(async () => {
-              await request({ action: 'delete' })
+              const r = await request({ action: 'delete' })
+              if (!r.discordDeleted)
+                window.alert('Order deleted, but its Discord card could not be removed. Delete it in Discord.')
               onDeleted()
             })
           },

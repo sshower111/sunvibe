@@ -150,7 +150,7 @@ export function AdminCustomOrderForm({
             onChange={e => update('cakeMessage', e.target.value)}
           />
         </div>
-        <div>
+        <div className="sm:col-span-2">
           <label htmlFor={id('fulfillment')} className={label}>
             Pickup / delivery
           </label>
@@ -164,29 +164,27 @@ export function AdminCustomOrderForm({
             ))}
           </NativeSelect>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label htmlFor={id('date')} className={label}>
-              {delivery ? 'Delivery date' : 'Pickup date'}
-            </label>
-            <Input
-              id={id('date')}
-              type="date"
-              value={data.pickupDate}
-              onChange={e => update('pickupDate', e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor={id('time')} className={label}>
-              Time
-            </label>
-            <Input
-              id={id('time')}
-              type="time"
-              value={data.pickupTime}
-              onChange={e => update('pickupTime', e.target.value)}
-            />
-          </div>
+        <div>
+          <label htmlFor={id('date')} className={label}>
+            {delivery ? 'Delivery date' : 'Pickup date'}
+          </label>
+          <Input
+            id={id('date')}
+            type="date"
+            value={data.pickupDate}
+            onChange={e => update('pickupDate', e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor={id('time')} className={label}>
+            Time
+          </label>
+          <Input
+            id={id('time')}
+            type="time"
+            value={data.pickupTime}
+            onChange={e => update('pickupTime', e.target.value)}
+          />
         </div>
       </div>
       {delivery && (

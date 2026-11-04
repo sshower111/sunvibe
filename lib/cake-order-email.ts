@@ -3,7 +3,15 @@ import { mailer, EMAIL_FROM, bakeryInbox } from '@/lib/email'
 import { SITE } from '@/lib/site-info'
 import { SITE_URL } from '@/lib/seo'
 import { escapeHtml } from '@/lib/security'
-import { emailDivider, emailHeading, emailPage, emailParagraph, emailRows, SUBJECT_TAG } from '@/lib/email-layout'
+import {
+  emailButton,
+  emailDivider,
+  emailHeading,
+  emailPage,
+  emailParagraph,
+  emailRows,
+  SUBJECT_TAG,
+} from '@/lib/email-layout'
 import {
   amountDueNow,
   isDelivery,
@@ -35,9 +43,17 @@ const cakeRows = (o: StoredCakeOrder): [string, string][] => [
     : []),
   ...(o.notes ? ([[o.kind === 'custom' ? 'Design notes' : 'Notes', o.notes]] as [string, string][]) : []),
 ]
-const html = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string) =>
+type Button = { label: string; url: string }
+const html = (
+  paragraphs: string[],
+  rows: [string, string][],
+  after: string[] = [],
+  kitchen?: string,
+  button?: Button,
+) =>
   emailPage(
     paragraphs.map(p => emailParagraph(escapeHtml(p))).join('') +
+      (button ? emailButton(escapeHtml(button.label), escapeHtml(button.url)) : '') +
       emailRows(rows.map(([label, value]) => [label, escapeHtml(value)])) +
       after.map(p => emailParagraph(escapeHtml(p).replace(/\n/g, '<br>'))).join('') +
       // Kitchen copy lines are "label：value", shown as a second table.
@@ -53,9 +69,16 @@ const html = (paragraphs: string[], rows: [string, string][], after: string[] = 
           '</div>'
         : ''),
   )
-const text = (paragraphs: string[], rows: [string, string][], after: string[] = [], kitchen?: string) =>
+const text = (
+  paragraphs: string[],
+  rows: [string, string][],
+  after: string[] = [],
+  kitchen?: string,
+  button?: Button,
+) =>
   [
     ...paragraphs,
+    ...(button ? [`${button.label}: ${button.url}`] : []),
     '',
     ...rows.map(([l, v]) => `${l}: ${v}`),
     '',
@@ -77,6 +100,8 @@ async function send(
     after?: string[]
     /** Chinese copy for the kitchen (bakery emails only). */
     kitchen?: string
+    /** A link button under the paragraphs (the pay link). */
+    button?: Button
     replyTo?: string
   },
 ) {
@@ -87,8 +112,8 @@ async function send(
         to: message.to,
         ...(message.replyTo ? { replyTo: message.replyTo } : {}),
         subject: message.subject,
-        html: html(message.paragraphs, message.rows, message.after, message.kitchen),
-        text: text(message.paragraphs, message.rows, message.after, message.kitchen),
+        html: html(message.paragraphs, message.rows, message.after, message.kitchen, message.button),
+        text: text(message.paragraphs, message.rows, message.after, message.kitchen, message.button),
       },
       { idempotencyKey: key },
     )
@@ -197,10 +222,10 @@ export const sendPaymentRequestEmail = (o: StoredCakeOrder) =>
       o.kind === 'custom'
         ? `Hi ${o.name}, thank you for choosing Sunville Bakery! Here are the final details of your cake.`
         : `Hi ${o.name}, good news: we can make your cake! The hold on your card ended before we confirmed, so it was not charged.`,
-      `To reserve it, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time):`,
-      payLink(o),
+      `To reserve your cake, please pay ${o.deposit ? 'the deposit of ' : ''}${money(amountDueNow(o))} by ${formatVegasTime(o.payBy!)} (Las Vegas time).`,
     ],
-    rows: cakeRows(o),
+    button: { label: `Pay ${o.deposit ? 'deposit ' : ''}${money(amountDueNow(o))}`, url: payLink(o) },
+    rows: [['Order', orderRef(o)], ...cakeRows(o)],
     after: [`If anything above needs changing, just reply to this email or call ${SITE.phone} before paying.`],
   })
 

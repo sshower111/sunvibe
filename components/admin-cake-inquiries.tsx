@@ -104,11 +104,17 @@ export function AdminCakeInquiries() {
       setDrafts(({ [id]: _, ...rest }) => rest)
     })
 
-  const removeTest = (id: string) =>
+  const remove = (id: string) =>
     run(async () => {
-      await request({ action: 'delete', id })
+      setNotice('')
+      const r = await request({ action: 'delete', id })
       close()
       setInquiries(current => current.filter(i => i.id !== id))
+      setNotice(
+        r.discordDeleted
+          ? 'Inquiry deleted, with its Discord card.'
+          : 'Inquiry deleted, but its Discord card could not be removed. Delete it in Discord.',
+      )
     })
   const sendTest = () =>
     run(async () => {
@@ -170,15 +176,17 @@ export function AdminCakeInquiries() {
         label: i.staffNotes ? 'Edit private notes' : 'Add private notes',
         onSelect: () => setDrafts(d => ({ ...d, [i.id]: i.staffNotes })),
       },
-      ...(i.test
-        ? [
-            {
-              label: 'Delete test inquiry',
-              danger: true,
-              onSelect: () => window.confirm('Delete this test inquiry?') && void removeTest(i.id),
-            },
-          ]
-        : []),
+      {
+        label: i.test ? 'Delete test inquiry' : 'Delete inquiry',
+        danger: true,
+        onSelect: () =>
+          window.confirm(
+            i.test
+              ? 'Delete this test inquiry and its Discord card?'
+              : `Delete the inquiry from ${i.name}? It is removed from admin for good, with its photos and its Discord card.` +
+                  (i.order ? ` Order ${i.order.ref} made from it stays in Cake orders.` : ''),
+          ) && void remove(i.id),
+      },
     ]
     const rows: [string, React.ReactNode][] = [
       ['Event', eventText(i)],

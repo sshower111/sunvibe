@@ -21,6 +21,10 @@ export type OrderActionId =
 export const needsAnswer = (o: Pick<StoredCakeOrder, 'status'>) =>
   o.status === 'awaiting_approval' || o.status === 'checking_kitchen' || o.status === 'hold_expired'
 
+/** A real order with a card hold (or a payment in progress) must be declined first, so the hold is released. */
+export const canDeleteOrder = (o: Pick<StoredCakeOrder, 'status' | 'test'>) =>
+  !!o.test || !['awaiting_approval', 'checking_kitchen', 'processing'].includes(o.status)
+
 /** Every action available for this order, in the order they are listed. */
 export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
   const ids: OrderActionId[] = []
@@ -33,7 +37,7 @@ export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
   if (o.status === 'picked_up') ids.push('not_picked_up')
   if ((o.status === 'paid' || o.status === 'deposit_paid' || o.status === 'picked_up') && o.paymentId)
     ids.push('refund')
-  if (o.test) ids.push('delete')
+  if (canDeleteOrder(o)) ids.push('delete')
   return ids
 }
 

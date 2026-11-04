@@ -23,6 +23,32 @@ async function forgetCard(card: Card) {
 }
 const deleted = (error: unknown) => (error as { code?: number }).code === 10008 // Unknown Message
 
+/**
+ * Deletes the Discord card of an order or inquiry and the thread under it (the order or inquiry was deleted in
+ * admin). Never throws; returns false when there was a card but it could not be removed.
+ */
+export async function deleteCard(kind: 'order' | 'inquiry', id: string) {
+  if (!botReady()) return true
+  try {
+    const card = await rememberedCard(kind, id)
+    if (!card) return true
+    const gone = (error: unknown) => [10003, 10008].includes((error as { code?: number }).code ?? 0) // already gone
+    // A thread started from a message has the message's ID, and stays behind when only the message is deleted.
+    // Deleting it needs the bot's Manage Threads permission; without it the thread is left and the card still goes.
+    await discordApi(`/channels/${card.messageId}`, 'DELETE').catch(error => {
+      if (!gone(error)) console.error('Discord thread not deleted', (error as Error).message)
+    })
+    await discordApi(`/channels/${card.channelId}/messages/${card.messageId}`, 'DELETE').catch(error => {
+      if (!gone(error)) throw error
+    })
+    await forgetCard(card)
+    return true
+  } catch (error) {
+    console.error('Discord card not deleted', (error as Error).message)
+    return false
+  }
+}
+
 /** History lines under the card's title; 👍 means the kitchen thread was started. */
 export const historyOf = (message: { embeds?: Embed[] } | null) =>
   (message?.embeds?.[0]?.description ?? '').split('\n').filter(Boolean)

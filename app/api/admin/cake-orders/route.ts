@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isAdminRequest } from '@/lib/admin-auth'
-import { deleteTestOrder, getCakeOrder, listOrderEvents, markKitchenSent, moveCakeOrder } from '@/lib/cake-orders-store'
+import { deleteCakeOrder, getCakeOrder, listOrderEvents, markKitchenSent, moveCakeOrder } from '@/lib/cake-orders-store'
 import {
   approveOrder,
   askKitchen,
@@ -13,7 +13,7 @@ import {
 } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
 import { resendPayLink } from '@/lib/custom-cake-orders'
-import { refreshOrderCardQuietly } from '@/lib/discord-orders'
+import { deleteCard, refreshOrderCardQuietly } from '@/lib/discord-orders'
 
 const actionSchema = z.object({
   action: z.enum([
@@ -75,6 +75,11 @@ export async function POST(req: NextRequest) {
       if (!order) return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
       return NextResponse.json({ order, events: await listOrderEvents(id), kitchenPhone: kitchenPhone() }, noStore)
     }
+    if (action === 'delete') {
+      // Gone for good: the order, its history and its Discord card (with the thread under it).
+      await deleteCakeOrder(id)
+      return NextResponse.json({ success: true, discordDeleted: await deleteCard('order', id) })
+    }
     if (action === 'approve') {
       const result = await approveOrder(id)
       await refreshOrderCardQuietly(
@@ -86,7 +91,6 @@ export async function POST(req: NextRequest) {
     if (action === 'decline') await declineOrder(id, parsed.data.notify ?? true)
     else if (action === 'refund') await refundOrder(id, parsed.data.notify ?? true)
     else if (action === 'ask_kitchen') await askKitchen(id)
-    else if (action === 'delete') await deleteTestOrder(id)
     else if (action === 'kitchen_sent') {
       if (!(await markKitchenSent(id))) throw new Error('Order not found. Refresh the list.')
     } else if (action === 'paid_offline') {
@@ -109,7 +113,7 @@ export async function POST(req: NextRequest) {
         throw new Error('This order changed. Refresh the list.')
     }
     // Discord: the order's card shows the new status and what was done.
-    if (action !== 'delete') await refreshOrderCardQuietly(id, ADMIN_NOTES[action])
+    await refreshOrderCardQuietly(id, ADMIN_NOTES[action])
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error && error.message ? error.message : 'Cake orders unavailable. Please retry.'

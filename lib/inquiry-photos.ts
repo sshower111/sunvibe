@@ -1,5 +1,5 @@
 import 'server-only'
-import { downloadPrivateFile, reencryptPrivateFile, uploadPrivateFile } from './photo-storage'
+import { downloadPrivateFile, reencryptPrivateFile, removePrivateFiles, uploadPrivateFile } from './photo-storage'
 
 /** Reference photo names look like "1.jpg"; the number is its place in the inquiry email. */
 export const INQUIRY_PHOTO_NAME = /^[1-9]\.(jpg|png|webp)$/
@@ -27,3 +27,6 @@ export async function saveInquiryPhotos(inquiryId: string, photos: { filename: s
 export const readInquiryPhoto = (inquiryId: string, name: string) => downloadPrivateFile(photoPath(inquiryId, name))
 export const reencryptInquiryPhoto = (inquiryId: string, name: string, dryRun = false) =>
   reencryptPrivateFile(photoPath(inquiryId, name), dryRun)
+/** Deletes an inquiry's saved photos (when the inquiry is deleted). Never throws. */
+export const deleteInquiryPhotos = (inquiryId: string, names: string[]) =>
+  removePrivateFiles(names.filter(n => INQUIRY_PHOTO_NAME.test(n)).map(n => photoPath(inquiryId, n)))

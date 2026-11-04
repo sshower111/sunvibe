@@ -545,11 +545,18 @@ test('admin test orders: inbox-only emails, approval, no card in production, del
     assert(emails.at(-1).subject.startsWith("[TEST] We can't make"))
     assert.equal(emails.at(-1).to, inbox)
 
-    // Only test orders can be deleted.
+    // Any order can be deleted, except a real one whose card is still on hold (decline it first).
     assert.equal((await adminCall({ action: 'delete', id: test.id })).status, 200)
     assert.equal(await store.getCakeOrder(test.id), null)
-    const real = (await (await adminCall({ action: 'list' })).json()).orders.find(o => !o.test)
-    assert.equal((await adminCall({ action: 'delete', id: real.id })).status, 409)
+    const orders = (await (await adminCall({ action: 'list' })).json()).orders
+    const held = orders.find(o => !o.test && ['awaiting_approval', 'checking_kitchen'].includes(o.status))
+    if (held) assert.equal((await adminCall({ action: 'delete', id: held.id })).status, 409)
+    const real = orders.find(
+      o => !o.test && !['awaiting_approval', 'checking_kitchen', 'processing'].includes(o.status),
+    )
+    assert(real, 'a real order that is not on hold')
+    assert.equal((await adminCall({ action: 'delete', id: real.id })).status, 200)
+    assert.equal(await store.getCakeOrder(real.id), null)
   } finally {
     delete process.env.SQUARE_ENVIRONMENT
   }
@@ -661,6 +668,8 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   assert.equal((await inquiries.getCakeInquiry(inquiryId)).status, 'waiting_customer')
   const linkEmail = emails.slice(before).find(e => e.to === 'bea@example.test')
   assert(linkEmail.text.includes('/pay/' + order.id))
+  assert(linkEmail.html.includes(`href="https://sunvillebakerylv.com/pay/${order.id}"`), 'pay button')
+  assert(linkEmail.html.includes('Pay deposit $100.00'))
   assert(linkEmail.text.includes('Balance due at delivery: $188.00'))
   const list = await (await adminPost(inquiryRoute, { action: 'list' })).json()
   assert.equal(list.inquiries.find(i => i.id === inquiryId).order.status, 'awaiting_payment')

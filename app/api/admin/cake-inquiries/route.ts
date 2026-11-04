@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isAdminRequest } from '@/lib/admin-auth'
 import {
-  deleteTestInquiry,
+  deleteCakeInquiry,
   getCakeInquiry,
   listCakeInquiries,
   saveCakeInquiry,
@@ -23,6 +23,8 @@ import { newInquiryPush } from '@/lib/push-messages'
 import { customOrderSchema } from '@/lib/cake-order'
 import { createOrderFromInquiry } from '@/lib/custom-cake-orders'
 import { listCakeOrders } from '@/lib/cake-orders-store'
+import { deleteInquiryPhotos } from '@/lib/inquiry-photos'
+import { deleteCard } from '@/lib/discord-orders'
 
 const updateSchema = z.union([
   z.object({ action: z.literal('status'), id: z.string().uuid(), status: z.enum(inquiryStatuses) }),
@@ -65,8 +67,12 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Invalid update' }, { status: 400 })
     const change = parsed.data
     if (change.action === 'delete') {
-      await deleteTestInquiry(change.id)
-      return NextResponse.json({ success: true })
+      // Gone for good: the inquiry, its saved photos and its Discord card (with the thread under it).
+      // An order made from it stays (delete it in Cake orders).
+      const inquiry = await deleteCakeInquiry(change.id)
+      if (!inquiry) return NextResponse.json({ error: 'Inquiry not found. Refresh the list.' }, { status: 404 })
+      if (inquiry.photos?.length) await deleteInquiryPhotos(inquiry.id, inquiry.photos)
+      return NextResponse.json({ success: true, discordDeleted: await deleteCard('inquiry', inquiry.id) })
     }
     await updateCakeInquiry(
       change.id,

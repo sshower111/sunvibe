@@ -24,7 +24,7 @@ const { load } = createLoader({
     '@/lib/cake-inquiries-store': {
       saveCakeInquiry: async i => saved.push(i),
       listCakeInquiries: async () => [],
-      deleteTestInquiry: async id => deleted.push(id),
+      deleteCakeInquiry: async id => (deleted.push(id), { id, photos: [] }),
     },
     resend: {
       Resend: class {

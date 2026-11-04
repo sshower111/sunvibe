@@ -1,6 +1,7 @@
 import 'server-only'
 import { verifiedDatabase } from './database'
 import { encode, decode } from './storage-crypto'
+import { canDeleteOrder } from './admin-order-actions'
 import { vegasInstant, type CakeOrderStatus, type StoredCakeOrder } from './cake-order'
 
 const contentDatabase = () => verifiedDatabase('content')
@@ -128,12 +129,14 @@ export async function listOrderEvents(id: string): Promise<OrderEvent[]> {
   }
 }
 
-/** Deletes an order made with admin "Test order". Real orders can't be deleted. */
-export async function deleteTestOrder(id: string) {
+/** Deletes an order and its history for good (admin "Delete order"). Nothing is refunded or emailed. */
+export async function deleteCakeOrder(id: string) {
   const order = await getCakeOrder(id)
-  if (!order?.test) throw new Error('Only test orders can be deleted.')
+  if (!order) throw new Error('Order not found. Refresh the list.')
+  if (!canDeleteOrder(order)) throw new Error("The customer's card is still on hold. Decline the order first.")
   const sql = await contentDatabase()
   await sql`DELETE FROM bakery_cake_orders WHERE id=${id}`
+  await sql`DELETE FROM bakery_cake_order_events WHERE order_id=${id}`.catch(() => {})
 }
 
 /**

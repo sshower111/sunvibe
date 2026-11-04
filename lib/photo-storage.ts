@@ -56,6 +56,16 @@ export async function uploadPrivateFile(pathname: string, data: Buffer) {
   })
   if (error) throw new Error('File upload unavailable')
 }
+/** Deletes files saved with uploadPrivateFile. Never throws; returns whether storage accepted it. */
+export async function removePrivateFiles(pathnames: string[]) {
+  if (!pathnames.length) return true
+  try {
+    const { error } = await storage().remove(pathnames)
+    return !error
+  } catch {
+    return false
+  }
+}
 /** Reads a file saved with uploadPrivateFile. */
 export async function downloadPrivateFile(pathname: string) {
   const { data, error } = await storage().download(pathname)

@@ -172,3 +172,17 @@ test('order cards say whether it is an online order or a custom cake from an inq
   )
   assert.equal(type(order({ inquiryId: undefined })), '🎨 Custom cake')
 })
+
+test('deleting an order or inquiry deletes its card and the thread under it', async () => {
+  reset({ cards: { [`inquiry:${INQUIRY_ID}`]: { channel_id: '888', message_id: '7002' } } })
+  assert.equal(await cards.deleteCard('inquiry', INQUIRY_ID), true)
+  assert.deepEqual(
+    state.calls.map(c => `${c.method} ${c.path}`),
+    ['DELETE /channels/7002', 'DELETE /channels/888/messages/7002'],
+  )
+  assert.deepEqual(state.forgot, ['7002'])
+  // No card: nothing to do.
+  reset()
+  assert.equal(await cards.deleteCard('order', ORDER_ID), true)
+  assert.equal(state.calls.length, 0)
+})

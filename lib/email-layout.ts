@@ -30,6 +30,11 @@ export const emailRows = (rows: [label: string, html: string][]) =>
     .join('') +
   '</table>'
 
+/** A big tap-friendly link button (e.g. "Pay $50.00"), with the address underneath for mail apps that hide buttons. */
+export const emailButton = (label: string, url: string) =>
+  `<p style="margin:20px 0 6px"><a href="${url}" style="display:inline-block;padding:14px 28px;background:#b4532a;color:#fff;font-weight:600;font-size:17px;text-decoration:none;border-radius:8px">${label}</a></p>` +
+  `<p style="margin:0 0 20px;font-size:13px;color:#6b6b6b">Or open: <a href="${url}" style="color:#6b6b6b;word-break:break-all">${url}</a></p>`
+
 export const emailDivider = () => '<hr style="margin:28px 0 20px;border:0;border-top:2px solid #e5e5e5">'
 
 /** Subject tags so the bakery inbox can sort mail with Gmail filters (e.g. subject:[Order]). */

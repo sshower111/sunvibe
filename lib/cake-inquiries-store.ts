@@ -23,12 +23,13 @@ export async function saveCakeInquiry(inquiry: Details) {
   await sql`INSERT INTO bakery_cake_inquiries(id,payload,created_at) VALUES(${inquiry.id},${encode(inquiry)},${inquiry.createdAt}) ON CONFLICT(id) DO NOTHING`
 }
 
-/** Deletes a sample inquiry made by "Send test inquiry". Real inquiries can't be deleted. */
-export async function deleteTestInquiry(id: string) {
+/** Deletes an inquiry for good (admin "Delete inquiry"). Returns the deleted inquiry, or null if it was not there. */
+export async function deleteCakeInquiry(id: string) {
+  const inquiry = await getCakeInquiry(id)
+  if (!inquiry) return null
   const sql = await contentDatabase()
-  const rows = await sql`SELECT payload FROM bakery_cake_inquiries WHERE id=${id}`
-  if (!rows.length || !(decode(rows[0].payload) as Details).test) throw new Error('Only test inquiries can be deleted')
   await sql`DELETE FROM bakery_cake_inquiries WHERE id=${id}`
+  return inquiry
 }
 
 export async function updateCakeInquiry(id: string, change: { status?: InquiryStatus; staffNotes?: string }) {
