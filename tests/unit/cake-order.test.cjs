@@ -687,7 +687,8 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   // The receipt carries the pickup QR code (inline image) that opens the Chinese pickup screen in admin.
   assert(receipt.html.includes('src="cid:pickup-qr"'))
   const qr = receipt.attachments.find(a => a.contentId === 'pickup-qr')
-  assert(qr && qr.content.subarray(1, 4).toString() === 'PNG')
+  assert(qr && Buffer.from(qr.content, 'base64').subarray(1, 4).toString() === 'PNG', 'base64 PNG')
+  assert.equal(qr.contentType, 'image/png')
   assert.match(receipt.text, /pickup code/)
   const bakery = emails.find(e => e.subject.startsWith('[Order] Paid: custom cake'))
   assert(bakery.text.includes('方式：賭場／酒店送貨 — $50'))

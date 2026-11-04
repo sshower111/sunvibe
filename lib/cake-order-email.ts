@@ -136,7 +136,14 @@ async function send(
   },
 ) {
   try {
-    const qr = message.pickupQr
+    // The pickup QR code is optional: if it can't be made, the email goes without it.
+    const qrPng = message.pickupQr
+      ? await pickupQrPng(message.pickupQr).catch(error => {
+          console.error('Pickup QR code not made', (error as Error).message)
+          return null
+        })
+      : null
+    const qr = qrPng ? message.pickupQr : undefined
     const extra = qr ? emailPickupCode(PICKUP_QR_CID, isDelivery(qr)) : ''
     const result = await mailer().emails.send(
       {
@@ -159,16 +166,26 @@ async function send(
           message.kitchen,
           message.branded,
         ),
-        ...(qr
+        // Resend wants attachment content as base64 text (a Buffer is sent as JSON numbers and rejected).
+        ...(qrPng
           ? {
-              attachments: [{ filename: 'pickup-code.png', content: await pickupQrPng(qr), contentId: PICKUP_QR_CID }],
+              attachments: [
+                {
+                  filename: 'pickup-code.png',
+                  content: qrPng.toString('base64'),
+                  contentType: 'image/png',
+                  contentId: PICKUP_QR_CID,
+                },
+              ],
             }
           : {}),
       },
       { idempotencyKey: key },
     )
+    if (result.error) console.error('Cake order email not sent', message.subject, result.error.message)
     return !result.error
-  } catch {
+  } catch (error) {
+    console.error('Cake order email not sent', message.subject, (error as Error).message)
     return false
   }
 }
