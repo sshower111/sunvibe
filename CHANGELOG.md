@@ -6,6 +6,7 @@ Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.
 
 ## 2026-11-05
 
+- **Custom cakes: guest "Not sure" and a cake summary instead of the size list**: the Guests row gets a **Not sure** tile. It opens Event size (Small up to 20, Medium 20–50, Large 50+); the best-fit size follows that answer, and the bakery sees "Guests: not sure (…)" at the top of the notes. On computers the side panel is now the cake summary: the recommended size (or "Your choice" when another size is picked) with servings, pickup or delivery and the starting price; the full size list is folded behind **View full size & pricing guide**. Phones show the same summary under the questions. (`components/custom-cake-inquiry.tsx`, `docs/CUSTOM-CAKE-INQUIRIES.md`, `docs/UI-DESIGN-SYSTEM.md`)
 - **Thank-you email: custom cakes only**: regular online orders no longer get the thank-you email or the photo page; the order ⋯ "Send thank-you email now" shows only on custom cakes. (`lib/thank-you.ts`, `lib/admin-order-actions.ts`, `app/api/admin/cake-orders/route.ts`, tests)
 
 ## 2026-11-04

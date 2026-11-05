@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ImagePlus, PartyPopper, Plus } from 'lucide-react'
+import { ChevronDown, ImagePlus, PartyPopper, Plus } from 'lucide-react'
 import { SITE } from '@/lib/site-info'
 import { cn } from '@/lib/utils'
 import { cakeCatalog, deliveryOptions, findCake, type CakeSpec } from '@/lib/cake-catalog'
@@ -35,7 +35,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { FormAlert } from '@/components/ui/form-message'
 
 // Custom cake quote request on /custom-cakes (POST /api/custom-cakes): event → design → contact.
-// Beside it on wide screens (inline on phones): a size guide to pick the size from, and a starting price.
+// Beside it on wide screens: the cake summary (recommended size, pickup or delivery, starting price) with the full
+// size and pricing guide folded away behind a button. Phones get a few suggested sizes inside the step instead.
 
 const steps = ['Event', 'Design', 'Contact'] as const
 const PICKUP = deliveryOptions[0]
@@ -49,6 +50,12 @@ const sizeGroups = [
 const NOT_SURE = 'Not sure'
 const MAX_INSPIRATION = 3
 const guestPresets = [10, 20, 30, 50, 75, 100]
+/** "Not sure" on guests: a rough event size stands in for the count. */
+const eventScales = [
+  { value: 'Small', detail: 'Up to 20', servings: 15 },
+  { value: 'Medium', detail: '20–50', servings: 35 },
+  { value: 'Large', detail: '50+', servings: 75 },
+] as const
 /** Phones and tablets. */
 const narrow = () => window.matchMedia('(max-width: 1023px)').matches
 const optionLabel = (value: string) =>
@@ -58,6 +65,8 @@ const empty = {
   date: '',
   eventType: '',
   guests: '',
+  guestsUnsure: false,
+  eventScale: '',
   size: NOT_SURE,
   budget: budgets[0] as string,
   delivery: false,
@@ -77,6 +86,14 @@ const empty = {
   textOk: false,
 }
 type Data = typeof empty
+
+const guestCount = (value: string) => (/^\d{1,3}$/.test(value) ? Number(value) : 0)
+/** Slices to plan for: the guest count, or the rough event size when the customer isn't sure. */
+function servingTarget(d: Data) {
+  if (!d.guestsUnsure) return guestCount(d.guests)
+  return eventScales.find(scale => scale.value === d.eventScale)?.servings ?? 0
+}
+const bestFitFor = (count: number) => (count > 0 ? recommend(count, 'Any', 'Please recommend').best : null)
 
 function Tile({
   selected,
@@ -314,27 +331,27 @@ export function CustomCakeInquiry() {
       window.scrollBy({ top: box.top - cover, behavior: 'smooth' })
     })
 
-  const guestCount = (value: string) => (/^\d{1,3}$/.test(value) ? Number(value) : 0)
-  const bestFitFor = (count: number) => (count > 0 ? recommend(count, 'Any', 'Please recommend').best : null)
-  const guests = guestCount(data.guests)
+  const guests = servingTarget(data)
   const bestFit = useMemo(() => bestFitFor(guests), [guests])
-  /** A new guest count selects its best-fit size (the customer can still pick another in the size guide). */
-  const setGuests = (value: string) => {
-    set('guests', value)
-    setData(d => ({ ...d, size: bestFitFor(guestCount(value))?.value ?? NOT_SURE }))
+  const [guideOpen, setGuideOpen] = useState(false)
+  /** A guest answer selects the best-fit size for it (the customer can still pick another in the size guide). */
+  const plan = (patch: Partial<Data>) => {
+    setData(d => {
+      const n = { ...d, ...patch }
+      return { ...n, size: bestFitFor(servingTarget(n))?.value ?? NOT_SURE }
+    })
+    setError('')
+    setInvalid('')
+    requestId.current = ''
   }
+  const setGuests = (value: string) => plan({ guests: value, guestsUnsure: false })
   const fulfillment = data.delivery ? data.deliveryOption : PICKUP
   // Starting price: the cake (by filling when one is chosen) plus delivery. The design is quoted on top.
   const cake = findCake(data.size)
   const cakeFrom = cake ? (startingPrice(cake, data.filling) ?? priceRange(cake)?.[0] ?? null) : null
   const fee = data.delivery ? (data.deliveryOption ? deliveryFee(data.deliveryOption) : null) : 0
-  const sizeText = !cake ? 'We’ll suggest one' : cake === bestFit ? `${cake.label} (best fit)` : cake.label
   const estimate = (
-    <dl className="space-y-2 text-sm">
-      <div className="flex justify-between gap-3">
-        <dt className="text-muted-foreground">Cake</dt>
-        <dd className="text-right font-semibold">{sizeText}</dd>
-      </div>
+    <dl className="space-y-2 border-t pt-4 text-sm">
       <div className="flex justify-between gap-3">
         <dt className="text-muted-foreground">{data.delivery ? 'Delivery' : 'Pickup'}</dt>
         <dd className="text-right font-semibold">
@@ -349,12 +366,33 @@ export function CustomCakeInquiry() {
       )}
     </dl>
   )
+  /** Live summary: the recommended (or chosen) cake for the guest answer, then pickup or delivery and the price. */
+  const summary = (
+    <div className="space-y-4">
+      <div aria-live="polite">
+        <p className="text-sm text-muted-foreground">
+          {cake && bestFit && cake.value !== bestFit.value ? 'Your choice' : 'Recommended'}
+        </p>
+        <p className="mt-1 font-serif text-2xl leading-tight text-primary">
+          {cake ? cake.label.replace(/^\d-Tier · /, 'Tiered ') : 'We’ll suggest a size'}
+        </p>
+        {cake && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Serves ~{cake.servings}
+            {guests > 0 && ` · ${data.guestsUnsure ? 'about ' : ''}${guests} slices needed`}
+          </p>
+        )}
+      </div>
+      {estimate}
+    </div>
+  )
 
   /** [message, id of the field to mark] */
   function check(): [string, string] | null {
     if (step === 0) {
       if (!data.date) return ['Choose your event date.', 'ci-date']
       if (!data.eventType) return ['Choose the occasion.', 'ci-event']
+      if (data.guestsUnsure && !data.eventScale) return ['Choose the size of your event.', 'ci-scale']
       if (!guests) return ['Enter how many guests.', 'ci-guests']
       if (data.delivery && !data.deliveryOption) return ['Choose a delivery option.', 'ci-delivery']
       if (data.delivery && !data.deliveryAddress.trim()) return ['Enter the delivery address or hotel.', 'ci-address']
@@ -415,7 +453,10 @@ export function CustomCakeInquiry() {
         textOk: data.textOk ? 'yes' : 'no',
         fulfillment,
         deliveryAddress: data.delivery ? data.deliveryAddress : '',
-        notes: data.notes,
+        // "Not sure" on guests: the bakery sees what the slice count was based on.
+        notes: data.guestsUnsure
+          ? [`Guests: not sure (${data.eventScale.toLowerCase()} event)`, data.notes].filter(Boolean).join('\n\n')
+          : data.notes,
         requestId: requestId.current,
       }
       Object.entries(fields).forEach(([key, value]) => form.set(key, value))
@@ -470,14 +511,30 @@ export function CustomCakeInquiry() {
       ref={top}
       className="mx-auto grid max-w-6xl scroll-mt-[var(--header-height)] items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]"
     >
-      {/* Wide screens: the size guide and starting price stay beside the questions. */}
+      {/* Wide screens: the live cake summary stays beside the questions; the full size guide folds out under it. */}
       <aside
-        aria-label="Size guide"
+        aria-label="Your cake"
         className="card-surface sticky top-[calc(var(--header-height)+1.5rem)] order-last hidden max-h-[calc(100dvh-var(--header-height)-3rem)] overflow-y-auto p-5 lg:block"
       >
-        <div className="mb-5 rounded-lg bg-base p-4">{estimate}</div>
-        <p className="heading-3 mb-3">Size guide</p>
-        <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
+        <div className="rounded-lg bg-base p-4">{summary}</div>
+        <button
+          type="button"
+          aria-expanded={guideOpen}
+          aria-controls="ci-guide"
+          onClick={() => setGuideOpen(open => !open)}
+          className="mt-3 flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-1 text-sm font-semibold text-primary hover:underline hover:underline-offset-4"
+        >
+          View full size & pricing guide
+          <ChevronDown
+            aria-hidden="true"
+            className={cn('size-4 shrink-0 transition-transform', guideOpen && 'rotate-180')}
+          />
+        </button>
+        {guideOpen && (
+          <div id="ci-guide" className="mt-2 border-t pt-4">
+            <SizeGuide value={data.size} onChange={value => set('size', value)} bestFit={bestFit} />
+          </div>
+        )}
       </aside>
       <form onSubmit={next} noValidate aria-busy={busy} className="min-w-0 sm:card-surface sm:card-pad">
         <ol aria-label="Progress" className="mb-4 grid grid-cols-3 gap-2 sm:mb-6">
@@ -559,11 +616,11 @@ export function CustomCakeInquiry() {
               </fieldset>
               <fieldset id="ci-guest-count">
                 <legend className={label}>Guests</legend>
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
                   {guestPresets.map(value => (
                     <Tile
                       key={value}
-                      selected={data.guests === String(value)}
+                      selected={!data.guestsUnsure && data.guests === String(value)}
                       onClick={() => {
                         setGuests(String(value))
                         reveal('ci-size-guide', 'ci-budget')
@@ -572,31 +629,67 @@ export function CustomCakeInquiry() {
                       {value === 100 ? '100+' : value}
                     </Tile>
                   ))}
-                </div>
-                <div className="mt-3 flex max-w-xs items-center gap-3">
-                  <label htmlFor="ci-guests" className="shrink-0 text-sm">
-                    Or type a number
-                  </label>
-                  <Input
-                    id="ci-guests"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={999}
-                    placeholder="e.g., 24"
-                    aria-invalid={bad('ci-guests')}
-                    value={data.guests}
-                    onChange={e => setGuests(e.target.value)}
-                    enterKeyHint="done"
-                    // Typing stays put; done (Enter or leaving the box) moves on.
-                    onKeyDown={e => {
-                      if (e.key !== 'Enter') return
-                      e.preventDefault()
-                      e.currentTarget.blur()
+                  <Tile
+                    className="col-span-2"
+                    selected={data.guestsUnsure}
+                    onClick={() => {
+                      plan({ guestsUnsure: true, guests: '' })
+                      reveal('ci-scale')
                     }}
-                    onBlur={() => guests > 0 && reveal('ci-size-guide', 'ci-budget')}
-                  />
+                  >
+                    Not sure
+                  </Tile>
                 </div>
+                {data.guestsUnsure ? (
+                  <div className="mt-4 rounded-xl bg-base p-4">
+                    <fieldset id="ci-scale" tabIndex={-1} aria-invalid={bad('ci-scale')}>
+                      <legend className={label}>Event size</legend>
+                      <div className="grid grid-cols-3 gap-3">
+                        {eventScales.map(scale => (
+                          <Tile
+                            key={scale.value}
+                            className="bg-card hover:bg-card"
+                            selected={data.eventScale === scale.value}
+                            onClick={() => {
+                              plan({ eventScale: scale.value })
+                              reveal('ci-size-guide', 'ci-budget')
+                            }}
+                          >
+                            <span>
+                              {scale.value}
+                              <span className="block text-sm font-normal opacity-85">{scale.detail}</span>
+                            </span>
+                          </Tile>
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex max-w-xs items-center gap-3">
+                    <label htmlFor="ci-guests" className="shrink-0 text-sm">
+                      Or type a number
+                    </label>
+                    <Input
+                      id="ci-guests"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={999}
+                      placeholder="e.g., 24"
+                      aria-invalid={bad('ci-guests')}
+                      value={data.guests}
+                      onChange={e => setGuests(e.target.value)}
+                      enterKeyHint="done"
+                      // Typing stays put; done (Enter or leaving the box) moves on.
+                      onKeyDown={e => {
+                        if (e.key !== 'Enter') return
+                        e.preventDefault()
+                        e.currentTarget.blur()
+                      }}
+                      onBlur={() => guests > 0 && reveal('ci-size-guide', 'ci-budget')}
+                    />
+                  </div>
+                )}
               </fieldset>
               {/* Phones and tablets: the size guide in the step (it sits beside the form on wide screens). */}
               <fieldset id="ci-size-guide" className="lg:hidden">
@@ -701,7 +794,7 @@ export function CustomCakeInquiry() {
                 </>
               )}
               {/* Phones and tablets: the starting price under the questions. */}
-              <div className="rounded-xl border border-subtle bg-base p-4 lg:hidden">{estimate}</div>
+              <div className="rounded-xl border border-subtle bg-base p-4 lg:hidden">{summary}</div>
             </>
           )}
 

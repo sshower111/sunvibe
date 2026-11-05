@@ -13,20 +13,20 @@ The refactor is done in steps, each reviewed before the next:
 
 ## Color
 
-| Token                                      | Hex       | Use                                                                 |
-| ------------------------------------------ | --------- | ------------------------------------------------------------------- |
-| `brand` (`primary`)                        | `#9e2a2b` | Rich terracotta: buttons, headings, links, focus ring (`bg-primary`, `text-primary`) |
-| `brand-deep`                               | `#7f2122` | Hover/pressed terracotta                                            |
-| `gold` (`accent-warm`)                     | `#e9a93b` | Egg-wash gold: footer edge and footer CTA. Fills only, never text on white |
-| `base` (`background`)                      | `#faf7f2` | Soft warm cream: page background (`bg-base`, `bg-background`)       |
-| `surface`                                  | `#f3ede4` | Deeper cream: page bands and soft sections (`bg-surface`, `bg-muted`) |
-| `surface-soft` (`secondary`)               | `#f7f3ed` | Lightest tint: hovers, placeholders                                 |
-| `ink` (`foreground`)                       | `#2b211e` | Deep espresso: body text, footer background                         |
-| `ink-muted`                                | `#675a54` | Secondary text                                                      |
-| `paper` (`card`)                           | `#ffffff` | Cards, containers, popovers                                         |
-| `line` (`border`, `subtle`)                | `#e6dfd5` | Soft warm sand: borders and dividers (`border-subtle`)              |
-| `input-line` (`input`)                     | `#d3c8ba` | Form field borders                                                  |
-| `success`, `warning`, `danger` (+ `-tint`), `success-on-dark` |           | Status messages and errors                                          |
+| Token                                                         | Hex       | Use                                                                                  |
+| ------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------ |
+| `brand` (`primary`)                                           | `#9e2a2b` | Rich terracotta: buttons, headings, links, focus ring (`bg-primary`, `text-primary`) |
+| `brand-deep`                                                  | `#7f2122` | Hover/pressed terracotta                                                             |
+| `gold` (`accent-warm`)                                        | `#e9a93b` | Egg-wash gold: footer edge and footer CTA. Fills only, never text on white           |
+| `base` (`background`)                                         | `#faf7f2` | Soft warm cream: page background (`bg-base`, `bg-background`)                        |
+| `surface`                                                     | `#f3ede4` | Deeper cream: page bands and soft sections (`bg-surface`, `bg-muted`)                |
+| `surface-soft` (`secondary`)                                  | `#f7f3ed` | Lightest tint: hovers, placeholders                                                  |
+| `ink` (`foreground`)                                          | `#2b211e` | Deep espresso: body text, footer background                                          |
+| `ink-muted`                                                   | `#675a54` | Secondary text                                                                       |
+| `paper` (`card`)                                              | `#ffffff` | Cards, containers, popovers                                                          |
+| `line` (`border`, `subtle`)                                   | `#e6dfd5` | Soft warm sand: borders and dividers (`border-subtle`)                               |
+| `input-line` (`input`)                                        | `#d3c8ba` | Form field borders                                                                   |
+| `success`, `warning`, `danger` (+ `-tint`), `success-on-dark` |           | Status messages and errors                                                           |
 
 Cards and popovers are white. Dark mode is not used.
 
@@ -73,7 +73,7 @@ Cards and popovers are white. Dark mode is not used.
 - Home photo strip (`components/bakery-marquee.tsx`): every gallery photo, square with `rounded-xl` corners and `shadow-photo` on the cream background, moving about 35px a second. Stops on hover and keyboard focus; reduced-motion visitors get a still, swipeable strip. Photos come from the same gallery data as `/gallery`.
 - Menu category chips: pills (`rounded-full`); the chosen one solid terracotta with white text, the others cream with a sand border. Menu card photos are clipped to the card's top corners (`rounded-t-xl`).
 - Cake order page (`components/cake-order-flow.tsx`): sizes in two rows, **Round cakes** (4 across) and **Sheet cakes** (3 across). Chosen size, flavor and filling tiles are solid terracotta with white text. Flavor and filling tiles have a small dot in the food's own color (the same colors as the cake drawing, `components/cake-preview.tsx`). Lead-time pill under the sizes: cream with a sand border for the 8" ("4-Hour Express Pickup"), terracotta tint for kitchen-confirmed sizes. The "Your cake" sidebar is a `card-surface` card. Choice tiles here and on Custom cakes: cream (`bg-base`) with a sand border when not chosen, solid terracotta with white text when chosen; the form itself is a `card-surface` card from 640px.
-- Custom cakes (`components/custom-cake-inquiry.tsx`): the Size guide panel is a `card-surface` card with the starting price in a cream box; "Not sure, please suggest" and the chosen size are terracotta with white text. The photo and link panel is cream with a dashed sand border and `rounded-xl`; photos and links sit side by side from 640px, thumbnails have a sand border; style tiles there are white so they stand out from the cream. The thank-you card has a terracotta party icon and "24–48 hours" in bold.
+- Custom cakes (`components/custom-cake-inquiry.tsx`): the side panel is a `card-surface` card with the cake summary (recommended size in serif terracotta, pickup or delivery, starting price) in a cream box and a terracotta **View full size & pricing guide** toggle with a chevron that opens the size guide under it; the guest "Not sure" helper sits in a cream box with white tiles; "Not sure, please suggest" and the chosen size are terracotta with white text. The photo and link panel is cream with a dashed sand border and `rounded-xl`; photos and links sit side by side from 640px, thumbnails have a sand border; style tiles there are white so they stand out from the cream. The thank-you card has a terracotta party icon and "24–48 hours" in bold.
 - How we bake (`components/about-section.tsx`): three `card-surface` cards, each with a small terracotta icon in a soft round tint (wheat, leaf, flame).
 - Contact: the form comes first on phones; visit details move beside it from 1024px.
 - Cake planner (`components/cake-order-flow.tsx`): no card frame on phones, and the Next button sticks to the bottom of the screen. `<CakePreview>` (`components/cake-preview.tsx`) draws the cake from the answers; it is the page’s one rich element, so its food colors (sponge, fillings, roses) live in that file, not in the tokens. Beside the steps from 1024px. Below that, a small strip pinned under the header from step 2 (so it doesn’t push the size suggestions down), and a large drawing on the summary instead of the strip. After each answer, `reveal()` scrolls the next question up under the header and strip. Below 1024px each step scrolls so the progress bar sits right under the header (the page title stays above, out of the way), and picking or typing a guest count scrolls the size suggestions into view. Scroll offsets come from `scroll-padding-top` on `html` only; don't add `scroll-mt` on top of it.
