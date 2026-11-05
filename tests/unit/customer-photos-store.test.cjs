@@ -80,15 +80,16 @@ test('thank-you emails: orders picked up 24 to 72 hours ago, once each, daytime 
     [3, 5, 'picked_up'], // too soon
     [4, 100, 'picked_up'], // too old: picked up before this was turned on
     [5, 26, 'paid'], // not picked up
+    [7, 25, 'picked_up'], // a regular online order: no thank-you
   ]) {
-    orders[id(n)] = { id: id(n), status: n === 5 ? 'paid' : 'picked_up' }
+    orders[id(n)] = { id: id(n), kind: n === 7 ? undefined : 'custom', status: n === 5 ? 'paid' : 'picked_up' }
     await db.query('INSERT INTO bakery_cake_order_events(order_id,at,action) VALUES($1,$2,$3)', [
       id(n),
       ago(hours),
       action,
     ])
   }
-  orders[id(6)] = { id: id(6), status: 'paid' } // picked up, then undone
+  orders[id(6)] = { id: id(6), kind: 'custom', status: 'paid' } // picked up, then undone
   await db.query('INSERT INTO bakery_cake_order_events(order_id,at,action) VALUES($1,$2,$3)', [
     id(6),
     ago(25),
@@ -99,7 +100,7 @@ test('thank-you emails: orders picked up 24 to 72 hours ago, once each, daytime 
   assert.equal(await thanks.sendDueThankYous(now), 0, 'once per order')
   assert.equal(await thanks.sendDueThankYous(new Date('2026-11-06T06:00:00Z')), 0, '10 PM: not sent')
   // Admin "Send thank-you email now": also once.
-  orders[id(3)] = { id: id(3), status: 'picked_up' }
+  orders[id(3)] = { id: id(3), kind: 'custom', status: 'picked_up' }
   assert.equal(await thanks.sendThankYou(id(3)), true)
   assert.equal(await thanks.sendThankYou(id(3)), false)
 })

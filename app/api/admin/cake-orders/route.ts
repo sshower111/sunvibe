@@ -86,7 +86,8 @@ export async function POST(req: NextRequest) {
     }
     if (action === 'send_thanks') {
       // Normally sent a day after pickup by the reminder job; this sends it now (still only once per order).
-      if (!(await sendThankYou(id))) throw new Error('Already sent for this order, or it is not picked up.')
+      if (!(await sendThankYou(id)))
+        throw new Error('Already sent, not picked up yet, or not a custom cake (only custom cakes get it).')
       return NextResponse.json({ success: true })
     }
     if (action === 'approve') {

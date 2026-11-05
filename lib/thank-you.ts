@@ -4,14 +4,18 @@ import { getCakeOrder } from './cake-orders-store'
 import { verifiedDatabase } from './database'
 import { sendThankYouEmail } from './cake-order-email'
 
-// The thank-you email, one day after an order is picked up or delivered: a short thanks and one "Share a photo"
+// The thank-you email, one day after a custom cake is picked up or delivered (not regular online orders): a short thanks and one "Share a photo"
 // button (/photos/<order id>). Sent once per order, never a reminder, and only in the daytime (Las Vegas).
 
 const HOUR = 3_600_000
 /** Photos are accepted for 60 days after the order was picked up. */
 const PHOTO_DAYS = 60
 
-export const acceptsPhotos = (o: Pick<StoredCakeOrder, 'status' | 'pickupDate'>, now = new Date()) =>
+/** Only custom cakes get the thank-you email, so only they take photos. */
+export const isCustomCake = (o: Pick<StoredCakeOrder, 'kind'>) => o.kind === 'custom'
+
+export const acceptsPhotos = (o: Pick<StoredCakeOrder, 'status' | 'pickupDate' | 'kind'>, now = new Date()) =>
+  isCustomCake(o) &&
   ['paid', 'deposit_paid', 'picked_up'].includes(o.status) &&
   now.getTime() - Date.parse(o.pickupDate + 'T00:00:00Z') < PHOTO_DAYS * 24 * HOUR
 
@@ -43,7 +47,7 @@ export async function sendDueThankYous(now = new Date()) {
 /** Sends one order's thank-you email, once (also used by admin "Send thank-you email now"). */
 export async function sendThankYou(orderId: string) {
   const order = await getCakeOrder(orderId)
-  if (!order || order.status !== 'picked_up') return false
+  if (!order || order.status !== 'picked_up' || !isCustomCake(order)) return false
   const sql = await verifiedDatabase('content')
   const claimed =
     await sql`INSERT INTO bakery_push_reminders(order_id,kind) VALUES(${orderId},'thank-you') ON CONFLICT DO NOTHING RETURNING kind`

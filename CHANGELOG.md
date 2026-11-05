@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-11-05
+
+- **Thank-you email: custom cakes only**: regular online orders no longer get the thank-you email or the photo page; the order ⋯ "Send thank-you email now" shows only on custom cakes. (`lib/thank-you.ts`, `lib/admin-order-actions.ts`, `app/api/admin/cake-orders/route.ts`, tests)
+
 ## 2026-11-04
 
 - **Email font**: every email now uses Helvetica (iPhone, Mac) or Arial (Windows, Android), the plain look of Google and Yelp emails, instead of each device's system font. (`lib/email-layout.ts`)

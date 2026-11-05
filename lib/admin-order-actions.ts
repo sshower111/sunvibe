@@ -35,7 +35,9 @@ export function orderActionIds(o: StoredCakeOrder): OrderActionId[] {
     ids.push('resend_link', 'copy_link')
   if (o.status === 'expired' || o.status === 'declined' || o.status === 'hold_expired') ids.push('paid_offline')
   ids.push('text_kitchen', 'copy_kitchen', 'call', 'email')
-  if (o.status === 'picked_up') ids.push('not_picked_up', 'send_thanks')
+  if (o.status === 'picked_up') ids.push('not_picked_up')
+  // The thank-you email (photos for the gallery) is for custom cakes only.
+  if (o.status === 'picked_up' && o.kind === 'custom') ids.push('send_thanks')
   if ((o.status === 'paid' || o.status === 'deposit_paid' || o.status === 'picked_up') && o.paymentId)
     ids.push('refund')
   if (canDeleteOrder(o)) ids.push('delete')

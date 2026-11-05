@@ -66,6 +66,7 @@ const base = {
   pickupTime: '14:00',
   price: 45,
   createdAt: '2026-11-01T00:00:00Z',
+  kind: 'custom',
 }
 
 test('thank-you email: short, first name, one "Share a photo" button, no order table', async () => {
@@ -100,7 +101,9 @@ test('photo page: picked-up orders accept photos (cleaned to JPEG) and the OK an
     .toBuffer()
   const file = new File([png], 'cake.png', { type: 'image/png' })
   assert.equal((await upload({ order: ORDER, submission: SUB, consent: 'yes', file })).status, 404)
-  order.status = 'picked_up'
+  order = { ...base, pickupDate: today, status: 'picked_up', kind: undefined }
+  assert.equal((await upload({ order: ORDER, submission: SUB, file })).status, 404, 'regular orders: no photos')
+  order.kind = 'custom'
   assert.equal((await upload({ order: ORDER, submission: 'nope', file })).status, 400)
   const r = await upload({ order: ORDER, submission: SUB, consent: 'yes', note: ' Loved it! ', file })
   assert.equal(r.status, 200)
