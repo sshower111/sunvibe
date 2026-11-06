@@ -4,6 +4,10 @@ All notable changes to the Sunville Bakery website will be documented in this fi
 
 Newest first. Every change that is pushed gets an entry here (see `CONTRIBUTING.md`).
 
+## 2026-11-06
+
+- **New custom order (no inquiry needed)**: Cake orders → **New custom order** makes a custom cake order from scratch, e.g. after a phone call: the customer's name, phone and email, then the same cake, date, price and deposit fields as "Approve & send pay link". The customer is emailed the pay link; the order shows in Cake orders (Awaiting payment) with its Discord card, and after payment it works like any custom cake (receipt with the pickup QR code, thank-you email). A **Test order** box sends the emails to the bakery inbox. (`lib/custom-cake-orders.ts`, `lib/cake-order.ts`, `app/api/admin/cake-orders/route.ts`, `app/api/admin/cake-inquiries/route.ts`, `components/admin-custom-order-form.tsx`, `components/admin-cake-orders.tsx`, `components/admin-page-header.tsx`, `tests/unit/cake-order.test.cjs`)
+
 ## 2026-11-05
 
 - **Custom cakes: guest "Not sure" and a cake summary instead of the size list**: the Guests row gets a **Not sure** tile. It opens Event size (Small up to 20, Medium 20–50, Large 50+); the best-fit size follows that answer, and the bakery sees "Guests: not sure (…)" at the top of the notes. On computers the side panel is now the cake summary: the recommended size (or "Your choice" when another size is picked) with servings, pickup or delivery and the starting price; the full size list is folded behind **View full size & pricing guide**. Phones show the same summary under the questions. (`components/custom-cake-inquiry.tsx`, `docs/CUSTOM-CAKE-INQUIRIES.md`, `docs/UI-DESIGN-SYSTEM.md`)

@@ -34,33 +34,42 @@ export const canPay = (o: StoredCakeOrder | null, now = new Date()): o is Stored
 /** Orders paid through a link: custom cakes, and online orders approved after their card hold ended. */
 export const hasPayLink = (o: Pick<StoredCakeOrder, 'kind' | 'payBy'>) => o.kind === 'custom' || !!o.payBy
 
-export async function createOrderFromInquiry(input: CustomOrderInput, now = new Date()) {
-  const inquiry = await getCakeInquiry(input.inquiryId)
-  if (!inquiry) throw new Error('Inquiry not found.')
-  const { inquiryId, deposit, deliveryAddress, ...cake } = input
+/**
+ * Makes a custom cake order and emails its pay link: from an inquiry ("Approve & send pay link") or from scratch
+ * (Cake orders → New custom order, with the customer's details). Either way it shows in Cake orders and gets its
+ * Discord card (📨 Awaiting payment, no ping).
+ */
+export async function createCustomCakeOrder(input: CustomOrderInput, now = new Date()) {
+  const { inquiryId, customer: typed, test, deposit, deliveryAddress, ...cake } = input
+  const inquiry = inquiryId ? await getCakeInquiry(inquiryId) : null
+  if (inquiryId && !inquiry) throw new Error('Inquiry not found.')
+  const customer = inquiry ?? typed
+  if (!customer) throw new Error("Enter the customer's details.")
   const order: StoredCakeOrder = {
     ...cake,
     id: randomUUID(),
     createdAt: now.toISOString(),
-    name: inquiry.name,
-    email: inquiry.email,
-    phone: inquiry.phone,
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
     status: 'awaiting_payment',
     kind: 'custom',
-    inquiryId,
+    ...(inquiryId ? { inquiryId } : {}),
     deliveryAddress: input.fulfillment === 'Pickup' ? '' : deliveryAddress,
     ...(deposit ? { deposit } : {}),
     payBy: payByFrom(now),
-    ...(inquiry.test ? { test: true } : {}),
+    ...(inquiry?.test || (!inquiry && test) ? { test: true } : {}),
   }
   const orderNo = await createCustomOrder(order)
   const saved = { ...order, orderNo }
-  await updateCakeInquiry(inquiryId, { status: 'waiting_customer' })
+  if (inquiryId) await updateCakeInquiry(inquiryId, { status: 'waiting_customer' })
   const emailed = await sendPaymentRequestEmail(saved)
-  // Discord: the order's card (no ping) and a line on the inquiry's card linking to it.
+  // Discord: the order's card (no ping) and, from an inquiry, a line on the inquiry's card linking to it.
   await inquiryBecameOrder(saved)
-  return { ref: orderRef(saved), emailed, sentTo: saved.test ? 'the bakery inbox (test)' : saved.email }
+  return { id: saved.id, ref: orderRef(saved), emailed, sentTo: saved.test ? 'the bakery inbox (test)' : saved.email }
 }
+/** Kept for the inquiry route and its tests. */
+export const createOrderFromInquiry = createCustomCakeOrder
 
 /** Sends the pay link again with a fresh 3 days (also reopens a link that ran out). */
 export async function resendPayLink(id: string, now = new Date()) {

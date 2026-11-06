@@ -738,4 +738,36 @@ test('custom cake orders: create from inquiry, pay link, deposit, expiry and res
   // Resend is only for unpaid custom orders.
   assert.equal((await adminCall({ action: 'resend_link', id: full.id })).status, 409)
   assert.equal(custom.canPay(await store.getCakeOrder(full.id)), false)
+
+  // Cake orders → New custom order: no inquiry, the customer is typed in; the pay link goes to their email.
+  const { inquiryId: _, ...cake } = base
+  const customer = { name: 'Phone Customer', email: 'phone@example.test', phone: '(702) 555-0199' }
+  assert.equal((await adminCall({ action: 'create_custom', order: { ...cake, price: 120 } })).status, 400)
+  assert.equal(
+    (await adminCall({ action: 'create_custom', order: { ...cake, inquiryId, customer, price: 120 } })).status,
+    400,
+    'customer or inquiry, not both',
+  )
+  assert.equal(
+    (await adminPost(inquiryRoute, { action: 'create_order', order: { ...cake, customer, price: 120 } })).status,
+    400,
+    'the inquiry route needs an inquiry',
+  )
+  const mailed = emails.length
+  r = await adminCall({ action: 'create_custom', order: { ...cake, customer, price: '120' } })
+  assert.equal(r.status, 200)
+  const made = await r.json()
+  const manual = await store.getCakeOrder(made.id)
+  assert.equal(manual.kind, 'custom')
+  assert.equal(manual.status, 'awaiting_payment')
+  assert.equal(manual.inquiryId, undefined)
+  assert.equal(manual.name, 'Phone Customer')
+  assert.equal(made.ref, '#' + manual.orderNo)
+  const link = emails.slice(mailed).find(e => e.to === 'phone@example.test')
+  assert(link.html.includes(`/pay/${manual.id}`), 'pay link email')
+  // A test one: emails go to the bakery inbox.
+  r = await adminCall({ action: 'create_custom', order: { ...cake, customer, price: 120, test: true } })
+  const tested = await store.getCakeOrder((await r.json()).id)
+  assert.equal(tested.test, true)
+  assert(emails.at(-1).subject.startsWith('[TEST] '))
 })

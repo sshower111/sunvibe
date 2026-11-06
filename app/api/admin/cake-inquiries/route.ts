@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Email is not set up (RESEND_API_KEY).' }, { status: 503 })
       const parsed = customOrderSchema.safeParse(body.order)
       if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+      if (!parsed.data.inquiryId) return NextResponse.json({ error: 'Invalid order' }, { status: 400 })
       return NextResponse.json(await createOrderFromInquiry(parsed.data))
     }
     const parsed = updateSchema.safeParse(body)

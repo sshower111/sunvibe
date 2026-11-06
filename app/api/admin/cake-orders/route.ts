@@ -12,7 +12,8 @@ import {
   refundOrder,
 } from '@/lib/cake-order-actions'
 import { bakeryInbox } from '@/lib/email'
-import { resendPayLink } from '@/lib/custom-cake-orders'
+import { createCustomCakeOrder, resendPayLink } from '@/lib/custom-cake-orders'
+import { customOrderSchema } from '@/lib/cake-order'
 import { deleteCard, refreshOrderCardQuietly } from '@/lib/discord-orders'
 import { sendThankYou } from '@/lib/thank-you'
 
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
       if (!process.env.RESEND_API_KEY)
         return NextResponse.json({ error: 'Email is not set up (RESEND_API_KEY).' }, { status: 503 })
       return NextResponse.json({ ...(await createTestOrder(body.scenario)), sentTo: bakeryInbox() })
+    }
+    if (body.action === 'create_custom') {
+      // Cake orders → New custom order: a custom cake made from scratch (e.g. ordered by phone), with a pay link.
+      if (!process.env.RESEND_API_KEY)
+        return NextResponse.json({ error: 'Email is not set up (RESEND_API_KEY).' }, { status: 503 })
+      const order = customOrderSchema.safeParse(body.order)
+      if (!order.success) return NextResponse.json({ error: order.error.issues[0].message }, { status: 400 })
+      if (order.data.inquiryId)
+        return NextResponse.json({ error: 'Use Approve & send pay link on the inquiry.' }, { status: 400 })
+      return NextResponse.json(await createCustomCakeOrder(order.data))
     }
     const parsed = actionSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

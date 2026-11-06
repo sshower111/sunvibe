@@ -17,7 +17,9 @@ import { AdminPageHeader } from './admin-page-header'
 import { AdminSegmented } from './admin-segmented'
 import { AdminStatusBadge, type BadgeTone } from './admin-status-badge'
 import { AdminOrderPanel } from './admin-order-review'
-import { headCell, listBox, rowClass, useOpenParam } from './admin-side-panel'
+import { AdminCustomOrderForm } from './admin-custom-order-form'
+import { Button } from './ui/button'
+import { AdminSidePanel, headCell, listBox, rowClass, useOpenParam } from './admin-side-panel'
 
 // Cake orders: a compact list (table on wide screens, one line pair per order on phones). Clicking an order opens
 // it in the side panel, where everything is done.
@@ -59,6 +61,8 @@ export function AdminCakeOrders() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const { openId, open, close } = useOpenParam()
+  // Cake orders → New custom order: a custom cake from scratch (e.g. ordered by phone), with a pay link.
+  const [creating, setCreating] = useState(false)
   const request = (body: Record<string, unknown>) => adminPost('/api/admin/cake-orders', body)
 
   async function run(task: () => Promise<void>) {
@@ -131,6 +135,18 @@ export function AdminCakeOrders() {
         title="Cake orders"
         onRefresh={load}
         busy={busy}
+        action={
+          <Button
+            size="sm"
+            onClick={() => {
+              close()
+              setNotice('')
+              setCreating(true)
+            }}
+          >
+            New custom order
+          </Button>
+        }
         menu={[
           { label: 'Test order (urgent, tomorrow)', onSelect: () => void sendTest('urgent') },
           { label: 'Test order (in 3 days)', onSelect: () => void sendTest('later') },
@@ -233,6 +249,20 @@ export function AdminCakeOrders() {
             </table>
           </div>
         </>
+      )}
+      {creating && !openId && (
+        <AdminSidePanel title="New custom order" onClose={() => setCreating(false)}>
+          <AdminCustomOrderForm
+            onCancel={() => setCreating(false)}
+            onCreated={(message, orderId) => {
+              setCreating(false)
+              setNotice(message)
+              setFilter('payment')
+              void reload().catch(() => {})
+              if (orderId) open(orderId)
+            }}
+          />
+        </AdminSidePanel>
       )}
       {openId && (
         <AdminOrderPanel

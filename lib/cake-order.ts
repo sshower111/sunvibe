@@ -279,10 +279,22 @@ export const amountDueNow = (o: Pick<StoredCakeOrder, 'price' | 'deposit'>) => o
 export const isDelivery = (o: Pick<StoredCakeOrder, 'fulfillment'>) => !!o.fulfillment && o.fulfillment !== 'Pickup'
 export const PAY_LINK_DAYS = 3
 
-/** Admin form that turns a confirmed custom cake inquiry into an order with a pay link. */
+/**
+ * Admin form that makes a custom cake order with a pay link: from a confirmed inquiry (inquiryId), or from scratch in
+ * Cake orders → New custom order (customer: name, email, phone; e.g. after a phone call).
+ */
 export const customOrderSchema = z
   .object({
-    inquiryId: z.string().uuid(),
+    inquiryId: z.string().uuid().optional(),
+    customer: z
+      .object({
+        name: z.string().trim().min(1, "Enter the customer's name.").max(100),
+        email: z.string().trim().email("Enter the customer's email.").max(200),
+        phone: z.string().trim().min(7, "Enter the customer's phone number.").max(30),
+      })
+      .optional(),
+    /** New custom order only: a test, emails go to the bakery inbox. */
+    test: z.boolean().optional(),
     size: z.string().trim().min(1, 'Enter the cake size.').max(100),
     flavor: z.string().trim().min(1, 'Enter the flavor.').max(100),
     filling: z.string().trim().min(1, 'Enter the filling.').max(100),
@@ -295,6 +307,7 @@ export const customOrderSchema = z
     price: z.coerce.number().min(1, 'Enter the total price.').max(10000),
     deposit: z.coerce.number().min(0).max(10000).optional(),
   })
+  .refine(v => !!v.inquiryId !== !!v.customer, { message: "Enter the customer's details.", path: ['customer'] })
   .refine(v => v.fulfillment === 'Pickup' || v.deliveryAddress.length > 0, {
     message: 'Enter the delivery address.',
     path: ['deliveryAddress'],
